@@ -15,9 +15,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 /**
- * WebSocket üzerinden real-time mesajlaşma.
+ * On WebSocket real-time messaging.
  *
- * Akış:
+ * Flow:
  * 1. Client → /app/chat.send (STOMP SEND)
  * 2. Server → DB'ye kaydet (IChatMessageService)
  * 3. Server → /topic/room/{roomId}'e broadcast (SimpMessagingTemplate)
