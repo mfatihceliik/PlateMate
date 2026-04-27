@@ -1,5 +1,6 @@
 package com.mefy.platemate.config;
 
+import com.corundumstudio.socketio.AuthorizationResult;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,11 +32,10 @@ public class SocketIOConfig {
         config.setAuthorizationListener(data -> {
             String token = data.getSingleUrlParam("token");
             if (token == null || token.isEmpty()) {
-                return com.corundumstudio.socketio.AuthorizationResult.ACCESS_DENIED;
+                return AuthorizationResult.ACCESS_DENIED;
             }
             boolean isValid = tokenProvider.validateToken(token);
-            return isValid ? com.corundumstudio.socketio.AuthorizationResult.ACCESS_GRANTED 
-                           : com.corundumstudio.socketio.AuthorizationResult.ACCESS_DENIED;
+            return isValid ? AuthorizationResult.ACCESS_GRANTED : AuthorizationResult.ACCESS_DENIED;
         });
 
         return new SocketIOServer(config);
