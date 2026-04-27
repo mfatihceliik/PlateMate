@@ -222,7 +222,7 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 8. Real-time Chat (`/api/chat`)
+## 8. Real-time Chat & Messages (`/api/chat`)
 
 ### Get My Chat Rooms
 - **Method**: `GET`
@@ -234,18 +234,6 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 - **URL**: `/api/chat/messages/{roomId}`
 - **Headers**: `Authorization: Bearer <token>`
 
-### Send Message
-- **Method**: `POST`
-- **URL**: `/api/chat/send`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "receiverId": 2,
-    "content": "Hello there!"
-  }
-  ```
-
 ### Mark Messages as Read
 - **Method**: `POST`
 - **URL**: `/api/chat/read/{roomId}`
@@ -253,7 +241,34 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 9. Friendship / Follow (`/api/friends`)
+## 9. WebSocket Messaging (`Socket.io`)
+
+**URL**: `ws://localhost:9092`
+**Query Parameters**: `token=<JWT_TOKEN>`
+
+### Connection
+- **Library**: `socket.io-client`
+- **Authentication**: JWT token must be passed in query string (e.g., `?token=...`).
+
+### Events (Send)
+- `join_room`: Joins a specific chat room.
+  - **Data**: `String` (roomId)
+- `send_message`: Sends a message to the room.
+  - **Data** (JSON):
+    ```json
+    {
+      "chatRoomId": 1,
+      "content": "Hello via Socket.io!"
+    }
+    ```
+
+### Events (Receive)
+- `new_message`: Triggered when a new message arrives in a joined room.
+  - **Data**: `ChatMessageDto`
+
+---
+
+## 10. Friendship / Follow (`/api/friends`)
 
 ### Follow User
 - **Method**: `POST`

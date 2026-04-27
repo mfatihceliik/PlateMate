@@ -8,6 +8,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.dataAccess.abstracts.IChatRoomDao;
 import com.mefy.platemate.business.abstracts.IParticipantService;
+import com.mefy.platemate.entities.concrete.ChatRoom;
 import com.mefy.platemate.entities.concrete.Participant;
 import com.mefy.platemate.entities.dto.ChatRoomDto;
 import jakarta.transaction.Transactional;

@@ -23,7 +23,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // Veritabanı & Spatial (Plaka/Konum işlemleri için)
     runtimeOnly 'org.postgresql:postgresql'
@@ -45,6 +44,9 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Socket.io
+    implementation 'com.corundumstudio.socketio:netty-socketio:2.0.12'
 }
 
 tasks.named('test') {
