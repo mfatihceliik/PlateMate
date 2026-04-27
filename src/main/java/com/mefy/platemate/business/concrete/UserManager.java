@@ -67,6 +67,29 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public Result update(User user) {
+        User existingUser = userDao.findById(user.getId()).orElse(null);
+        if (existingUser == null) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+
+        // Email değişmişse çakışma kontrolü yap
+        if (user.getEmail() != null && !user.getEmail().equals(existingUser.getEmail())) {
+            Result emailResult = BusinessRules.run(checkIfEmailExists(user.getEmail()));
+            if (emailResult != null) return emailResult;
+            existingUser.setEmail(user.getEmail());
+        }
+
+        // Şifre değişmişse hashleyerek güncelle
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+
+        userDao.save(existingUser);
+        return new SuccessResult(messageService.getMessage(Messages.USER_UPDATED));
+    }
+
+    @Override
     public Result delete(Long id) {
         Result result = BusinessRules.run(checkIfUserExistsById(id));
         if (result != null) return result;

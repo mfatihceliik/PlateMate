@@ -11,6 +11,7 @@ public interface IUserService {
     DataResult<User> add(User user);
     DataResult<List<UserDto>> getAll();
     DataResult<UserDto> getById(Long id);
+    Result update(User user);
     Result delete(Long id);
     DataResult<UserDto> getByUsername(String username);
     DataResult<User> getByUsernameOrEmailForAuth(String identifier); // Login için Entity döner (password kontrolü)

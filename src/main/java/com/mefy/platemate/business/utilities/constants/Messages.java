@@ -10,6 +10,7 @@ public final class Messages {
     public static final String USER_EMAIL_EXISTS = "user.email.exists";
     public static final String USER_NOT_FOUND = "user.not.found";
     public static final String USER_DELETED = "user.deleted";
+    public static final String USER_UPDATED = "user.updated";
     public static final String USER_FOUND = "user.found";
     public static final String USERS_LISTED = "users.listed";
 
@@ -23,6 +24,7 @@ public final class Messages {
     // Vehicle Messages
     public static final String PLATE_INVALID = "plate.invalid";
     public static final String VEHICLE_ADDED = "vehicle.added";
+    public static final String VEHICLE_UPDATED = "vehicle.updated";
     public static final String VEHICLES_LISTED = "vehicles.listed";
     public static final String VEHICLE_NOT_FOUND = "vehicle.not.found";
     public static final String VEHICLE_FOUND = "vehicle.found";
@@ -30,6 +32,7 @@ public final class Messages {
 
     // Review Messages
     public static final String REVIEW_ADDED = "review.added";
+    public static final String REVIEW_UPDATED = "review.updated";
     public static final String REVIEWS_LISTED = "reviews.listed";
     public static final String SELF_REVIEW_NOT_ALLOWED = "self.review.not.allowed";
     public static final String REVIEW_NOT_FOUND = "review.not.found";

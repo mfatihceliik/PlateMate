@@ -40,6 +40,23 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    @PutMapping
+    public ResponseEntity<Result> update(
+            @RequestAttribute("userId") Long currentUserId,
+            @jakarta.validation.Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateUserRequest request) {
+
+        com.mefy.platemate.entities.concrete.User user = new com.mefy.platemate.entities.concrete.User();
+        user.setId(currentUserId);
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+
+        Result result = userService.update(user);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> delete(@PathVariable Long id) {
         Result result = userService.delete(id);

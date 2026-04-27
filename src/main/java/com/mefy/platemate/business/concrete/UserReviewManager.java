@@ -73,6 +73,33 @@ public class UserReviewManager implements IUserReviewService {
 
     @Override
     @Transactional
+    public Result update(UserReview userReview, Long currentUserId) {
+        UserReview existingReview = userReviewDao.findById(userReview.getId()).orElse(null);
+        if (existingReview == null) {
+            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
+        }
+
+        if (!existingReview.getReviewer().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage("review.delete.unauthorized"));
+        }
+
+        Integer oldRating = existingReview.getRating();
+        Integer newRating = userReview.getRating();
+
+        existingReview.setRating(newRating);
+        existingReview.setComment(userReview.getComment());
+
+        userReviewDao.save(existingReview);
+
+        if (!oldRating.equals(newRating)) {
+            updateUserProfileStatisticsForEdit(existingReview.getTargetProfile().getId(), oldRating, newRating);
+        }
+
+        return new SuccessResult(messageService.getMessage(Messages.REVIEW_UPDATED));
+    }
+
+    @Override
+    @Transactional
     public Result delete(Long reviewId, Long currentUserId) {
         UserReview review = userReviewDao.findById(reviewId).orElse(null);
         if (review == null) {
@@ -108,6 +135,15 @@ public class UserReviewManager implements IUserReviewService {
         long newTotalSum = Math.max(0, profile.getTotalRatingSum() - removedRating);
         double newAverage = newReviewCount > 0 ? (double) newTotalSum / newReviewCount : 0.0;
         profile.setReviewCount(newReviewCount);
+        profile.setTotalRatingSum(newTotalSum);
+        profile.setDriverRating(newAverage);
+        userProfileDao.save(profile);
+    }
+
+    private void updateUserProfileStatisticsForEdit(Long profileId, Integer oldRating, Integer newRating) {
+        UserProfile profile = userProfileDao.findById(profileId).orElseThrow();
+        long newTotalSum = profile.getTotalRatingSum() - oldRating + newRating;
+        double newAverage = profile.getReviewCount() > 0 ? (double) newTotalSum / profile.getReviewCount() : 0.0;
         profile.setTotalRatingSum(newTotalSum);
         profile.setDriverRating(newAverage);
         userProfileDao.save(profile);

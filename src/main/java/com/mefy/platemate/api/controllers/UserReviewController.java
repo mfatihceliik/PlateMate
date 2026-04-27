@@ -54,6 +54,23 @@ public class UserReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
+    @PutMapping
+    public ResponseEntity<Result> update(
+            @RequestAttribute("userId") Long currentUserId,
+            @jakarta.validation.Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateReviewRequest request) {
+
+        UserReview review = new UserReview();
+        review.setId(request.getId());
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+
+        Result result = userReviewService.update(review, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> delete(
             @PathVariable Long id,

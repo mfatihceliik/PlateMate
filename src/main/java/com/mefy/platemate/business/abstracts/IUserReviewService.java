@@ -10,5 +10,6 @@ import org.springframework.data.domain.Page;
 public interface IUserReviewService {
     Result add(UserReview userReview);
     DataResult<Page<UserReviewDto>> getByTargetProfileId(Long targetProfileId, int page, int size);
+    Result update(UserReview userReview, Long currentUserId);
     Result delete(Long reviewId, Long currentUserId); // Sadece yorumu yazan silebilir
 }

@@ -74,6 +74,31 @@ public class VehicleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
+    @PutMapping
+    public ResponseEntity<Result> update(
+            @RequestAttribute("userId") Long currentUserId,
+            @Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateVehicleRequest request) {
+
+        DataResult<City> cityResult = cityService.getById(request.getCityId());
+        if (!cityResult.isSuccess()) {
+            return ResponseEntity.badRequest().body(cityResult);
+        }
+
+        Vehicle vehicle = new Vehicle();
+        vehicle.setId(request.getId());
+        vehicle.setPlateCode(request.getPlateCode());
+        vehicle.setBrand(request.getBrand());
+        vehicle.setModel(request.getModel());
+        vehicle.setColor(request.getColor());
+        vehicle.setCity(cityResult.getData());
+
+        Result result = vehicleService.update(vehicle, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> delete(
             @PathVariable Long id,

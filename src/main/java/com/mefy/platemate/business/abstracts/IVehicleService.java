@@ -12,5 +12,6 @@ public interface IVehicleService {
     DataResult<VehicleDto> getByPlateCode(String plateCode);
     DataResult<List<VehicleDto>> getByUserId(Long userId); // Kullanıcının araçları
     Result add(Vehicle vehicle);
+    Result update(Vehicle vehicle, Long currentUserId);
     Result delete(Long id, Long currentUserId); // Sadece araç sahibi silebilir
 }

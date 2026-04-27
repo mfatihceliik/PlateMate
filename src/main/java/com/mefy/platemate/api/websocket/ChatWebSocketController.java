@@ -19,7 +19,7 @@ import org.springframework.stereotype.Controller;
  *
  * Flow:
  * 1. Client → /app/chat.send (STOMP SEND)
- * 2. Server → DB'ye kaydet (IChatMessageService)
+ * 2. Server → Save DB (IChatMessageService)
  * 3. Server → /topic/room/{roomId}'e broadcast (SimpMessagingTemplate)
  * 4. Subscribe olan tüm client'lar mesajı alır
  */

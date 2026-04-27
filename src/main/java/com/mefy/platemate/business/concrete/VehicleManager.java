@@ -71,6 +71,38 @@ public class VehicleManager implements IVehicleService {
     }
 
     @Override
+    public Result update(Vehicle vehicle, Long currentUserId) {
+        Vehicle existingVehicle = vehicleDao.findById(vehicle.getId()).orElse(null);
+        if (existingVehicle == null) {
+            return new ErrorResult(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
+        }
+
+        if (!existingVehicle.getUser().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage("vehicle.delete.unauthorized"));
+        }
+
+        String normalizedPlate = vehicle.getPlateCode().replace(" ", "").toUpperCase();
+
+        // Eğer plaka değişmişse geçerlilik ve çakışma kontrolü yap
+        if (!existingVehicle.getPlateCode().equals(normalizedPlate)) {
+            Result result = BusinessRules.run(
+                    checkIfPlateValid(normalizedPlate),
+                    checkIfPlateExists(normalizedPlate)
+            );
+            if (result != null) return result;
+            existingVehicle.setPlateCode(normalizedPlate);
+        }
+
+        existingVehicle.setBrand(vehicle.getBrand());
+        existingVehicle.setModel(vehicle.getModel());
+        existingVehicle.setColor(vehicle.getColor());
+        existingVehicle.setCity(vehicle.getCity());
+
+        vehicleDao.save(existingVehicle);
+        return new SuccessResult(messageService.getMessage(Messages.VEHICLE_UPDATED));
+    }
+
+    @Override
     public Result delete(Long id, Long currentUserId) {
         Vehicle vehicle = vehicleDao.findById(id).orElse(null);
         if (vehicle == null) {

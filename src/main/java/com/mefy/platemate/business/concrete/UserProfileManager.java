@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IUserProfileService;
+import com.mefy.platemate.business.abstracts.IUserReviewService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.UserProfileMapper;
@@ -19,7 +20,7 @@ public class UserProfileManager implements IUserProfileService {
     private final IUserProfileDao userProfileDao;
     private final UserProfileMapper userProfileMapper;
     private final IMessageService messageService;
-    private final com.mefy.platemate.business.abstracts.IUserReviewService userReviewService;
+    private final IUserReviewService userReviewService;
 
     @Override
     public DataResult<UserProfileDto> getByUserId(Long userId, int page, int size) {

@@ -15,8 +15,8 @@ PlateMate is a social platform for drivers and vehicle owners. This backend API 
 
 ## Tech Stack
 
-- **Framework**: Spring Boot 3
-- **Language**: Java 17+
+- **Framework**: Spring Boot 4
+- **Language**: Java 21
 - **Security**: Spring Security & JWT
 - **Database**: PostgreSQL (or H2 for local development)
 - **Mapping**: Manual Mappers & Lombok
@@ -27,7 +27,7 @@ PlateMate is a social platform for drivers and vehicle owners. This backend API 
 
 ### Prerequisites
 
-- JDK 17 or higher
+- JDK 21 
 - Maven 3.6+
 - PostgreSQL (optional, defaults to H2 if configured)
 
