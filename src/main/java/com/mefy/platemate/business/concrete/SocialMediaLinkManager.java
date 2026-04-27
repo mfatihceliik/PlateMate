@@ -2,12 +2,14 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.ISocialMediaLinkService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ISocialMediaLinkDao;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
+import com.mefy.platemate.entities.concrete.SocialPlatform;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +21,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
 
     @Override
     public Result add(SocialMediaLink link) {
-        Result result = com.mefy.platemate.business.utilities.rules.BusinessRules.run(
+        Result result = BusinessRules.run(
                 checkIfPlatformExists(link.getUserProfile().getId(), link.getPlatform())
         );
 
@@ -29,7 +31,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_ADDED));
     }
 
-    private Result checkIfPlatformExists(Long userProfileId, com.mefy.platemate.entities.concrete.SocialPlatform platform) {
+    private Result checkIfPlatformExists(Long userProfileId, SocialPlatform platform) {
         if (socialMediaLinkDao.existsByUserProfileIdAndPlatform(userProfileId, platform)) {
             return new ErrorResult(messageService.getMessage(Messages.SOCIAL_PLATFORM_ALREADY_EXISTS));
         }
@@ -49,7 +51,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
 
         // Eğer platform değişmişse, yeni platformun zaten olup olmadığını kontrol et
         if (existingLink.getPlatform() != link.getPlatform()) {
-            Result result = com.mefy.platemate.business.utilities.rules.BusinessRules.run(
+            Result result = BusinessRules.run(
                     checkIfPlatformExists(currentUserId, link.getPlatform())
             );
             if (result != null) return result;

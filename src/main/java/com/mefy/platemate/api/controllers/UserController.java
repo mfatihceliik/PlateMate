@@ -4,6 +4,8 @@ import com.mefy.platemate.business.abstracts.IUserService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.request.UpdateUserRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +45,8 @@ public class UserController {
     @PutMapping
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
-            @jakarta.validation.Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
 
         com.mefy.platemate.entities.concrete.User user = new com.mefy.platemate.entities.concrete.User();
         user.setId(currentUserId);

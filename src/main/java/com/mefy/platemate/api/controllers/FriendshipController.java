@@ -21,7 +21,8 @@ public class FriendshipController {
     @PostMapping("/request/{addresseeId}")
     public ResponseEntity<Result> sendRequest(
             @RequestAttribute("userId") Long currentUserId,
-            @PathVariable Long addresseeId) {
+            @PathVariable Long addresseeId
+    ) {
         Result result = friendshipService.sendRequest(currentUserId, addresseeId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
@@ -32,7 +33,8 @@ public class FriendshipController {
     @PutMapping("/{id}/accept")
     public ResponseEntity<Result> accept(
             @PathVariable Long id,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         Result result = friendshipService.acceptRequest(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
@@ -43,7 +45,8 @@ public class FriendshipController {
     @PutMapping("/{id}/reject")
     public ResponseEntity<Result> reject(
             @PathVariable Long id,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         Result result = friendshipService.rejectRequest(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
@@ -54,7 +57,8 @@ public class FriendshipController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> remove(
             @PathVariable Long id,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         Result result = friendshipService.removeFriend(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
@@ -64,13 +68,15 @@ public class FriendshipController {
 
     @GetMapping
     public ResponseEntity<DataResult<List<FriendshipDto>>> getFriends(
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         return ResponseEntity.ok(friendshipService.getFriends(currentUserId));
     }
 
     @GetMapping("/pending")
     public ResponseEntity<DataResult<List<FriendshipDto>>> getPendingRequests(
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         return ResponseEntity.ok(friendshipService.getPendingRequests(currentUserId));
     }
 }

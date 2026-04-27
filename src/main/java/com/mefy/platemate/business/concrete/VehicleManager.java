@@ -38,6 +38,10 @@ public class VehicleManager implements IVehicleService {
     public DataResult<VehicleDto> getByPlateCode(String plateCode) {
         String formattedPlate = plateCode.replace(" ", "").toUpperCase();
 
+        if (!plateValidator.isValid(formattedPlate)) {
+            return new ErrorDataResult<>(messageService.getMessage(Messages.PLATE_INVALID));
+        }
+
         Vehicle vehicle = vehicleDao.findByPlateCode(formattedPlate).orElse(null);
         if (vehicle == null) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
@@ -60,7 +64,8 @@ public class VehicleManager implements IVehicleService {
 
         Result result = BusinessRules.run(
                 checkIfPlateValid(normalizedPlate),
-                checkIfPlateExists(normalizedPlate)
+                checkIfPlateExists(normalizedPlate),
+                checkIfPlateMatchesCity(normalizedPlate, vehicle.getCity().getId())
         );
 
         if (result != null) return result;
@@ -87,7 +92,8 @@ public class VehicleManager implements IVehicleService {
         if (!existingVehicle.getPlateCode().equals(normalizedPlate)) {
             Result result = BusinessRules.run(
                     checkIfPlateValid(normalizedPlate),
-                    checkIfPlateExists(normalizedPlate)
+                    checkIfPlateExists(normalizedPlate),
+                    checkIfPlateMatchesCity(normalizedPlate, vehicle.getCity().getId())
             );
             if (result != null) return result;
             existingVehicle.setPlateCode(normalizedPlate);
@@ -117,7 +123,7 @@ public class VehicleManager implements IVehicleService {
         return new SuccessResult(messageService.getMessage("vehicle.deleted"));
     }
 
-    // --- BUSINESS RULES ---
+    ///  BUSINESS RULES
 
     private Result checkIfPlateValid(String plateCode) {
         if (!plateValidator.isValid(plateCode)) {
@@ -129,6 +135,17 @@ public class VehicleManager implements IVehicleService {
     private Result checkIfPlateExists(String plateCode) {
         if (vehicleDao.existsByPlateCode(plateCode)) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALREADY_EXISTS));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfPlateMatchesCity(String plateCode, Integer cityId) {
+        // İlk iki rakamı al
+        String platePrefix = plateCode.substring(0, 2);
+        String cityPrefix = String.format("%02d", cityId);
+
+        if (!platePrefix.equals(cityPrefix)) {
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_CITY_MISMATCH));
         }
         return new SuccessResult();
     }

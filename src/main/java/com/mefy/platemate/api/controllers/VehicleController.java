@@ -9,6 +9,7 @@ import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.Vehicle;
 import com.mefy.platemate.entities.dto.VehicleDto;
 import com.mefy.platemate.entities.dto.request.AddVehicleRequest;
+import com.mefy.platemate.entities.dto.request.UpdateVehicleRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,7 +48,8 @@ public class VehicleController {
     @PostMapping
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody AddVehicleRequest request) {
+            @Valid @RequestBody AddVehicleRequest request
+    ) {
 
         // City'yi bul
         DataResult<City> cityResult = cityService.getById(request.getCityId());
@@ -77,7 +79,8 @@ public class VehicleController {
     @PutMapping
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateVehicleRequest request) {
+            @Valid @RequestBody UpdateVehicleRequest request
+    ) {
 
         DataResult<City> cityResult = cityService.getById(request.getCityId());
         if (!cityResult.isSuccess()) {
@@ -102,7 +105,8 @@ public class VehicleController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> delete(
             @PathVariable Long id,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         Result result = vehicleService.delete(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);

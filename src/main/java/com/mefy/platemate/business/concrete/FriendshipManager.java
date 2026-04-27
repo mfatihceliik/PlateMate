@@ -123,7 +123,7 @@ public class FriendshipManager implements IFriendshipService {
         return new SuccessDataResult<>(dtos, messageService.getMessage(Messages.PENDING_REQUESTS_LISTED));
     }
 
-    // --- BUSINESS RULES ---
+    ///  BUSINESS RULES
 
     private Result checkIfSelfRequest(Long requesterId, Long addresseeId) {
         if (requesterId.equals(addresseeId)) {

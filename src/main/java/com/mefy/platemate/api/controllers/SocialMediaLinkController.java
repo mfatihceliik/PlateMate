@@ -5,6 +5,7 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.request.AddSocialLinkRequest;
+import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,8 @@ public class SocialMediaLinkController {
     @PostMapping
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody AddSocialLinkRequest request) {
+            @Valid @RequestBody AddSocialLinkRequest request
+    ) {
 
         UserProfile profile = new UserProfile();
         profile.setId(currentUserId);
@@ -41,7 +43,8 @@ public class SocialMediaLinkController {
     @PutMapping
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest request) {
+            @Valid @RequestBody UpdateSocialLinkRequest request
+    ) {
 
         SocialMediaLink link = new SocialMediaLink();
         link.setId(request.getId());
@@ -58,7 +61,8 @@ public class SocialMediaLinkController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Result> delete(
             @PathVariable Long id,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         Result result = socialMediaLinkService.delete(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);

@@ -28,14 +28,16 @@ public class ChatController {
 
     @GetMapping("/rooms")
     public ResponseEntity<DataResult<List<ChatRoomDto>>> getUserRooms(
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         return ResponseEntity.ok(chatRoomService.getUserRooms(currentUserId));
     }
 
     @PostMapping("/rooms")
     public ResponseEntity<DataResult<ChatRoomDto>> getOrCreateRoom(
             @RequestAttribute("userId") Long currentUserId,
-            @RequestParam Long otherUserId) {
+            @RequestParam Long otherUserId
+    ) {
         DataResult<ChatRoomDto> result = chatRoomService.getOrCreateChatRoom(currentUserId, otherUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -49,7 +51,8 @@ public class ChatController {
     @PostMapping("/rooms/messages")
     public ResponseEntity<?> sendMessage(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody SendMessageRequest request) {
+            @Valid @RequestBody SendMessageRequest request
+    ) {
 
         User sender = new User();
         sender.setId(currentUserId);
@@ -72,7 +75,8 @@ public class ChatController {
     @PutMapping("/rooms/{roomId}/read")
     public ResponseEntity<Result> markAsRead(
             @PathVariable Long roomId,
-            @RequestAttribute("userId") Long currentUserId) {
+            @RequestAttribute("userId") Long currentUserId
+    ) {
         return ResponseEntity.ok(chatMessageService.markAsRead(roomId, currentUserId));
     }
 }

@@ -28,14 +28,14 @@ public class UserProfileManager implements IUserProfileService {
         if (profile == null) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
         }
-        
+
         UserProfileDto dto = userProfileMapper.entityToDto(profile);
-        
+
         var reviewsResult = userReviewService.getByTargetProfileId(userId, page, size);
         if (reviewsResult.isSuccess()) {
             dto.setReviews(reviewsResult.getData());
         }
-        
+
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PROFILE_FOUND));
     }
 
@@ -55,7 +55,7 @@ public class UserProfileManager implements IUserProfileService {
         return new SuccessResult(messageService.getMessage(Messages.PROFILE_UPDATED));
     }
 
-    // --- BUSINESS RULES ---
+    ///  BUSINESS RULES
 
     private Result checkIfBioTooLong(String bio) {
         if (bio != null && bio.length() > 500) {

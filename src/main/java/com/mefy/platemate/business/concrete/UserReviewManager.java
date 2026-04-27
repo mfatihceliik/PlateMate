@@ -6,9 +6,9 @@ import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.UserReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.*;
+import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserReviewDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserReview;
@@ -65,9 +65,9 @@ public class UserReviewManager implements IUserReviewService {
     public DataResult<Page<UserReviewDto>> getByTargetProfileId(Long targetProfileId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<UserReview> reviewsPage = userReviewDao.findByTargetProfileId(targetProfileId, pageable);
-        
+
         Page<UserReviewDto> dtoPage = reviewsPage.map(userReviewMapper::entityToDto);
-        
+
         return new SuccessDataResult<>(dtoPage, messageService.getMessage(Messages.REVIEWS_LISTED));
     }
 
@@ -116,7 +116,7 @@ public class UserReviewManager implements IUserReviewService {
         return new SuccessResult(messageService.getMessage("review.deleted"));
     }
 
-    // --- BUSINESS RULES ---
+    ///  BUSINESS RULES
 
     private void updateUserProfileStatistics(Long profileId, Integer newRating) {
         UserProfile profile = userProfileDao.findById(profileId).orElseThrow();

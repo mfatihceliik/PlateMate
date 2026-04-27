@@ -116,7 +116,7 @@ public class UserManager implements IUserService {
         return new SuccessDataResult<>(user, messageService.getMessage(Messages.USER_FOUND));
     }
 
-    // --- BUSINESS RULES ---
+    ///  BUSINESS RULES
 
     private Result checkIfUsernameExists(String username) {
         if (userDao.existsByUsername(username)) {

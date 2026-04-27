@@ -8,6 +8,7 @@ import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserReview;
 import com.mefy.platemate.entities.dto.UserReviewDto;
 import com.mefy.platemate.entities.dto.request.AddReviewRequest;
+import com.mefy.platemate.entities.dto.request.UpdateReviewRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,14 +27,16 @@ public class UserReviewController {
     public ResponseEntity<DataResult<Page<UserReviewDto>>> getByProfileId(
             @PathVariable Long profileId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size
+    ) {
         return ResponseEntity.ok(userReviewService.getByTargetProfileId(profileId, page, size));
     }
 
     @PostMapping
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
-            @Valid @RequestBody AddReviewRequest request) {
+            @Valid @RequestBody AddReviewRequest request
+    ) {
 
         User reviewer = new User();
         reviewer.setId(currentUserId);
@@ -57,7 +60,8 @@ public class UserReviewController {
     @PutMapping
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
-            @jakarta.validation.Valid @RequestBody com.mefy.platemate.entities.dto.request.UpdateReviewRequest request) {
+            @Valid @RequestBody UpdateReviewRequest request
+    ) {
 
         UserReview review = new UserReview();
         review.setId(request.getId());
