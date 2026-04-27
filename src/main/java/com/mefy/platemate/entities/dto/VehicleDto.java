@@ -1,0 +1,19 @@
+package com.mefy.platemate.entities.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class VehicleDto {
+    @JsonProperty("id") // Android tarafında ID'yi net görmek için
+    private Long id;
+    private String plateCode;
+    private String brand;
+    private String model;
+    private String color;
+    private String cityName; // City entity'sinden name'i buraya çekeceğiz
+}
