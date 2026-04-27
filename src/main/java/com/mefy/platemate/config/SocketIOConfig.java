@@ -32,10 +32,10 @@ public class SocketIOConfig {
         config.setAuthorizationListener(data -> {
             String token = data.getSingleUrlParam("token");
             if (token == null || token.isEmpty()) {
-                return AuthorizationResult.ACCESS_DENIED;
+                return AuthorizationResult.FAILED_AUTHORIZATION;
             }
             boolean isValid = tokenProvider.validateToken(token);
-            return isValid ? AuthorizationResult.ACCESS_GRANTED : AuthorizationResult.ACCESS_DENIED;
+            return isValid ? AuthorizationResult.SUCCESSFUL_AUTHORIZATION : AuthorizationResult.FAILED_AUTHORIZATION;
         });
 
         return new SocketIOServer(config);
