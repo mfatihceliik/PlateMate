@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * WebMVC konfigürasyonu.
  * JWT Interceptor'ı burada kayıt ederek hangi endpoint'lerin korumalı,
  * hangilerinin açık (public) olacağını belirliyoruz.
- *
+ * <p>
  * Yeni bir public endpoint eklendiğinde excludePathPatterns'a eklenmeli.
  */
 @Configuration

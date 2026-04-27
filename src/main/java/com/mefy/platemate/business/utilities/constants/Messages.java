@@ -19,7 +19,6 @@ public final class Messages {
     public static final String PROFILE_BIO_TOO_LONG = "profile.bio.too.long";
     // Vehicle Messages
     public static final String PLATE_INVALID = "plate.invalid";
-    public static final String PLATE_CITY_MISMATCH = "plate.city.mismatch";
     public static final String VEHICLE_ADDED = "vehicle.added";
     public static final String VEHICLE_UPDATED = "vehicle.updated";
     public static final String VEHICLES_LISTED = "vehicles.listed";

@@ -13,5 +13,7 @@ public class SocialMediaLinkMapper implements ModelMapperService<SocialMediaLink
     }
 
     @Override
-    public SocialMediaLink dtoToEntity(SocialMediaLinkDto dto) { return null; }
+    public SocialMediaLink dtoToEntity(SocialMediaLinkDto dto) {
+        return null;
+    }
 }

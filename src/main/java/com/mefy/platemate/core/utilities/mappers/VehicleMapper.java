@@ -23,5 +23,7 @@ public class VehicleMapper implements ModelMapperService<Vehicle, VehicleDto> {
     }
 
     @Override
-    public Vehicle dtoToEntity(VehicleDto dto) { return null; }
+    public Vehicle dtoToEntity(VehicleDto dto) {
+        return null;
+    }
 }

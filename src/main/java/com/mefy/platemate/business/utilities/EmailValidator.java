@@ -9,7 +9,7 @@ public class EmailValidator {
             "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
 
     public static boolean isEmailValid(String email) {
-        if(email == null || email.isBlank())
+        if (email == null || email.isBlank())
             return false;
         Pattern pattern = Pattern.compile(EMAIL_PATTERN, Pattern.CASE_INSENSITIVE);
         return pattern.matcher(email).matches();

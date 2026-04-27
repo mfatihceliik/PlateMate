@@ -10,10 +10,10 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * JWT Authentication Interceptor.
  * Spring MVC HandlerInterceptor olarak çalışır — Security filter chain'e dokunmaz.
  * Her istek geldiğinde token kontrolü yapar ve userId'yi request attribute olarak ekler.
- *
+ * <p>
  * Controller'lar userId'ye şu şekilde erişir:
- *   Long userId = (Long) request.getAttribute("userId");
- *   veya @RequestAttribute("userId") Long userId
+ * Long userId = (Long) request.getAttribute("userId");
+ * veya @RequestAttribute("userId") Long userId
  */
 @Component
 @RequiredArgsConstructor

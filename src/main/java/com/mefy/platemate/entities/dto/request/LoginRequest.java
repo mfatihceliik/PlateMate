@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoginRequest {
     private String username;
-    
+
     private String email;
 
     @NotBlank(message = "{validation.user.password.notblank}")
     private String password;
-    
+
     public String getIdentifier() {
         if (email != null && !email.trim().isEmpty()) {
             return email;

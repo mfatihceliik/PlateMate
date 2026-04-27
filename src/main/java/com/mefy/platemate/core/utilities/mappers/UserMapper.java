@@ -21,5 +21,7 @@ public class UserMapper implements ModelMapperService<User, UserDto> {
     }
 
     @Override
-    public User dtoToEntity(UserDto dto) { return null; }
+    public User dtoToEntity(UserDto dto) {
+        return null;
+    }
 }

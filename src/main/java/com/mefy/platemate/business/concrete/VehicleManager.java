@@ -64,8 +64,7 @@ public class VehicleManager implements IVehicleService {
 
         Result result = BusinessRules.run(
                 checkIfPlateValid(normalizedPlate),
-                checkIfPlateExists(normalizedPlate),
-                checkIfPlateMatchesCity(normalizedPlate, vehicle.getCity().getId())
+                checkIfPlateExists(normalizedPlate)
         );
 
         if (result != null) return result;
@@ -92,8 +91,7 @@ public class VehicleManager implements IVehicleService {
         if (!existingVehicle.getPlateCode().equals(normalizedPlate)) {
             Result result = BusinessRules.run(
                     checkIfPlateValid(normalizedPlate),
-                    checkIfPlateExists(normalizedPlate),
-                    checkIfPlateMatchesCity(normalizedPlate, vehicle.getCity().getId())
+                    checkIfPlateExists(normalizedPlate)
             );
             if (result != null) return result;
             existingVehicle.setPlateCode(normalizedPlate);
@@ -135,17 +133,6 @@ public class VehicleManager implements IVehicleService {
     private Result checkIfPlateExists(String plateCode) {
         if (vehicleDao.existsByPlateCode(plateCode)) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALREADY_EXISTS));
-        }
-        return new SuccessResult();
-    }
-
-    private Result checkIfPlateMatchesCity(String plateCode, Integer cityId) {
-        // İlk iki rakamı al
-        String platePrefix = plateCode.substring(0, 2);
-        String cityPrefix = String.format("%02d", cityId);
-
-        if (!platePrefix.equals(cityPrefix)) {
-            return new ErrorResult(messageService.getMessage(Messages.PLATE_CITY_MISMATCH));
         }
         return new SuccessResult();
     }

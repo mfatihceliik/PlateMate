@@ -22,5 +22,7 @@ public class UserReviewMapper implements ModelMapperService<UserReview, UserRevi
     }
 
     @Override
-    public UserReview dtoToEntity(UserReviewDto dto) { return null; }
+    public UserReview dtoToEntity(UserReviewDto dto) {
+        return null;
+    }
 }

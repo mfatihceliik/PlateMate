@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface IVehicleDao extends JpaRepository<Vehicle, Long> {
     Optional<Vehicle> findByPlateCode(String plateCode);
+
     boolean existsByPlateCode(String plateCode);
+
     List<Vehicle> findByUserId(Long userId);
 }

@@ -8,7 +8,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 /**
  * WebSocket STOMP konfigürasyonu.
- *
+ * <p>
  * Client bağlantı: ws://host:port/ws (SockJS fallback ile)
  * Subscribe: /topic/room/{roomId} (mesaj dinleme)
  * Send: /app/chat.send (mesaj gönderme)

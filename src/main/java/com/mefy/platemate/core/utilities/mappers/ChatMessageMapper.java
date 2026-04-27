@@ -22,5 +22,7 @@ public class ChatMessageMapper implements ModelMapperService<ChatMessage, ChatMe
     }
 
     @Override
-    public ChatMessage dtoToEntity(ChatMessageDto dto) { return null; }
+    public ChatMessage dtoToEntity(ChatMessageDto dto) {
+        return null;
+    }
 }

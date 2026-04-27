@@ -50,5 +50,7 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
     }
 
     @Override
-    public Friendship dtoToEntity(FriendshipDto dto) { return null; }
+    public Friendship dtoToEntity(FriendshipDto dto) {
+        return null;
+    }
 }

@@ -36,5 +36,7 @@ public class ChatRoomMapper implements ModelMapperService<ChatRoom, ChatRoomDto>
     }
 
     @Override
-    public ChatRoom dtoToEntity(ChatRoomDto dto) { return null; }
+    public ChatRoom dtoToEntity(ChatRoomDto dto) {
+        return null;
+    }
 }

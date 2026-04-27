@@ -33,5 +33,7 @@ public class UserProfileMapper implements ModelMapperService<UserProfile, UserPr
     }
 
     @Override
-    public UserProfile dtoToEntity(UserProfileDto dto) { return null; }
+    public UserProfile dtoToEntity(UserProfileDto dto) {
+        return null;
+    }
 }
