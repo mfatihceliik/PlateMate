@@ -7,11 +7,8 @@ import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.dataAccess.abstracts.IChatRoomDao;
-import com.mefy.platemate.dataAccess.abstracts.IParticipantDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
-import com.mefy.platemate.entities.concrete.ChatRoom;
+import com.mefy.platemate.business.abstracts.IParticipantService;
 import com.mefy.platemate.entities.concrete.Participant;
-import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.ChatRoomDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +23,8 @@ import java.util.stream.Collectors;
 public class ChatRoomManager implements IChatRoomService {
 
     private final IChatRoomDao chatRoomDao;
-    private final IParticipantDao participantDao;
+    private final IParticipantService participantService;
     private final ChatRoomMapper chatRoomMapper;
-    private final IUserDao userDao;
     private final IMessageService messageService;
 
     @Override
@@ -53,7 +49,7 @@ public class ChatRoomManager implements IChatRoomService {
 
     @Override
     public DataResult<List<ChatRoomDto>> getUserRooms(Long userId) {
-        List<Participant> participations = participantDao.findByUserId(userId);
+        List<Participant> participations = participantService.getByUserId(userId).getData();
         List<ChatRoomDto> dtos = participations.stream()
                 .map(p -> chatRoomMapper.entityToDto(p.getChatRoom()))
                 .collect(Collectors.toList());
@@ -62,15 +58,10 @@ public class ChatRoomManager implements IChatRoomService {
     }
 
     private void addParticipantToRoom(ChatRoom room, Long userId) {
-        User user = userDao.findById(userId).orElseThrow();
-        Participant participant = new Participant();
-        participant.setChatRoom(room);
-        participant.setUser(user);
-        participant.setJoinedAt(LocalDateTime.now());
-        participantDao.save(participant);
+        participantService.addParticipantToRoom(room, userId);
     }
 
     private ChatRoom findPrivateChatBetweenUsers(Long id1, Long id2) {
-        return participantDao.findPrivateChatBetweenUsers(id1, id2).orElse(null);
+        return participantService.findPrivateChatBetweenUsers(id1, id2).getData().orElse(null);
     }
 }
