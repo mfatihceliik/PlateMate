@@ -29,12 +29,13 @@ public class SocketIOConfig {
 
         // Handshake Auth Interceptor
         config.setAuthorizationListener(data -> {
-            // Token parameter veya Header'dan gelebilir. Socket.io client genelde query param kullanır.
             String token = data.getSingleUrlParam("token");
             if (token == null || token.isEmpty()) {
-                return false;
+                return com.corundumstudio.socketio.AuthorizationResult.ACCESS_DENIED;
             }
-            return tokenProvider.validateToken(token);
+            boolean isValid = tokenProvider.validateToken(token);
+            return isValid ? com.corundumstudio.socketio.AuthorizationResult.ACCESS_GRANTED 
+                           : com.corundumstudio.socketio.AuthorizationResult.ACCESS_DENIED;
         });
 
         return new SocketIOServer(config);
