@@ -60,23 +60,27 @@ public class UserManager implements IUserService {
     @Override
     public DataResult<UserDto> getById(Long id) {
         User user = userDao.findById(id).orElse(null);
-        if (user == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.USER_NOT_FOUND));
+        
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
         }
+        
         return new SuccessDataResult<>(userMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
     public Result update(User user) {
         User existingUser = userDao.findById(user.getId()).orElse(null);
-        if (existingUser == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfUserExists(existingUser),
+                checkEmailUpdate(user.getEmail(), existingUser)
+        );
+        if (result != null) return result;
 
-        // Email değişmişse çakışma kontrolü yap
+        // Email değişmişse güncelle
         if (user.getEmail() != null && !user.getEmail().equals(existingUser.getEmail())) {
-            Result emailResult = BusinessRules.run(checkIfEmailExists(user.getEmail()));
-            if (emailResult != null) return emailResult;
             existingUser.setEmail(user.getEmail());
         }
 
@@ -101,18 +105,24 @@ public class UserManager implements IUserService {
     @Override
     public DataResult<UserDto> getByUsername(String username) {
         User user = userDao.findByUsername(username).orElse(null);
-        if (user == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.USER_NOT_FOUND));
+        
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
         }
+        
         return new SuccessDataResult<>(userMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
     public DataResult<User> getByUsernameOrEmailForAuth(String identifier) {
         User user = userDao.findByUsernameOrEmail(identifier, identifier).orElse(null);
-        if (user == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.USER_NOT_FOUND));
+        
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
         }
+        
         return new SuccessDataResult<>(user, messageService.getMessage(Messages.USER_FOUND));
     }
 
@@ -135,6 +145,22 @@ public class UserManager implements IUserService {
     private Result checkIfEmailExists(String email) {
         if (email != null && userDao.existsByEmail(email)) {
             return new ErrorResult(messageService.getMessage(Messages.USER_EMAIL_EXISTS));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserExists(User user) {
+        if (user == null) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkEmailUpdate(String newEmail, User existingUser) {
+        if (existingUser == null) return new SuccessResult();
+        
+        if (newEmail != null && !newEmail.equals(existingUser.getEmail())) {
+            return BusinessRules.run(checkIfEmailExists(newEmail));
         }
         return new SuccessResult();
     }

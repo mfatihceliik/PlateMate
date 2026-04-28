@@ -38,14 +38,20 @@ public class VehicleManager implements IVehicleService {
     public DataResult<VehicleDto> getByPlateCode(String plateCode) {
         String formattedPlate = plateCode.replace(" ", "").toUpperCase();
 
-        if (!plateValidator.isValid(formattedPlate)) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.PLATE_INVALID));
+        Result result = BusinessRules.run(
+                checkIfPlateValid(formattedPlate)
+        );
+
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
         }
 
         Vehicle vehicle = vehicleDao.findByPlateCode(formattedPlate).orElse(null);
-        if (vehicle == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
+        Result existsResult = BusinessRules.run(checkIfVehicleExists(vehicle));
+        if (existsResult != null) {
+            return new ErrorDataResult<>(existsResult.getMessage());
         }
+
         return new SuccessDataResult<>(vehicleMapper.entityToDto(vehicle), messageService.getMessage(Messages.VEHICLE_FOUND));
     }
 
@@ -76,27 +82,19 @@ public class VehicleManager implements IVehicleService {
 
     @Override
     public Result update(Vehicle vehicle, Long currentUserId) {
-        Vehicle existingVehicle = vehicleDao.findById(vehicle.getId()).orElse(null);
-        if (existingVehicle == null) {
-            return new ErrorResult(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
-        }
-
-        if (!existingVehicle.getUser().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("vehicle.delete.unauthorized"));
-        }
-
         String normalizedPlate = vehicle.getPlateCode().replace(" ", "").toUpperCase();
+        Vehicle existingVehicle = vehicleDao.findById(vehicle.getId()).orElse(null);
+        
+        Result result = BusinessRules.run(
+                checkIfVehicleExists(existingVehicle),
+                checkIfUserAuthorized(existingVehicle, currentUserId),
+                checkPlateUpdate(normalizedPlate, existingVehicle)
+        );
 
-        // Eğer plaka değişmişse geçerlilik ve çakışma kontrolü yap
-        if (!existingVehicle.getPlateCode().equals(normalizedPlate)) {
-            Result result = BusinessRules.run(
-                    checkIfPlateValid(normalizedPlate),
-                    checkIfPlateExists(normalizedPlate)
-            );
-            if (result != null) return result;
-            existingVehicle.setPlateCode(normalizedPlate);
-        }
+        if (result != null) return result;
 
+
+        existingVehicle.setPlateCode(normalizedPlate);
         existingVehicle.setBrand(vehicle.getBrand());
         existingVehicle.setModel(vehicle.getModel());
         existingVehicle.setColor(vehicle.getColor());
@@ -109,19 +107,19 @@ public class VehicleManager implements IVehicleService {
     @Override
     public Result delete(Long id, Long currentUserId) {
         Vehicle vehicle = vehicleDao.findById(id).orElse(null);
-        if (vehicle == null) {
-            return new ErrorResult(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
-        }
 
-        if (!vehicle.getUser().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("vehicle.delete.unauthorized"));
-        }
+        Result result = BusinessRules.run(
+                checkIfVehicleExists(vehicle),
+                checkIfUserAuthorized(vehicle, currentUserId)
+        );
+
+        if (result != null) return result;
 
         vehicleDao.deleteById(id);
         return new SuccessResult(messageService.getMessage("vehicle.deleted"));
     }
 
-    ///  BUSINESS RULES
+    /// ----- BUSINESS RULES -----
 
     private Result checkIfPlateValid(String plateCode) {
         if (!plateValidator.isValid(plateCode)) {
@@ -133,6 +131,45 @@ public class VehicleManager implements IVehicleService {
     private Result checkIfPlateExists(String plateCode) {
         if (vehicleDao.existsByPlateCode(plateCode)) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALREADY_EXISTS));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfVehicleExists(String plateCode) {
+        Vehicle vehicle = vehicleDao.findByPlateCode(plateCode).orElse(null);
+        Result existsResult = BusinessRules.run(checkIfVehicleExists(vehicle));
+        if (existsResult != null) {
+            return new ErrorDataResult<>(existsResult.getMessage());
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfVehicleExists(Vehicle vehicle) {
+        if (vehicle == null) {
+            return new ErrorResult(messageService.getMessage(Messages.VEHICLE_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserAuthorized(Vehicle vehicle, Long currentUserId) {
+        if (vehicle == null) return new SuccessResult();
+        
+        if (!vehicle.getUser().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage("vehicle.delete.unauthorized"));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkPlateUpdate(String newPlateCode, Vehicle existingVehicle) {
+        if (existingVehicle == null) return new SuccessResult();
+        
+        String normalizedPlate = newPlateCode.replace(" ", "").toUpperCase();
+        if (!existingVehicle.getPlateCode().equals(normalizedPlate)) {
+            Result ruleResult = BusinessRules.run(
+                    checkIfPlateValid(normalizedPlate),
+                    checkIfPlateExists(normalizedPlate)
+            );
+            if (ruleResult != null) return ruleResult;
         }
         return new SuccessResult();
     }

@@ -25,8 +25,10 @@ public class UserProfileManager implements IUserProfileService {
     @Override
     public DataResult<UserProfileDto> getByUserId(Long userId, int page, int size) {
         UserProfile profile = userProfileDao.findById(userId).orElse(null);
-        if (profile == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
+        
+        Result result = BusinessRules.run(checkIfProfileExists(profile));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
         }
 
         UserProfileDto dto = userProfileMapper.entityToDto(profile);
@@ -42,10 +44,12 @@ public class UserProfileManager implements IUserProfileService {
     @Override
     public Result update(UserProfile userProfile) {
         UserProfile existingProfile = userProfileDao.findById(userProfile.getId()).orElse(null);
-        if (existingProfile == null) return new ErrorResult(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
-
-        Result ruleResult = BusinessRules.run(checkIfBioTooLong(userProfile.getBio()));
-        if (ruleResult != null) return ruleResult;
+        
+        Result result = BusinessRules.run(
+                checkIfProfileExists(existingProfile),
+                checkIfBioTooLong(userProfile.getBio())
+        );
+        if (result != null) return result;
 
         existingProfile.setFirstName(userProfile.getFirstName());
         existingProfile.setLastName(userProfile.getLastName());
@@ -55,11 +59,18 @@ public class UserProfileManager implements IUserProfileService {
         return new SuccessResult(messageService.getMessage(Messages.PROFILE_UPDATED));
     }
 
-    ///  BUSINESS RULES
+    /// ----- BUSINESS RULES -----
 
     private Result checkIfBioTooLong(String bio) {
         if (bio != null && bio.length() > 500) {
             return new ErrorResult(messageService.getMessage(Messages.PROFILE_BIO_TOO_LONG));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfProfileExists(UserProfile profile) {
+        if (profile == null) {
+            return new ErrorResult(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
         }
         return new SuccessResult();
     }

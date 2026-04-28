@@ -41,21 +41,13 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     @Override
     public Result update(SocialMediaLink link, Long currentUserId) {
         SocialMediaLink existingLink = socialMediaLinkDao.findById(link.getId()).orElse(null);
-        if (existingLink == null) {
-            return new ErrorResult(messageService.getMessage(Messages.SOCIAL_LINK_NOT_FOUND));
-        }
-
-        if (!existingLink.getUserProfile().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("social.link.delete.unauthorized"));
-        }
-
-        // Eğer platform değişmişse, yeni platformun zaten olup olmadığını kontrol et
-        if (existingLink.getPlatform() != link.getPlatform()) {
-            Result result = BusinessRules.run(
-                    checkIfPlatformExists(currentUserId, link.getPlatform())
-            );
-            if (result != null) return result;
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfLinkExists(existingLink),
+                checkIfUserAuthorizedForLink(existingLink, currentUserId),
+                checkPlatformUpdate(link.getPlatform(), existingLink, currentUserId)
+        );
+        if (result != null) return result;
 
         existingLink.setPlatform(link.getPlatform());
         existingLink.setUrl(link.getUrl());
@@ -67,13 +59,38 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     @Override
     public Result delete(Long id, Long currentUserId) {
         SocialMediaLink link = socialMediaLinkDao.findById(id).orElse(null);
+        
+        Result result = BusinessRules.run(
+                checkIfLinkExists(link),
+                checkIfUserAuthorizedForLink(link, currentUserId)
+        );
+        if (result != null) return result;
+        socialMediaLinkDao.deleteById(id);
+        return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_DELETED));
+    }
+
+    private Result checkIfLinkExists(SocialMediaLink link) {
         if (link == null) {
             return new ErrorResult(messageService.getMessage(Messages.SOCIAL_LINK_NOT_FOUND));
         }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserAuthorizedForLink(SocialMediaLink link, Long currentUserId) {
+        if (link == null) return new SuccessResult();
+        
         if (!link.getUserProfile().getId().equals(currentUserId)) {
             return new ErrorResult(messageService.getMessage("social.link.delete.unauthorized"));
         }
-        socialMediaLinkDao.deleteById(id);
-        return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_DELETED));
+        return new SuccessResult();
+    }
+
+    private Result checkPlatformUpdate(SocialPlatform newPlatform, SocialMediaLink existingLink, Long currentUserId) {
+        if (existingLink == null) return new SuccessResult();
+        
+        if (existingLink.getPlatform() != newPlatform) {
+            return BusinessRules.run(checkIfPlatformExists(currentUserId, newPlatform));
+        }
+        return new SuccessResult();
     }
 }

@@ -27,7 +27,7 @@ public class UserReviewManager implements IUserReviewService {
 
     private final IUserReviewDao userReviewDao;
     private final IUserProfileDao userProfileDao;
-    private final IUserDao userDao; // Added IUserDao
+    private final IUserDao userDao;
     private final UserReviewMapper userReviewMapper;
     private final IMessageService messageService;
 
@@ -38,19 +38,14 @@ public class UserReviewManager implements IUserReviewService {
         Long targetId = userReview.getTargetProfile().getId();
 
         Result result = BusinessRules.run(
-                checkIfSelfReview(reviewerId, targetId)
+                checkIfSelfReview(reviewerId, targetId),
+                checkIfUserExistsById(reviewerId),
+                checkIfProfileExistsById(targetId)
         );
         if (result != null) return result;
 
         User reviewer = userDao.findById(reviewerId).orElse(null);
         UserProfile targetProfile = userProfileDao.findById(targetId).orElse(null);
-
-        if (reviewer == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
-        if (targetProfile == null) {
-            return new ErrorResult(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
-        }
 
         userReview.setReviewer(reviewer);
         userReview.setTargetProfile(targetProfile);
@@ -75,13 +70,12 @@ public class UserReviewManager implements IUserReviewService {
     @Transactional
     public Result update(UserReview userReview, Long currentUserId) {
         UserReview existingReview = userReviewDao.findById(userReview.getId()).orElse(null);
-        if (existingReview == null) {
-            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
-        }
-
-        if (!existingReview.getReviewer().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("review.delete.unauthorized"));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfReviewExists(existingReview),
+                checkIfUserAuthorizedForReview(existingReview, currentUserId)
+        );
+        if (result != null) return result;
 
         Integer oldRating = existingReview.getRating();
         Integer newRating = userReview.getRating();
@@ -102,13 +96,12 @@ public class UserReviewManager implements IUserReviewService {
     @Transactional
     public Result delete(Long reviewId, Long currentUserId) {
         UserReview review = userReviewDao.findById(reviewId).orElse(null);
-        if (review == null) {
-            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
-        }
-
-        if (!review.getReviewer().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("review.delete.unauthorized"));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfReviewExists(review),
+                checkIfUserAuthorizedForReview(review, currentUserId)
+        );
+        if (result != null) return result;
 
         rollbackUserProfileStatistics(review.getTargetProfile().getId(), review.getRating());
 
@@ -116,7 +109,7 @@ public class UserReviewManager implements IUserReviewService {
         return new SuccessResult(messageService.getMessage("review.deleted"));
     }
 
-    ///  BUSINESS RULES
+    /// ----- BUSINESS RULES -----
 
     private void updateUserProfileStatistics(Long profileId, Integer newRating) {
         UserProfile profile = userProfileDao.findById(profileId).orElseThrow();
@@ -152,6 +145,35 @@ public class UserReviewManager implements IUserReviewService {
     private Result checkIfSelfReview(Long reviewerId, Long targetId) {
         if (reviewerId.equals(targetId)) {
             return new ErrorResult(messageService.getMessage(Messages.SELF_REVIEW_NOT_ALLOWED));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserExistsById(Long userId) {
+        if (!userDao.existsById(userId)) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfProfileExistsById(Long profileId) {
+        if (!userProfileDao.existsById(profileId)) {
+            return new ErrorResult(messageService.getMessage(Messages.PROFILE_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfReviewExists(UserReview review) {
+        if (review == null) {
+            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserAuthorizedForReview(UserReview review, Long currentUserId) {
+        if (review == null) return new SuccessResult();
+        if (!review.getReviewer().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage("review.delete.unauthorized"));
         }
         return new SuccessResult();
     }

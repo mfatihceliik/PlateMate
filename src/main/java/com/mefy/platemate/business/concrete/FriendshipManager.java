@@ -40,9 +40,9 @@ public class FriendshipManager implements IFriendshipService {
 
         User requester = userDao.findById(requesterId).orElse(null);
         User addressee = userDao.findById(addresseeId).orElse(null);
-        if (requester == null || addressee == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
+        
+        Result usersResult = BusinessRules.run(checkIfUsersExist(requester, addressee));
+        if (usersResult != null) return usersResult;
 
         Friendship friendship = new Friendship();
         friendship.setRequester(requester);
@@ -57,13 +57,13 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result acceptRequest(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        if (friendship == null) return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_NOT_FOUND));
-        if (!friendship.getAddressee().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("friendship.accept.unauthorized"));
-        }
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            return new ErrorResult(messageService.getMessage("friendship.already.answered"));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfFriendshipExists(friendship),
+                checkIfUserAuthorized(friendship, currentUserId, "friendship.accept.unauthorized"),
+                checkIfFriendshipIsPending(friendship)
+        );
+        if (result != null) return result;
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         friendship.setRespondedAt(LocalDateTime.now());
@@ -75,13 +75,13 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result rejectRequest(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        if (friendship == null) return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_NOT_FOUND));
-        if (!friendship.getAddressee().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("friendship.reject.unauthorized"));
-        }
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            return new ErrorResult(messageService.getMessage("friendship.already.answered"));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfFriendshipExists(friendship),
+                checkIfUserAuthorized(friendship, currentUserId, "friendship.reject.unauthorized"),
+                checkIfFriendshipIsPending(friendship)
+        );
+        if (result != null) return result;
 
         friendship.setStatus(FriendshipStatus.REJECTED);
         friendship.setRespondedAt(LocalDateTime.now());
@@ -93,13 +93,12 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result removeFriend(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        if (friendship == null) return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_NOT_FOUND));
-
-        boolean isParticipant = friendship.getRequester().getId().equals(currentUserId)
-                || friendship.getAddressee().getId().equals(currentUserId);
-        if (!isParticipant) {
-            return new ErrorResult(messageService.getMessage("friendship.remove.unauthorized"));
-        }
+        
+        Result result = BusinessRules.run(
+                checkIfFriendshipExists(friendship),
+                checkIfUserIsParticipant(friendship, currentUserId)
+        );
+        if (result != null) return result;
 
         friendshipDao.delete(friendship);
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_REMOVED));
@@ -135,6 +134,46 @@ public class FriendshipManager implements IFriendshipService {
     private Result checkIfAlreadyExists(Long requesterId, Long addresseeId) {
         if (friendshipDao.findBetweenUsers(requesterId, addresseeId).isPresent()) {
             return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_ALREADY_EXISTS));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUsersExist(User requester, User addressee) {
+        if (requester == null || addressee == null) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfFriendshipExists(Friendship friendship) {
+        if (friendship == null) {
+            return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_NOT_FOUND));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserAuthorized(Friendship friendship, Long currentUserId, String unauthorizedMessageKey) {
+        if (friendship == null) return new SuccessResult();
+        if (!friendship.getAddressee().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage(unauthorizedMessageKey));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfFriendshipIsPending(Friendship friendship) {
+        if (friendship == null) return new SuccessResult();
+        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+            return new ErrorResult(messageService.getMessage("friendship.already.answered"));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserIsParticipant(Friendship friendship, Long currentUserId) {
+        if (friendship == null) return new SuccessResult();
+        boolean isParticipant = friendship.getRequester().getId().equals(currentUserId)
+                || friendship.getAddressee().getId().equals(currentUserId);
+        if (!isParticipant) {
+            return new ErrorResult(messageService.getMessage("friendship.remove.unauthorized"));
         }
         return new SuccessResult();
     }

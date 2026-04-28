@@ -35,7 +35,7 @@ public class VehicleController {
     public ResponseEntity<DataResult<VehicleDto>> getByPlateCode(@RequestParam String plate) {
         DataResult<VehicleDto> result = vehicleService.getByPlateCode(plate);
         if (!result.isSuccess()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result);
     }

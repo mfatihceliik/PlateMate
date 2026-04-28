@@ -2,10 +2,9 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.ICityService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
-import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.core.utilities.results.ErrorDataResult;
-import com.mefy.platemate.core.utilities.results.SuccessDataResult;
+import com.mefy.platemate.core.utilities.results.*;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.entities.concrete.City;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,17 @@ public class CityManager implements ICityService {
     @Override
     public DataResult<City> getById(Integer id) {
         City city = cityDao.findById(id).orElse(null);
-        if (city == null) return new ErrorDataResult<>(messageService.getMessage(Messages.CITY_NOT_FOUND));
+        
+        Result result = BusinessRules.run(checkIfCityExists(city));
+        if (result != null) return new ErrorDataResult<>(result.getMessage());
+        
         return new SuccessDataResult<>(city, messageService.getMessage(Messages.CITY_FOUND));
+    }
+
+    private Result checkIfCityExists(City city) {
+        if (city == null) {
+            return new ErrorResult(messageService.getMessage(Messages.CITY_NOT_FOUND));
+        }
+        return new SuccessResult();
     }
 }
