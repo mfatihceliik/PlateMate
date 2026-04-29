@@ -6,10 +6,13 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.mefy.platemate.api.socket.abstracts.IChatSocketHandler;
 import com.mefy.platemate.api.socket.utilities.constants.SocketEvents;
 import com.mefy.platemate.business.abstracts.IChatMessageService;
+import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.dataAccess.abstracts.IParticipantDao;
 import com.mefy.platemate.entities.concrete.ChatMessage;
 import com.mefy.platemate.entities.concrete.ChatRoom;
 import com.mefy.platemate.entities.concrete.User;
+import com.mefy.platemate.entities.dto.ChatMessageDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,17 +63,22 @@ public class ChatSocketHandler implements IChatSocketHandler {
         message.setChatRoom(room);
         message.setContent(data.getContent());
 
+        DataResult<ChatMessageDto> result = null;
         try {
-            var result = chatMessageService.sendMessage(message);
+            result = chatMessageService.sendMessage(message);
 
             if (result.isSuccess()) {
                 client.getNamespace()
                         .getRoomOperations(data.getChatRoomId().toString())
-                        .sendEvent(SocketEvents.NEW_MESSAGE, result.getData());
+                        .sendEvent(SocketEvents.NEW_MESSAGE, result);
+            } else {
+                // İş kuralı hatası (Örn: Mesajlaşma kapalı)
+                client.sendEvent(SocketEvents.ERROR, result);
             }
         } catch (Exception e) {
             log.error("Socket error in handleSendMessage: {}", e.getMessage());
-            // Client'a hata gönderilebilir (opsiyonel)
+            // Beklenmedik sistem hatası
+            client.sendEvent(SocketEvents.ERROR, result != null ? result : new ErrorResult(e.getMessage()));
         }
     }
 }

@@ -30,7 +30,7 @@ public class UserLocationManager implements IUserLocationService {
     private final IMessageService messageService;
 
     @Override
-    public DataResult<List<Long>> updateLocation(Long userId, Double latitude, Double longitude) {
+    public DataResult<UserLocationDto> updateLocation(Long userId, Double latitude, Double longitude) {
         User user = userDao.findById(userId).orElse(null);
         Result result = BusinessRules.run(checkIfUserExists(user));
         if (result != null) return new ErrorDataResult<>(result.getMessage());
@@ -44,29 +44,28 @@ public class UserLocationManager implements IUserLocationService {
         userLocation.setLongitude(longitude);
         userLocation.setLastUpdatedAt(LocalDateTime.now());
 
-        userLocationDao.save(userLocation);
-
-        // Bildirim gidecek kullanıcıları hesapla (Business logic burada olmalı)
-        List<Long> notifyUserIds = getFriendsToNotify(userId);
-
-        return new SuccessDataResult<>(notifyUserIds, messageService.getMessage(Messages.LOCATION_UPDATED));
+        UserLocation savedLocation = userLocationDao.save(userLocation);
+        return new SuccessDataResult<>(userLocationMapper.entityToDto(savedLocation), messageService.getMessage(Messages.LOCATION_UPDATED));
     }
 
-    private List<Long> getFriendsToNotify(Long userId) {
+    @Override
+    public DataResult<List<Long>> getFriendsToNotify(Long userId) {
         // 1. Sahibi paylaşımı kapatmışsa kimseye gitmez
         UserSettings settings = userSettingsDao.findByUserId(userId).orElse(null);
         if (settings == null || !settings.isLocationSharingEnabled()) {
-            return List.of();
+            return new SuccessDataResult<>(List.of());
         }
 
         // 2. Kabul edilmiş arkadaşlar
         var friendships = friendshipDao.findByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
         
-        return friendships.stream()
+        List<Long> notifyIds = friendships.stream()
                 .map(f -> f.getRequester().getId().equals(userId) ? f.getAddressee().getId() : f.getRequester().getId())
                 // 3. Engellenenleri filtrele
                 .filter(friendId -> !locationBlockDao.existsByUserIdAndBlockedUserId(userId, friendId))
                 .collect(Collectors.toList());
+
+        return new SuccessDataResult<>(notifyIds);
     }
 
     @Override

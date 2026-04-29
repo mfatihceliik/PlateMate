@@ -13,6 +13,10 @@ public final class SocketEvents {
     // Room Prefixes
     public static final String USER_ROOM_PREFIX = "user_";
 
+    // General Events
+    public static final String ERROR = "error";
+    public static final String NOTIFICATION_RECEIVED = "notification_received";
+
     private SocketEvents() {
     } // Prevent instantiation
 }

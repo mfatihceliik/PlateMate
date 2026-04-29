@@ -42,8 +42,11 @@ public class UserSettingsManager implements IUserSettingsService {
         if (request.getLocationSharingEnabled() != null) {
             settings.setLocationSharingEnabled(request.getLocationSharingEnabled());
         }
-        if (request.getNotificationsEnabled() != null) {
-            settings.setNotificationsEnabled(request.getNotificationsEnabled());
+        if (request.getMessageNotificationsEnabled() != null) {
+            settings.setMessageNotificationsEnabled(request.getMessageNotificationsEnabled());
+        }
+        if (request.getFriendNotificationsEnabled() != null) {
+            settings.setFriendNotificationsEnabled(request.getFriendNotificationsEnabled());
         }
 
         userSettingsDao.save(settings);
@@ -56,7 +59,8 @@ public class UserSettingsManager implements IUserSettingsService {
         settings.setUser(user);
         settings.setMessagingEnabled(true);
         settings.setLocationSharingEnabled(true);
-        settings.setNotificationsEnabled(true);
+        settings.setMessageNotificationsEnabled(true);
+        settings.setFriendNotificationsEnabled(true);
         return userSettingsDao.save(settings);
     }
 }

@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 public class UserSettingsDto implements IDto {
     private boolean messagingEnabled;
     private boolean locationSharingEnabled;
-    private boolean notificationsEnabled;
+    private boolean messageNotificationsEnabled;
+    private boolean friendNotificationsEnabled;
 }

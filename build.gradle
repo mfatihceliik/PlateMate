@@ -47,6 +47,9 @@ dependencies {
 
     // Socket.io
     implementation 'com.corundumstudio.socketio:netty-socketio:2.0.12'
+
+    // Firebase Admin SDK
+    implementation 'com.google.firebase:firebase-admin:9.5.0'
 }
 
 tasks.named('test') {

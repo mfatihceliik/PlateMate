@@ -12,7 +12,8 @@ public class UserSettingsMapper implements ModelMapperService<UserSettings, User
         UserSettingsDto dto = new UserSettingsDto();
         dto.setMessagingEnabled(entity.isMessagingEnabled());
         dto.setLocationSharingEnabled(entity.isLocationSharingEnabled());
-        dto.setNotificationsEnabled(entity.isNotificationsEnabled());
+        dto.setMessageNotificationsEnabled(entity.isMessageNotificationsEnabled());
+        dto.setFriendNotificationsEnabled(entity.isFriendNotificationsEnabled());
         return dto;
     }
 

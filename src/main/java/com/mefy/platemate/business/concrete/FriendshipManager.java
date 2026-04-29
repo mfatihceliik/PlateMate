@@ -1,6 +1,5 @@
-package com.mefy.platemate.business.concrete;
-
 import com.mefy.platemate.business.abstracts.IFriendshipService;
+import com.mefy.platemate.business.abstracts.INotificationService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.FriendshipMapper;
@@ -10,6 +9,7 @@ import com.mefy.platemate.dataAccess.abstracts.IFriendshipDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Friendship;
 import com.mefy.platemate.entities.concrete.FriendshipStatus;
+import com.mefy.platemate.entities.concrete.NotificationType;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.FriendshipDto;
 import jakarta.transaction.Transactional;
@@ -27,6 +27,7 @@ public class FriendshipManager implements IFriendshipService {
     private final IFriendshipDao friendshipDao;
     private final IUserDao userDao;
     private final FriendshipMapper friendshipMapper;
+    private final INotificationService notificationService;
     private final IMessageService messageService;
 
     @Override
@@ -49,6 +50,11 @@ public class FriendshipManager implements IFriendshipService {
         friendship.setAddressee(addressee);
         friendship.setStatus(FriendshipStatus.PENDING);
         friendshipDao.save(friendship);
+
+        // Bildirim gönder
+        String title = messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_TITLE);
+        String content = requester.getUsername() + " " + messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_CONTENT);
+        notificationService.sendNotification(addresseeId, title, content, NotificationType.FRIEND_REQUEST);
 
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_REQUEST_SENT));
     }

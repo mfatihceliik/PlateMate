@@ -76,6 +76,12 @@ public final class Messages {
     public static final String REPORTS_LISTED = "reports.listed";
     public static final String REPORT_SELF_NOT_ALLOWED = "report.self.not.allowed";
 
+    // Notification Messages
+    public static final String NOTIFICATION_NEW_MESSAGE_TITLE = "notification.new_message.title";
+    public static final String NOTIFICATION_NEW_MESSAGE_CONTENT = "notification.new_message.content";
+    public static final String NOTIFICATION_FRIEND_REQUEST_TITLE = "notification.friend_request.title";
+    public static final String NOTIFICATION_FRIEND_REQUEST_CONTENT = "notification.friend_request.content";
+
     private Messages() {
     } // Instance oluşturulmasını engelle (Utility class)
 }

@@ -22,5 +22,6 @@ public class UserSettings implements IEntity {
 
     private boolean messagingEnabled = true;      // Mesajlaşma aç/kapa
     private boolean locationSharingEnabled = true; // Lokasyon paylaşımı aç/kapa
-    private boolean notificationsEnabled = true;   // Bildirim aç/kapa (ileride)
+    private boolean messageNotificationsEnabled = true;    // Mesaj bildirimleri
+    private boolean friendNotificationsEnabled = true;      // Arkadaşlık bildirimleri
 }
