@@ -1,3 +1,5 @@
+package com.mefy.platemate.business.concrete;
+
 import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.business.abstracts.INotificationService;
 import com.mefy.platemate.business.utilities.constants.Messages;
