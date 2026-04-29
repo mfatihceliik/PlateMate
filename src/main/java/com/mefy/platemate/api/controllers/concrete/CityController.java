@@ -1,34 +1,33 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.ICityController;
 
 import com.mefy.platemate.business.abstracts.ICityService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.entities.concrete.City;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cities")
 @RequiredArgsConstructor
-public class CityController {
+public class CityController implements ICityController {
 
     private final ICityService cityService;
 
-    @GetMapping
+    @Override
     public ResponseEntity<DataResult<List<City>>> getAll() {
         return ResponseEntity.ok(cityService.getAll());
     }
 
-    @GetMapping("/{id}")
+    @Override
     public ResponseEntity<DataResult<City>> getById(@PathVariable Integer id) {
         DataResult<City> result = cityService.getById(id);
         if (!result.isSuccess()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result);
     }

@@ -1,5 +1,6 @@
 package com.mefy.platemate.entities.dto.request;
 
+import com.mefy.platemate.entities.abstracts.IDto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
+public class RegisterRequest implements IDto {
     @NotBlank(message = "{validation.user.username.notblank}")
     @Size(min = 3, max = 30, message = "{validation.user.username.size}")
     private String username;

@@ -1,5 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
+import com.mefy.platemate.entities.abstracts.IDto;
 import com.mefy.platemate.entities.concrete.FriendshipStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FriendshipDto {
+public class FriendshipDto implements IDto {
     private Long id;
     private Long friendUserId;         // Karşı tarafın user ID'si
     private String friendUsername;      // Karşı tarafın kullanıcı adı

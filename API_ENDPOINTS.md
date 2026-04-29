@@ -72,7 +72,7 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ### Get Profile
 - **Method**: `GET`
-- **URL**: `/api/profiles/{userId}?page=0&size=20`
+- **URL**: `/api/profiles/{userId}`
 
 ### Update Profile (Self)
 - **Method**: `PUT`
@@ -89,7 +89,29 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 4. User Reviews (`/api/reviews`)
+## 4. User Settings (`/api/settings`)
+
+### Get My Settings
+- **Method**: `GET`
+- **URL**: `/api/settings`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Update Settings
+- **Method**: `PUT`
+- **URL**: `/api/settings`
+- **Headers**: `Authorization: Bearer <token>`
+- **Body** (JSON):
+  ```json
+  {
+    "messagingEnabled": true,
+    "locationSharingEnabled": true,
+    "notificationsEnabled": true
+  }
+  ```
+
+---
+
+## 5. User Reviews (`/api/reviews`)
 
 ### Add Review
 - **Method**: `POST`
@@ -128,7 +150,7 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 5. Vehicle Management (`/api/vehicles`)
+## 6. Vehicle Management (`/api/vehicles`)
 
 ### Get All Vehicles
 - **Method**: `GET`
@@ -180,7 +202,7 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 6. Social Media Links (`/api/social-links`)
+## 7. Social Media Links (`/api/social-links`)
 
 ### Add Social Link
 - **Method**: `POST`
@@ -214,7 +236,7 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 7. City Data (`/api/cities`)
+## 8. City Data (`/api/cities`)
 
 ### Get All Cities
 - **Method**: `GET`
@@ -222,26 +244,43 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 8. Real-time Chat & Messages (`/api/chat`)
+## 9. Real-time Chat & Messages (`/api/chat`)
 
 ### Get My Chat Rooms
 - **Method**: `GET`
 - **URL**: `/api/chat/rooms`
 - **Headers**: `Authorization: Bearer <token>`
 
+### Create or Get Private Chat Room
+- **Method**: `POST`
+- **URL**: `/api/chat/rooms?otherUserId=2`
+- **Headers**: `Authorization: Bearer <token>`
+
 ### Get Room Messages
 - **Method**: `GET`
-- **URL**: `/api/chat/messages/{roomId}`
+- **URL**: `/api/chat/rooms/{roomId}/messages`
 - **Headers**: `Authorization: Bearer <token>`
 
 ### Mark Messages as Read
-- **Method**: `POST`
-- **URL**: `/api/chat/read/{roomId}`
+- **Method**: `PUT`
+- **URL**: `/api/chat/rooms/{roomId}/read`
 - **Headers**: `Authorization: Bearer <token>`
+
+### Send Message (REST Fallback)
+- **Method**: `POST`
+- **URL**: `/api/chat/rooms/messages`
+- **Headers**: `Authorization: Bearer <token>`
+- **Body** (JSON):
+  ```json
+  {
+    "chatRoomId": 1,
+    "content": "Hello!"
+  }
+  ```
 
 ---
 
-## 9. WebSocket Messaging (`Socket.io`)
+## 10. WebSocket Messaging (`Socket.io`)
 
 **URL**: `ws://localhost:9092`
 **Query Parameters**: `token=<JWT_TOKEN>`
@@ -249,11 +288,10 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 ### Connection
 - **Library**: `socket.io-client`
 - **Authentication**: JWT token must be passed in query string (e.g., `?token=...`).
+- **Auto-Join**: Upon connection, the server automatically joins the client to all rooms they are a participant in.
 
 ### Events (Send)
-- `join_room`: Joins a specific chat room.
-  - **Data**: `String` (roomId)
-- `send_message`: Sends a message to the room.
+- `send_message`: Sends a message to a room.
   - **Data** (JSON):
     ```json
     {
@@ -268,27 +306,97 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 10. Friendship / Follow (`/api/friends`)
+## 11. User Locations & Blocking (`/api/locations`)
 
-### Follow User
+### Get Specific User Location
+- **Method**: `GET`
+- **URL**: `/api/locations/user/{userId}`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Get All Visible Locations
+- **Method**: `GET`
+- **URL**: `/api/locations/visible`
+- **Headers**: `Authorization: Bearer <token>`
+- *(Note: Returns locations of friends who have sharing enabled and haven't blocked you)*
+
+### Block Friend from Seeing My Location
 - **Method**: `POST`
-- **URL**: `/api/friends/follow/{targetUserId}`
+- **URL**: `/api/locations/block/{targetUserId}`
 - **Headers**: `Authorization: Bearer <token>`
 
-### Unfollow User
+### Unblock Friend from Seeing My Location
+- **Method**: `DELETE`
+- **URL**: `/api/locations/block/{targetUserId}`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Get My Location Blacklist
+- **Method**: `GET`
+- **URL**: `/api/locations/blocked`
+- **Headers**: `Authorization: Bearer <token>`
+
+---
+
+## 12. Friendships (`/api/friendships`)
+
+### Send Friend Request
 - **Method**: `POST`
-- **URL**: `/api/friends/unfollow/{targetUserId}`
+- **URL**: `/api/friendships/request/{addresseeId}`
 - **Headers**: `Authorization: Bearer <token>`
 
-### Get Followers
-- **Method**: `GET`
-- **URL**: `/api/friends/followers/{userId}`
-
-### Get Following
-- **Method**: `GET`
-- **URL**: `/api/friends/following/{userId}`
-
-### Get Follow Status
-- **Method**: `GET`
-- **URL**: `/api/friends/status/{targetUserId}`
+### Accept Friend Request
+- **Method**: `PUT`
+- **URL**: `/api/friendships/{id}/accept`
 - **Headers**: `Authorization: Bearer <token>`
+
+### Reject Friend Request
+- **Method**: `PUT`
+- **URL**: `/api/friendships/{id}/reject`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Remove Friend / Cancel Request
+- **Method**: `DELETE`
+- **URL**: `/api/friendships/{id}`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Get My Friends
+- **Method**: `GET`
+- **URL**: `/api/friendships`
+- **Headers**: `Authorization: Bearer <token>`
+
+### Get Pending Incoming Requests
+- **Method**: `GET`
+- **URL**: `/api/friendships/pending`
+- **Headers**: `Authorization: Bearer <token>`
+
+---
+
+## 13. Reports (`/api/reports`)
+
+### Submit a Report
+- **Method**: `POST`
+- **URL**: `/api/reports/add`
+- **Headers**: `Authorization: Bearer <token>`
+- **Body** (JSON):
+  ```json
+  {
+    "reportedUserId": 2,
+    "reason": "Inappropriate behavior",
+    "description": "User was spamming..."
+  }
+  ```
+
+### Mark as Reviewed (Admin)
+- **Method**: `PUT`
+- **URL**: `/api/reports/{id}/review`
+
+### Mark as Resolved (Admin)
+- **Method**: `PUT`
+- **URL**: `/api/reports/{id}/resolve`
+
+### Get Reports for User
+- **Method**: `GET`
+- **URL**: `/api/reports/reportedUser/{userId}`
+
+### Get All Pending Reports
+- **Method**: `GET`
+- **URL**: `/api/reports/pending`

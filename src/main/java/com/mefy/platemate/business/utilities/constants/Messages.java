@@ -57,6 +57,25 @@ public final class Messages {
     public static final String FRIENDSHIP_SELF_REQUEST = "friendship.self.request";
     public static final String FRIENDS_LISTED = "friends.listed";
     public static final String PENDING_REQUESTS_LISTED = "pending.requests.listed";
+    // User Location Messages
+    public static final String LOCATION_UPDATED = "location.updated";
+    public static final String LOCATION_VISIBILITY_UPDATED = "location.visibility.updated";
+    public static final String LOCATION_NOT_FOUND = "location.not.found";
+    public static final String LOCATIONS_LISTED = "locations.listed";
+
+    // Settings Messages
+    public static final String SETTINGS_UPDATED = "settings.updated";
+    public static final String SETTINGS_FOUND = "settings.found";
+    public static final String MESSAGING_DISABLED = "messaging.disabled";
+
+    // Report Messages
+    public static final String REPORT_ADDED = "report.added";
+    public static final String REPORT_NOT_FOUND = "report.not.found";
+    public static final String REPORT_REVIEWED = "report.reviewed";
+    public static final String REPORT_RESOLVED = "report.resolved";
+    public static final String REPORTS_LISTED = "reports.listed";
+    public static final String REPORT_SELF_NOT_ALLOWED = "report.self.not.allowed";
+
     private Messages() {
     } // Instance oluşturulmasını engelle (Utility class)
 }

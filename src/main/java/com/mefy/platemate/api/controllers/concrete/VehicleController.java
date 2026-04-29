@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IVehicleController;
 
 import com.mefy.platemate.business.abstracts.ICityService;
 import com.mefy.platemate.business.abstracts.IVehicleService;
@@ -19,19 +21,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vehicles")
 @RequiredArgsConstructor
-public class VehicleController {
+public class VehicleController implements IVehicleController {
 
     private final IVehicleService vehicleService;
     private final ICityService cityService;
 
-    @GetMapping
+    @Override
     public ResponseEntity<DataResult<List<VehicleDto>>> getAll() {
         return ResponseEntity.ok(vehicleService.getAll());
     }
 
-    @GetMapping("/search")
+    @Override
     public ResponseEntity<DataResult<VehicleDto>> getByPlateCode(@RequestParam String plate) {
         DataResult<VehicleDto> result = vehicleService.getByPlateCode(plate);
         if (!result.isSuccess()) {
@@ -40,12 +41,12 @@ public class VehicleController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/user/{userId}")
+    @Override
     public ResponseEntity<DataResult<List<VehicleDto>>> getByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(vehicleService.getByUserId(userId));
     }
 
-    @PostMapping
+    @Override
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddVehicleRequest request
@@ -76,7 +77,7 @@ public class VehicleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping
+    @Override
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdateVehicleRequest request
@@ -102,7 +103,7 @@ public class VehicleController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Result> delete(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId

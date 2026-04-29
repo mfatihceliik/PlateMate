@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IUserReviewController;
 
 import com.mefy.platemate.business.abstracts.IUserReviewService;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -17,13 +19,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 
 @RestController
-@RequestMapping("/api/reviews")
 @RequiredArgsConstructor
-public class UserReviewController {
+public class UserReviewController implements IUserReviewController {
 
     private final IUserReviewService userReviewService;
 
-    @GetMapping("/{profileId}")
+    @Override
     public ResponseEntity<DataResult<Page<UserReviewDto>>> getByProfileId(
             @PathVariable Long profileId,
             @RequestParam(defaultValue = "0") int page,
@@ -32,7 +33,7 @@ public class UserReviewController {
         return ResponseEntity.ok(userReviewService.getByTargetProfileId(profileId, page, size));
     }
 
-    @PostMapping
+    @Override
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddReviewRequest request
@@ -57,7 +58,7 @@ public class UserReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping
+    @Override
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdateReviewRequest request
@@ -75,7 +76,7 @@ public class UserReviewController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Result> delete(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId) {

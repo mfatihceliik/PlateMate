@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IUserController;
 
 import com.mefy.platemate.business.abstracts.IUserService;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -13,36 +15,35 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements IUserController {
 
     private final IUserService userService;
 
-    @GetMapping
+    @Override
     public ResponseEntity<DataResult<List<UserDto>>> getAll() {
         return ResponseEntity.ok(userService.getAll());
     }
 
-    @GetMapping("/{id}")
+    @Override
     public ResponseEntity<DataResult<UserDto>> getById(@PathVariable Long id) {
         DataResult<UserDto> result = userService.getById(id);
         if (!result.isSuccess()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/search")
+    @Override
     public ResponseEntity<DataResult<UserDto>> getByUsername(@RequestParam String username) {
         DataResult<UserDto> result = userService.getByUsername(username);
         if (!result.isSuccess()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping
+    @Override
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdateUserRequest request
@@ -60,7 +61,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Result> delete(@PathVariable Long id) {
         Result result = userService.delete(id);
         if (!result.isSuccess()) {

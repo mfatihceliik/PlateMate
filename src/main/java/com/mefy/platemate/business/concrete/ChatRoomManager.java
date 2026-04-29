@@ -5,8 +5,10 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.mappers.ChatRoomMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.dataAccess.abstracts.IChatRoomDao;
+import com.mefy.platemate.dataAccess.abstracts.IUserSettingsDao;
 import com.mefy.platemate.business.abstracts.IParticipantService;
 import com.mefy.platemate.entities.concrete.ChatRoom;
 import com.mefy.platemate.entities.concrete.Participant;
@@ -25,12 +27,19 @@ public class ChatRoomManager implements IChatRoomService {
 
     private final IChatRoomDao chatRoomDao;
     private final IParticipantService participantService;
+    private final IUserSettingsDao userSettingsDao;
     private final ChatRoomMapper chatRoomMapper;
     private final IMessageService messageService;
 
     @Override
     @Transactional
     public DataResult<ChatRoomDto> getOrCreateChatRoom(Long userOneId, Long userTwoId) {
+        // Hedef kullanıcının mesajlaşma ayarını kontrol et
+        var targetSettings = userSettingsDao.findByUserId(userTwoId).orElse(null);
+        if (targetSettings != null && !targetSettings.isMessagingEnabled()) {
+            return new ErrorDataResult<>(messageService.getMessage(Messages.MESSAGING_DISABLED));
+        }
+
         ChatRoom existingRoom = findPrivateChatBetweenUsers(userOneId, userTwoId);
 
         if (existingRoom != null) {

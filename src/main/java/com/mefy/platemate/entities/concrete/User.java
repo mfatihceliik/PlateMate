@@ -38,4 +38,7 @@ public class User implements IEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Participant> participants;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserSettings settings;
 }

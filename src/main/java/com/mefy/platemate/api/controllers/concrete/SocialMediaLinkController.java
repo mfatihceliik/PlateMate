@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.ISocialMediaLinkController;
 
 import com.mefy.platemate.business.abstracts.ISocialMediaLinkService;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -13,13 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/social-links")
 @RequiredArgsConstructor
-public class SocialMediaLinkController {
+public class SocialMediaLinkController implements ISocialMediaLinkController {
 
     private final ISocialMediaLinkService socialMediaLinkService;
 
-    @PostMapping
+    @Override
     public ResponseEntity<Result> add(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddSocialLinkRequest request
@@ -40,7 +41,7 @@ public class SocialMediaLinkController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping
+    @Override
     public ResponseEntity<Result> update(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdateSocialLinkRequest request
@@ -58,7 +59,7 @@ public class SocialMediaLinkController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Result> delete(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId

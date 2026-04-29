@@ -1,5 +1,6 @@
 package com.mefy.platemate.entities.dto.request;
 
+import com.mefy.platemate.entities.abstracts.IDto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddVehicleRequest {
+public class AddVehicleRequest implements IDto {
     @NotBlank(message = "{validation.vehicle.plate.notblank}")
     private String plateCode;
 

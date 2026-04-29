@@ -1,5 +1,6 @@
 package com.mefy.platemate.entities.dto.request;
 
+import com.mefy.platemate.entities.abstracts.IDto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateReviewRequest {
+public class UpdateReviewRequest implements IDto {
     @NotNull
     private Long id;
 

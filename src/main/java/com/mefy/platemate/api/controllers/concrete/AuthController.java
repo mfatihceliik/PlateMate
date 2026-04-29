@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IAuthController;
 
 import com.mefy.platemate.business.abstracts.IUserService;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
@@ -22,16 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements IAuthController {
 
     private final IUserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final IMessageService messageService;
 
-    @PostMapping("/register")
+    @Override
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
@@ -49,7 +50,7 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/login")
+    @Override
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         String identifier = request.getIdentifier();
         if (identifier == null || identifier.trim().isEmpty()) {

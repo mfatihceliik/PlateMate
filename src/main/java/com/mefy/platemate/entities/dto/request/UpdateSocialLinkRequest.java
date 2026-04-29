@@ -1,5 +1,6 @@
 package com.mefy.platemate.entities.dto.request;
 
+import com.mefy.platemate.entities.abstracts.IDto;
 import com.mefy.platemate.entities.concrete.SocialPlatform;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateSocialLinkRequest {
+public class UpdateSocialLinkRequest implements IDto {
     @NotNull
     private Long id;
 

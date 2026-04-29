@@ -1,4 +1,6 @@
-package com.mefy.platemate.api.controllers;
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IFriendshipController;
 
 import com.mefy.platemate.business.abstracts.IFriendshipService;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -12,13 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/friendships")
 @RequiredArgsConstructor
-public class FriendshipController {
+public class FriendshipController implements IFriendshipController {
 
     private final IFriendshipService friendshipService;
 
-    @PostMapping("/request/{addresseeId}")
+    @Override
     public ResponseEntity<Result> sendRequest(
             @RequestAttribute("userId") Long currentUserId,
             @PathVariable Long addresseeId
@@ -30,7 +31,7 @@ public class FriendshipController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}/accept")
+    @Override
     public ResponseEntity<Result> accept(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId
@@ -42,7 +43,7 @@ public class FriendshipController {
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/{id}/reject")
+    @Override
     public ResponseEntity<Result> reject(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId
@@ -54,7 +55,7 @@ public class FriendshipController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Result> remove(
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId
@@ -66,14 +67,14 @@ public class FriendshipController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping
+    @Override
     public ResponseEntity<DataResult<List<FriendshipDto>>> getFriends(
             @RequestAttribute("userId") Long currentUserId
     ) {
         return ResponseEntity.ok(friendshipService.getFriends(currentUserId));
     }
 
-    @GetMapping("/pending")
+    @Override
     public ResponseEntity<DataResult<List<FriendshipDto>>> getPendingRequests(
             @RequestAttribute("userId") Long currentUserId
     ) {
