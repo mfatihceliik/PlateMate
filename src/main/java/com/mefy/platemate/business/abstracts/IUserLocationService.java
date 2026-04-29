@@ -7,7 +7,7 @@ import com.mefy.platemate.entities.dto.UserLocationDto;
 import java.util.List;
 
 public interface IUserLocationService {
-    Result updateLocation(Long userId, Double latitude, Double longitude);
+    DataResult<List<Long>> updateLocation(Long userId, Double latitude, Double longitude);
     DataResult<UserLocationDto> getLocationByUserId(Long userId);
     DataResult<List<UserLocationDto>> getVisibleLocationsForUser(Long viewerId);
     

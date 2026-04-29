@@ -4,6 +4,7 @@ import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.mefy.platemate.api.socket.abstracts.IChatSocketHandler;
+import com.mefy.platemate.api.socket.utilities.constants.SocketEvents;
 import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.dataAccess.abstracts.IParticipantDao;
 import com.mefy.platemate.entities.concrete.ChatMessage;
@@ -24,41 +25,27 @@ public class ChatSocketHandler implements IChatSocketHandler {
 
     @Override
     public void registerEvents(SocketIOServer server) {
-        server.addEventListener("join_room", Long.class, this::handleJoinRoom);
-        server.addEventListener("send_message", SendMessageRequest.class, this::handleSendMessage);
+        server.addEventListener(SocketEvents.JOIN_ROOM, Long.class, this::handleJoinRoom);
+        server.addEventListener(SocketEvents.SEND_MESSAGE, SendMessageRequest.class, this::handleSendMessage);
     }
 
     @Override
     public void handleJoinRoom(SocketIOClient client, Long roomId, AckRequest ackSender) {
         Long userId = client.get("userId");
-        if (userId == null) {
-            log.warn("Unauthenticated join_room attempt from session {}", client.getSessionId());
-            return;
-        }
+        if (userId == null) return;
 
-        // Participant tablosunda kullanıcının bu odaya üye olup olmadığını kontrol et
-        boolean isMember = participantDao.existsByUserIdAndChatRoomId(userId, roomId);
-        if (!isMember) {
-            log.warn("User {} attempted to join room {} without membership", userId, roomId);
-            return;
+        if (participantDao.existsByUserIdAndChatRoomId(userId, roomId)) {
+            client.joinRoom(roomId.toString());
+            log.info("User {} joined room {}", userId, roomId);
         }
-
-        client.joinRoom(roomId.toString());
-        log.info("User {} joined room {}", userId, roomId);
     }
 
     @Override
     public void handleSendMessage(SocketIOClient client, SendMessageRequest data, AckRequest ackSender) {
         Long senderId = client.get("userId");
-        if (senderId == null) {
-            log.warn("Unauthenticated send_message attempt from session {}", client.getSessionId());
-            return;
-        }
+        if (senderId == null) return;
 
-        // Mesaj göndermeden önce oda üyeliği doğrula
-        boolean isMember = participantDao.existsByUserIdAndChatRoomId(senderId, data.getChatRoomId());
-        if (!isMember) {
-            log.warn("User {} attempted to send message to room {} without membership", senderId, data.getChatRoomId());
+        if (!participantDao.existsByUserIdAndChatRoomId(senderId, data.getChatRoomId())) {
             return;
         }
 
@@ -73,12 +60,17 @@ public class ChatSocketHandler implements IChatSocketHandler {
         message.setChatRoom(room);
         message.setContent(data.getContent());
 
-        var result = chatMessageService.sendMessage(message);
+        try {
+            var result = chatMessageService.sendMessage(message);
 
-        if (result.isSuccess()) {
-            client.getNamespace()
-                    .getRoomOperations(data.getChatRoomId().toString())
-                    .sendEvent("new_message", result.getData());
+            if (result.isSuccess()) {
+                client.getNamespace()
+                        .getRoomOperations(data.getChatRoomId().toString())
+                        .sendEvent(SocketEvents.NEW_MESSAGE, result.getData());
+            }
+        } catch (Exception e) {
+            log.error("Socket error in handleSendMessage: {}", e.getMessage());
+            // Client'a hata gönderilebilir (opsiyonel)
         }
     }
 }

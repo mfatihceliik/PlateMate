@@ -4,6 +4,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.mefy.platemate.api.socket.abstracts.ISocketRegistrar;
+import com.mefy.platemate.api.socket.utilities.constants.SocketEvents;
 import com.mefy.platemate.business.abstracts.IParticipantService;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,9 @@ public class SocketModule {
             try {
                 Long userId = tokenProvider.getUserIdFromToken(token);
                 client.set("userId", userId);
+
+                // Kullanıcının kendi özel odasına katılmasını sağla (Bireysel bildirimler için)
+                client.joinRoom(SocketEvents.USER_ROOM_PREFIX + userId);
 
                 // Kullanıcının üye olduğu tüm odalara otomatik katıl (Auto-Join)
                 var participationResult = participantService.getByUserId(userId);

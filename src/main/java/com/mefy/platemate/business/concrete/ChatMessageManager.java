@@ -4,12 +4,10 @@ import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.mappers.ChatMessageMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
-import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.core.utilities.results.SuccessDataResult;
-import com.mefy.platemate.core.utilities.results.SuccessResult;
+import com.mefy.platemate.core.utilities.results.*;
 import com.mefy.platemate.dataAccess.abstracts.IChatMessageDao;
 import com.mefy.platemate.dataAccess.abstracts.IChatRoomDao;
+import com.mefy.platemate.dataAccess.abstracts.IUserSettingsDao;
 import com.mefy.platemate.entities.concrete.ChatMessage;
 import com.mefy.platemate.entities.concrete.ChatRoom;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
@@ -27,15 +25,30 @@ public class ChatMessageManager implements IChatMessageService {
 
     private final IChatMessageDao chatMessageDao;
     private final IChatRoomDao chatRoomDao;
+    private final IUserSettingsDao userSettingsDao;
     private final ChatMessageMapper chatMessageMapper;
     private final IMessageService messageService;
 
     @Override
     @Transactional
     public DataResult<ChatMessageDto> sendMessage(ChatMessage message) {
+        ChatRoom room = chatRoomDao.findById(message.getChatRoom().getId()).orElseThrow();
+        
+        // Karşı tarafın mesajlaşma iznini kontrol et (Business Rule)
+        if (!room.isGroup()) {
+            room.getParticipants().stream()
+                    .filter(p -> !p.getUser().getId().equals(message.getSender().getId()))
+                    .findFirst()
+                    .ifPresent(recipient -> {
+                        var settings = userSettingsDao.findByUserId(recipient.getUser().getId()).orElse(null);
+                        if (settings != null && !settings.isMessagingEnabled()) {
+                            throw new RuntimeException(messageService.getMessage(Messages.MESSAGING_DISABLED));
+                        }
+                    });
+        }
+
         chatMessageDao.save(message);
 
-        ChatRoom room = chatRoomDao.findById(message.getChatRoom().getId()).orElseThrow();
         room.setLastMessageAt(LocalDateTime.now());
         chatRoomDao.save(room);
 
