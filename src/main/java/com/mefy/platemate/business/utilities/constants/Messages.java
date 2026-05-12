@@ -11,26 +11,23 @@ public final class Messages {
     public static final String USER_UPDATED = "user.updated";
     public static final String USER_FOUND = "user.found";
     public static final String USERS_LISTED = "users.listed";
+    public static final String USER_ROLE_NOT_FOUND = "user.role.not.found";
     // Profile Messages
     public static final String PROFILE_NOT_FOUND = "profile.not.found";
     public static final String PROFILE_LISTED = "profile.listed";
-    public static final String PROFILE_UPDATED = "profile.updated";
     public static final String PROFILE_FOUND = "profile.found";
-    public static final String PROFILE_BIO_TOO_LONG = "profile.bio.too.long";
-    // Vehicle Messages
+    // Plate Messages
     public static final String PLATE_INVALID = "plate.invalid";
-    public static final String VEHICLE_ADDED = "vehicle.added";
-    public static final String VEHICLE_UPDATED = "vehicle.updated";
-    public static final String VEHICLES_LISTED = "vehicles.listed";
-    public static final String VEHICLE_NOT_FOUND = "vehicle.not.found";
-    public static final String VEHICLE_FOUND = "vehicle.found";
-    public static final String PLATE_ALREADY_EXISTS = "plate.already.exists";
+    public static final String PLATE_FOUND = "plate.found";
+    public static final String SUBSCRIPTION_ACTIVATED = "subscription.activated";
+    public static final String SUBSCRIPTION_STATUS_FOUND = "subscription.status.found";
+    public static final String SUBSCRIPTION_HISTORY_LISTED = "subscription.history.listed";
     // Review Messages
     public static final String REVIEW_ADDED = "review.added";
     public static final String REVIEW_UPDATED = "review.updated";
     public static final String REVIEWS_LISTED = "reviews.listed";
-    public static final String SELF_REVIEW_NOT_ALLOWED = "self.review.not.allowed";
     public static final String REVIEW_NOT_FOUND = "review.not.found";
+    public static final String REVIEW_DELETED = "review.deleted";
     // Chat & Message Messages
     public static final String CHAT_ROOM_FOUND = "chat.room.found";
     public static final String CHAT_ROOM_CREATED = "chat.room.created";

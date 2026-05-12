@@ -1,7 +1,17 @@
 package com.mefy.platemate.entities.concrete;
 
 import com.mefy.platemate.entities.abstracts.IEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,15 +40,38 @@ public class User implements IEntity {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    private LocalDateTime premiumUntil;
+
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private UserRole role;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserProfile profile;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Vehicle> vehicles;
+    private List<Participant> participants;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Participant> participants;
+    private List<PlateReview> plateReviews;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserSubscription> subscriptions;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserSettings settings;
+
+    public boolean hasRole(UserRoleCode roleCode) {
+        return role != null && role.getCode() == roleCode;
+    }
+
+    public boolean isPremiumActive() {
+        return hasRole(UserRoleCode.PREMIUM)
+                && premiumUntil != null
+                && premiumUntil.isAfter(LocalDateTime.now());
+    }
+
+    public boolean isSubscriptionActive() {
+        return isPremiumActive();
+    }
 }

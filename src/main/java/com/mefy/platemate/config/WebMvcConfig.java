@@ -6,13 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * WebMVC konfigürasyonu.
- * JWT Interceptor'ı burada kayıt ederek hangi endpoint'lerin korumalı,
- * hangilerinin açık (public) olacağını belirliyoruz.
- * <p>
- * Yeni bir public endpoint eklendiğinde excludePathPatterns'a eklenmeli.
- */
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -22,12 +15,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtAuthenticationInterceptor)
-                .addPathPatterns("/api/**")         // Tüm API endpoint'lerini koru
+                .addPathPatterns("/api/**")
                 .excludePathPatterns(
-                        "/api/auth/**",             // Login & Register açık
-                        "/api/cities/**",           // Şehir listesi herkese açık
-                        "/api/vehicles/search/**",  // Plaka arama herkese açık (anonim arama)
-                        "/ws/**"                    // WebSocket endpoint'i (kendi auth mekanizması var)
+                        "/api/auth/**",
+                        "/api/cities/**",
+                        "/api/plates/search",
+                        "/api/plates/search/**",
+                        "/ws/**"
                 );
     }
 }

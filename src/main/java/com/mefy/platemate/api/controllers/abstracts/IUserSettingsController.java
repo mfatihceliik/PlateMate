@@ -11,12 +11,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/settings")
 public interface IUserSettingsController {
 
-    @GetMapping
-    ResponseEntity<DataResult<UserSettingsDto>> getByUserId(@RequestAttribute("userId") Long currentUserId);
+    @GetMapping("/{userId}")
+    ResponseEntity<DataResult<UserSettingsDto>> getByUserId(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId);
 
-    @PutMapping
+    @PutMapping("/{userId}")
     ResponseEntity<Result> update(
-            @RequestAttribute("userId") Long currentUserId,
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId,
             @Valid @RequestBody UpdateSettingsRequest request
     );
 }

@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -12,7 +14,13 @@ public class UserDto implements IDto {
     private Long id;
     private String username;
     private String email;
-    private String firstName;
-    private String lastName;
+    private String token;
+    private LocalDateTime premiumUntil;
+    private boolean premiumActive;
+    private String roleCode;
+    private LocalDateTime currentSubscriptionStartedAt;
+    private LocalDateTime currentSubscriptionExpiresAt;
+    private Integer currentSubscriptionPurchasedDays;
+    private String currentSubscriptionStatus;
     // Password yok!
 }

@@ -41,11 +41,6 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
         dto.setFriendUserId(friend.getId());
         dto.setFriendUsername(friend.getUsername());
 
-        if (friend.getProfile() != null) {
-            dto.setFriendFirstName(friend.getProfile().getFirstName());
-            dto.setFriendLastName(friend.getProfile().getLastName());
-        }
-
         return dto;
     }
 

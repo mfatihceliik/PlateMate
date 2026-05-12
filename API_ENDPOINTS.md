@@ -1,48 +1,64 @@
-# PlateMate API Documentation
+# PlateMate API Endpoints
 
-This document contains all available API endpoints for the PlateMate Backend. Use this to generate a Postman collection.
+Bu dokuman mevcut backend kodundaki endpointleri yansitir.
 
 **Base URL**: `http://localhost:8080`
 
-**Authentication**: Most endpoints require a JWT token in the `Authorization: Bearer <token>` header.
+## Auth Notu
+
+- Cogu `/api/**` endpoint JWT ister: `Authorization: Bearer <token>`
+- JWT muaf endpointler:
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `GET /api/cities/**`
+  - `GET /api/plates/search`
+  - `GET /api/plates/search/**`
+- Root:
+  - `GET /` -> `redirect:/swagger-ui/index.html`
 
 ---
 
-## 1. Authentication (`/api/auth`)
+## 1) Authentication (`/api/auth`)
 
 ### Register
 - **Method**: `POST`
 - **URL**: `/api/auth/register`
-- **Body** (JSON):
-  ```json
-  {
-    "username": "fatih",
-    "password": "password123",
-    "email": "fatih@example.com"
-  }
-  ```
+- **Body**:
+```json
+{
+  "username": "fatih",
+  "password": "password123",
+  "email": "fatih@example.com"
+}
+```
 
 ### Login
 - **Method**: `POST`
 - **URL**: `/api/auth/login`
-- **Body** (JSON):
-  ```json
-  {
-    "username": "fatih",
-    "password": "password123"
-  }
-  ```
-  *(Note: You can also use "email" instead of "username" in the field)*
+- **Body** (username veya email ile):
+```json
+{
+  "username": "fatih",
+  "password": "password123"
+}
+```
+veya
+```json
+{
+  "email": "fatih@example.com",
+  "password": "password123"
+}
+```
 
 ---
 
-## 2. User Management (`/api/users`)
+## 2) Users (`/api/users`)
 
 ### Get All Users
 - **Method**: `GET`
 - **URL**: `/api/users`
 
-### Get User By ID
+### Get User By Id
 - **Method**: `GET`
 - **URL**: `/api/users/{id}`
 
@@ -52,15 +68,14 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ### Update User (Self)
 - **Method**: `PUT`
-- **URL**: `/api/users`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "email": "newemail@example.com",
-    "password": "newpassword123"
-  }
-  ```
+- **URL**: `/api/users/{userId}`
+- **Body**:
+```json
+{
+  "email": "newmail@example.com",
+  "password": "newpassword123"
+}
+```
 
 ### Delete User
 - **Method**: `DELETE`
@@ -68,335 +83,296 @@ This document contains all available API endpoints for the PlateMate Backend. Us
 
 ---
 
-## 3. Profile Management (`/api/profiles`)
+## 3) Profiles (`/api/profiles`)
 
-### Get Profile
+### Get Profile By User Id
 - **Method**: `GET`
-- **URL**: `/api/profiles/{userId}`
-
-### Update Profile (Self)
-- **Method**: `PUT`
-- **URL**: `/api/profiles`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "firstName": "Fatih",
-    "lastName": "Celik",
-    "bio": "Software Developer"
-  }
-  ```
+- **URL**: `/api/profiles/{userId}?page=0&size=20`
+- **Not**: Profile cevabinda `username`, `driverRating`, `reviewCount`, `totalRatingSum`, `socialMediaLinks`, `plateReviews(Page)` doner.
 
 ---
 
-## 4. User Settings (`/api/settings`)
+## 4) User Settings (`/api/settings`)
 
 ### Get My Settings
 - **Method**: `GET`
-- **URL**: `/api/settings`
-- **Headers**: `Authorization: Bearer <token>`
+- **URL**: `/api/settings/{userId}`
+- **Not**: `userId`, token icindeki user ile ayni olmalidir.
 
-### Update Settings
+### Update My Settings
 - **Method**: `PUT`
-- **URL**: `/api/settings`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "messagingEnabled": true,
-    "locationSharingEnabled": true,
-    "notificationsEnabled": true
-  }
-  ```
+- **URL**: `/api/settings/{userId}`
+- **Body**:
+```json
+{
+  "messagingEnabled": true,
+  "locationSharingEnabled": true,
+  "messageNotificationsEnabled": true,
+  "friendNotificationsEnabled": true
+}
+```
 
 ---
 
-## 5. User Reviews (`/api/reviews`)
+## 5) Plates & Plate Reviews (`/api/plates`)
 
-### Add Review
+### Search Plate
+- **Method**: `GET`
+- **URL**: `/api/plates/search?plate=34ABC123`
+- **Public**: Evet (JWT istemez)
+- **Not**:
+  - Plaka formati gecersizse `400`
+  - Gecerli plaka ise `200`
+  - Kayit yoksa backend plate kaydini olusturur (upsert davranisi)
+  - Yorumsuz plakada aggregate alanlar `0` doner
+
+### Get Plate Reviews
+- **Method**: `GET`
+- **URL**: `/api/plates/{plateCode}/reviews?page=0&size=20`
+
+### Add Or Update My Review For Plate
 - **Method**: `POST`
-- **URL**: `/api/reviews`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "targetProfileId": 2,
-    "rating": 5,
-    "comment": "Great driver!"
-  }
-  ```
+- **URL**: `/api/plates/{plateCode}/reviews`
+- **Body**:
+```json
+{
+  "rating": 5,
+  "comment": "Temiz kullanim."
+}
+```
+- **Not**: Ayni kullanici ayni plaka icin tekrar `POST` atarsa yeni kayit yerine mevcut yorumunu gunceller.
 
-### Get Reviews for Profile
-- **Method**: `GET`
-- **URL**: `/api/reviews/target/{targetProfileId}?page=0&size=20`
-
-### Update Review
+### Update Review By Review Id
 - **Method**: `PUT`
-- **URL**: `/api/reviews`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "id": 1,
-    "rating": 4,
-    "comment": "Actually, it was okay."
-  }
-  ```
+- **URL**: `/api/plates/reviews/{id}`
+- **Body**:
+```json
+{
+  "rating": 4,
+  "comment": "Yorum guncellendi."
+}
+```
 
-### Delete Review
+### Delete Review By Review Id
 - **Method**: `DELETE`
-- **URL**: `/api/reviews/{id}`
-- **Headers**: `Authorization: Bearer <token>`
+- **URL**: `/api/plates/reviews/{id}`
 
 ---
 
-## 6. Vehicle Management (`/api/vehicles`)
+## 6) Subscriptions (`/api/subscriptions`)
 
-### Get All Vehicles
-- **Method**: `GET`
-- **URL**: `/api/vehicles`
-
-### Search Vehicle By Plate
-- **Method**: `GET`
-- **URL**: `/api/vehicles/search?plate=34ABC123`
-
-### Get User's Vehicles
-- **Method**: `GET`
-- **URL**: `/api/vehicles/user/{userId}`
-
-### Add Vehicle
+### Activate Subscription
 - **Method**: `POST`
-- **URL**: `/api/vehicles`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "plateCode": "34ABC123",
-    "brand": "BMW",
-    "model": "M3",
-    "color": "Black",
-    "cityId": 34
-  }
-  ```
+- **URL**: `/api/subscriptions/activate`
+- **Body**:
+```json
+{
+  "days": 30
+}
+```
+- **Not**:
+  - `user_subscriptions` tablosuna gecmis kaydi acilir
+  - `users.premiumUntil` senkron tutulur
+  - `user_roles` `NORMAL/PREMIUM` durumu otomatik senkronlanir
 
-### Update Vehicle
-- **Method**: `PUT`
-- **URL**: `/api/vehicles`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "id": 1,
-    "plateCode": "34XYZ789",
-    "brand": "Audi",
-    "model": "A4",
-    "color": "White",
-    "cityId": 34
-  }
-  ```
+### Get Current Subscription
+- **Method**: `GET`
+- **URL**: `/api/subscriptions/me`
 
-### Delete Vehicle
-- **Method**: `DELETE`
-- **URL**: `/api/vehicles/{id}`
-- **Headers**: `Authorization: Bearer <token>`
+### Get Subscription History
+- **Method**: `GET`
+- **URL**: `/api/subscriptions/me/history`
 
 ---
 
-## 7. Social Media Links (`/api/social-links`)
+## 7) Social Links (`/api/social-links`)
 
 ### Add Social Link
 - **Method**: `POST`
 - **URL**: `/api/social-links`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "platform": "INSTAGRAM",
-    "url": "https://instagram.com/user"
-  }
-  ```
+- **Body**:
+```json
+{
+  "platform": "INSTAGRAM",
+  "url": "https://instagram.com/user"
+}
+```
 
 ### Update Social Link
 - **Method**: `PUT`
 - **URL**: `/api/social-links`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "id": 1,
-    "platform": "X",
-    "url": "https://x.com/user"
-  }
-  ```
+- **Body**:
+```json
+{
+  "id": 1,
+  "platform": "X",
+  "url": "https://x.com/user"
+}
+```
 
 ### Delete Social Link
 - **Method**: `DELETE`
 - **URL**: `/api/social-links/{id}`
-- **Headers**: `Authorization: Bearer <token>`
 
 ---
 
-## 8. City Data (`/api/cities`)
+## 8) Friendships (`/api/friendships`)
+
+### Send Friendship Request
+- **Method**: `POST`
+- **URL**: `/api/friendships/request/{addresseeId}`
+
+### Accept Request
+- **Method**: `PUT`
+- **URL**: `/api/friendships/{id}/accept`
+
+### Reject Request
+- **Method**: `PUT`
+- **URL**: `/api/friendships/{id}/reject`
+
+### Remove Friendship
+- **Method**: `DELETE`
+- **URL**: `/api/friendships/{id}`
+
+### Get Friends
+- **Method**: `GET`
+- **URL**: `/api/friendships`
+- **Not**: Sadece `ACCEPTED` kayitlar doner.
+
+### Get Pending Incoming Requests
+- **Method**: `GET`
+- **URL**: `/api/friendships/pending`
+
+---
+
+## 9) Chat (`/api/chat`)
+
+### Get My Rooms
+- **Method**: `GET`
+- **URL**: `/api/chat/rooms`
+
+### Get Or Create Private Room
+- **Method**: `POST`
+- **URL**: `/api/chat/rooms?otherUserId=2`
+
+### Get Room Messages
+- **Method**: `GET`
+- **URL**: `/api/chat/rooms/{roomId}/messages`
+
+### Send Message (REST Fallback)
+- **Method**: `POST`
+- **URL**: `/api/chat/rooms/messages`
+- **Body**:
+```json
+{
+  "chatRoomId": 1,
+  "content": "Merhaba"
+}
+```
+
+### Mark Room Messages As Read
+- **Method**: `PUT`
+- **URL**: `/api/chat/rooms/{roomId}/read`
+
+---
+
+## 10) User Locations (`/api/locations`)
+
+### Get User Location
+- **Method**: `GET`
+- **URL**: `/api/locations/user/{userId}`
+
+### Get Visible Locations For Me
+- **Method**: `GET`
+- **URL**: `/api/locations/visible`
+
+### Block User From My Location
+- **Method**: `POST`
+- **URL**: `/api/locations/block/{targetUserId}`
+
+### Unblock User From My Location
+- **Method**: `DELETE`
+- **URL**: `/api/locations/block/{targetUserId}`
+
+### Get My Blocked User Id List
+- **Method**: `GET`
+- **URL**: `/api/locations/blocked`
+
+---
+
+## 11) Reports (`/api/reports`)
+
+### Add Report
+- **Method**: `POST`
+- **URL**: `/api/reports/add`
+- **Body**:
+```json
+{
+  "reporter": { "id": 1 },
+  "reportedUser": { "id": 2 },
+  "reason": "Spam / hakaret"
+}
+```
+
+### Mark Report As Reviewed
+- **Method**: `PUT`
+- **URL**: `/api/reports/{reportId}/review`
+
+### Mark Report As Resolved
+- **Method**: `PUT`
+- **URL**: `/api/reports/{reportId}/resolve`
+
+### Get Reports For Reported User
+- **Method**: `GET`
+- **URL**: `/api/reports/reportedUser/{reportedUserId}`
+
+### Get All Pending Reports
+- **Method**: `GET`
+- **URL**: `/api/reports/pending`
+
+---
+
+## 12) Cities (`/api/cities`) - Public
 
 ### Get All Cities
 - **Method**: `GET`
 - **URL**: `/api/cities`
 
----
-
-## 9. Real-time Chat & Messages (`/api/chat`)
-
-### Get My Chat Rooms
+### Get City By Id
 - **Method**: `GET`
-- **URL**: `/api/chat/rooms`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Create or Get Private Chat Room
-- **Method**: `POST`
-- **URL**: `/api/chat/rooms?otherUserId=2`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Get Room Messages
-- **Method**: `GET`
-- **URL**: `/api/chat/rooms/{roomId}/messages`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Mark Messages as Read
-- **Method**: `PUT`
-- **URL**: `/api/chat/rooms/{roomId}/read`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Send Message (REST Fallback)
-- **Method**: `POST`
-- **URL**: `/api/chat/rooms/messages`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "chatRoomId": 1,
-    "content": "Hello!"
-  }
-  ```
+- **URL**: `/api/cities/{id}`
 
 ---
 
-## 10. WebSocket Messaging (`Socket.io`)
+## 13) FCM Tokens (`/api/fcm-tokens`)
 
-**URL**: `ws://localhost:9092`
-**Query Parameters**: `token=<JWT_TOKEN>`
-
-### Connection
-- **Library**: `socket.io-client`
-- **Authentication**: JWT token must be passed in query string (e.g., `?token=...`).
-- **Auto-Join**: Upon connection, the server automatically joins the client to all rooms they are a participant in.
-
-### Events (Send)
-- `send_message`: Sends a message to a room.
-  - **Data** (JSON):
-    ```json
-    {
-      "chatRoomId": 1,
-      "content": "Hello via Socket.io!"
-    }
-    ```
-
-### Events (Receive)
-- `new_message`: Triggered when a new message arrives in a joined room.
-  - **Data**: `ChatMessageDto`
-
----
-
-## 11. User Locations & Blocking (`/api/locations`)
-
-### Get Specific User Location
-- **Method**: `GET`
-- **URL**: `/api/locations/user/{userId}`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Get All Visible Locations
-- **Method**: `GET`
-- **URL**: `/api/locations/visible`
-- **Headers**: `Authorization: Bearer <token>`
-- *(Note: Returns locations of friends who have sharing enabled and haven't blocked you)*
-
-### Block Friend from Seeing My Location
+### Register FCM Token
 - **Method**: `POST`
-- **URL**: `/api/locations/block/{targetUserId}`
-- **Headers**: `Authorization: Bearer <token>`
+- **URL**: `/api/fcm-tokens/register`
+- **Body**:
+```json
+{
+  "token": "fcm_device_token",
+  "deviceId": "android-123"
+}
+```
 
-### Unblock Friend from Seeing My Location
+### Unregister FCM Token
 - **Method**: `DELETE`
-- **URL**: `/api/locations/block/{targetUserId}`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Get My Location Blacklist
-- **Method**: `GET`
-- **URL**: `/api/locations/blocked`
-- **Headers**: `Authorization: Bearer <token>`
+- **URL**: `/api/fcm-tokens/unregister?token=fcm_device_token`
 
 ---
 
-## 12. Friendships (`/api/friendships`)
+## 14) WebSocket (Socket.io)
 
-### Send Friend Request
-- **Method**: `POST`
-- **URL**: `/api/friendships/request/{addresseeId}`
-- **Headers**: `Authorization: Bearer <token>`
+- **URL**: `ws://localhost:9092`
+- **Query**: `token=<JWT>`
+- **Send Event**: `send_message`
+```json
+{
+  "chatRoomId": 1,
+  "content": "Hello via socket"
+}
+```
+- **Receive Event**: `new_message`
 
-### Accept Friend Request
-- **Method**: `PUT`
-- **URL**: `/api/friendships/{id}/accept`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Reject Friend Request
-- **Method**: `PUT`
-- **URL**: `/api/friendships/{id}/reject`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Remove Friend / Cancel Request
-- **Method**: `DELETE`
-- **URL**: `/api/friendships/{id}`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Get My Friends
-- **Method**: `GET`
-- **URL**: `/api/friendships`
-- **Headers**: `Authorization: Bearer <token>`
-
-### Get Pending Incoming Requests
-- **Method**: `GET`
-- **URL**: `/api/friendships/pending`
-- **Headers**: `Authorization: Bearer <token>`
-
----
-
-## 13. Reports (`/api/reports`)
-
-### Submit a Report
-- **Method**: `POST`
-- **URL**: `/api/reports/add`
-- **Headers**: `Authorization: Bearer <token>`
-- **Body** (JSON):
-  ```json
-  {
-    "reportedUserId": 2,
-    "reason": "Inappropriate behavior",
-    "description": "User was spamming..."
-  }
-  ```
-
-### Mark as Reviewed (Admin)
-- **Method**: `PUT`
-- **URL**: `/api/reports/{id}/review`
-
-### Mark as Resolved (Admin)
-- **Method**: `PUT`
-- **URL**: `/api/reports/{id}/resolve`
-
-### Get Reports for User
-- **Method**: `GET`
-- **URL**: `/api/reports/reportedUser/{userId}`
-
-### Get All Pending Reports
-- **Method**: `GET`
-- **URL**: `/api/reports/pending`

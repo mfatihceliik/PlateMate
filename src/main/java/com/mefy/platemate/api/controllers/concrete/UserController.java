@@ -3,12 +3,16 @@ package com.mefy.platemate.api.controllers.concrete;
 import com.mefy.platemate.api.controllers.abstracts.IUserController;
 
 import com.mefy.platemate.business.abstracts.IUserService;
+import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.UserDto;
 import com.mefy.platemate.entities.dto.request.UpdateUserRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +23,7 @@ import java.util.List;
 public class UserController implements IUserController {
 
     private final IUserService userService;
+    private final IMessageService messageService;
 
     @Override
     public ResponseEntity<DataResult<List<UserDto>>> getAll() {
@@ -45,12 +50,17 @@ public class UserController implements IUserController {
 
     @Override
     public ResponseEntity<Result> update(
-            @RequestAttribute("userId") Long currentUserId,
+            @PathVariable("userId") Long userId,
+            @RequestAttribute("userId") Long tokenUserId,
             @Valid @RequestBody UpdateUserRequest request
     ) {
+        if (!userId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResult(messageService.getMessage("auth.unauthorized")));
+        }
 
-        com.mefy.platemate.entities.concrete.User user = new com.mefy.platemate.entities.concrete.User();
-        user.setId(currentUserId);
+        User user = new User();
+        user.setId(userId);
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
 

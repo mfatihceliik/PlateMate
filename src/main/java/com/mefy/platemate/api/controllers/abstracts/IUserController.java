@@ -22,9 +22,10 @@ public interface IUserController {
     @GetMapping("/search")
     ResponseEntity<DataResult<UserDto>> getByUsername(@RequestParam String username);
 
-    @PutMapping
+    @PutMapping("/{userId}")
     ResponseEntity<Result> update(
-            @RequestAttribute("userId") Long currentUserId,
+            @PathVariable("userId") Long userId,
+            @RequestAttribute("userId") Long tokenUserId,
             @Valid @RequestBody UpdateUserRequest request
     );
 

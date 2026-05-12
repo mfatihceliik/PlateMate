@@ -1,13 +1,16 @@
 # PlateMate Backend
 
-PlateMate is a social platform for drivers and vehicle owners. This backend API provides features for user authentication, profile management, vehicle registration, user reviews, social media integration, and real-time messaging.
+PlateMate is a social platform for drivers and vehicle owners. This backend API provides features for user authentication, profile management, plate-centered lookup, plate reviews, social media integration, and real-time messaging.
 
 ## Features
 
 - **Multi-Field Authentication**: Login using either `username` or `email`.
-- **User Profiles**: Manage personal information, bios, and social media links.
-- **Vehicle Management**: Register and manage vehicles by plate numbers.
-- **Review System**: Rate and review other users' driving profiles with built-in self-review prevention and pagination.
+- **User Profiles**: View username-based profile summary, plate review stats, and social media links.
+- **Vehicle Catalog**: Search Turkish plates, fetch seeded brand/color catalogs, and collect community-confirmed vehicle details.
+- **Review System**: Rate and review license plates with pagination.
+- **Subscription Plate Claims**: Let active subscribers make an in-app ownership claim for a plate without presenting it as official ownership verification.
+- **Subscription History Tracking**: Store subscription activation time, duration, expiry, and status history for audit and future panel use.
+- **Ownership Confirmation Requests**: If a subscribed user cannot claim a plate because another subscribed user already claimed it, they can submit a photo-backed ownership confirmation request for manual review.
 - **Social Media Integration**: Add, update, and delete social media links (Instagram, X, etc.) with platform-uniqueness constraints.
 - **Real-time Chat**: Messaging system with WebSocket support.
 - **Internationalization (i18n)**: Fully localized error and success messages (Turkish and English supported).
@@ -51,8 +54,10 @@ The API endpoints are organized as follows:
 
 - `/api/auth`: Registration and Login
 - `/api/profiles`: Profile management
-- `/api/reviews`: User evaluations and ratings
-- `/api/vehicles`: Vehicle registrations
+- `/api/vehicle-brands`: Vehicle brand catalog
+- `/api/vehicle-colors`: Vehicle color catalog
+- `/api/plates`: Plate lookup and plate review operations
+- `/api/subscriptions`: Subscription activation and status
 - `/api/social-links`: Social media integration
 - `/api/cities`: City data management
 

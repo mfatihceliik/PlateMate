@@ -1,0 +1,87 @@
+package com.mefy.platemate.api.controllers.concrete;
+
+import com.mefy.platemate.api.controllers.abstracts.IPlateController;
+import com.mefy.platemate.business.abstracts.IPlateService;
+import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.entities.dto.PlateDto;
+import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
+import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+public class PlateController implements IPlateController {
+
+    private final IPlateService plateService;
+
+    @Override
+    public ResponseEntity<DataResult<PlateDto>> search(@RequestParam String plate) {
+        DataResult<PlateDto> result = plateService.searchByPlateCode(plate);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<DataResult<Page<PlateReviewDto>>> getReviews(
+            @PathVariable String plateCode,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        DataResult<Page<PlateReviewDto>> result = plateService.getReviewsByPlateCode(plateCode, page, size);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Result> addReview(
+            @PathVariable String plateCode,
+            @RequestAttribute("userId") Long currentUserId,
+            @Valid @RequestBody AddPlateReviewRequest request
+    ) {
+        Result result = plateService.addReview(plateCode, currentUserId, request);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    @Override
+    public ResponseEntity<Result> updateReview(
+            @PathVariable Long id,
+            @RequestAttribute("userId") Long currentUserId,
+            @Valid @RequestBody UpdatePlateReviewRequest request
+    ) {
+        Result result = plateService.updateReview(id, currentUserId, request);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Result> deleteReview(
+            @PathVariable Long id,
+            @RequestAttribute("userId") Long currentUserId
+    ) {
+        Result result = plateService.deleteReview(id, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+}

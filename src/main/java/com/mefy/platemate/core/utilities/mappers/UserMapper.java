@@ -13,9 +13,10 @@ public class UserMapper implements ModelMapperService<User, UserDto> {
         dto.setId(entity.getId());
         dto.setUsername(entity.getUsername());
         dto.setEmail(entity.getEmail());
-        if (entity.getProfile() != null) {
-            dto.setFirstName(entity.getProfile().getFirstName());
-            dto.setLastName(entity.getProfile().getLastName());
+        dto.setPremiumUntil(entity.getPremiumUntil());
+        dto.setPremiumActive(entity.isPremiumActive());
+        if (entity.getRole() != null && entity.getRole().getCode() != null) {
+            dto.setRoleCode(entity.getRole().getCode().name());
         }
         return dto;
     }

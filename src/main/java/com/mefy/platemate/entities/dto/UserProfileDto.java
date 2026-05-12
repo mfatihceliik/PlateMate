@@ -13,11 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 public class UserProfileDto implements IDto {
     private Long id;
-    private String firstName;
-    private String lastName;
-    private String bio;
+    private String username;
     private Double driverRating;
     private Integer reviewCount;
-    private List<SocialMediaLinkDto> socialMediaLinks; // Aşağıdaki DTO'yu kullanıyor
-    private Page<UserReviewDto> reviews; // Yorumlar da sayfalı olarak profille birlikte geliyor
+    private Long totalRatingSum;
+    private List<SocialMediaLinkDto> socialMediaLinks;
+    private Page<PlateReviewDto> plateReviews;
 }

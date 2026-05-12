@@ -10,10 +10,13 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserReviewDto implements IDto {
+public class PlateReviewDto implements IDto {
     private Long id;
+    private String plateCode;
     private Integer rating;
     private String comment;
-    private String reviewerUsername; // Yorumu yapanın nick'i
+    private Long userId;
+    private String username;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

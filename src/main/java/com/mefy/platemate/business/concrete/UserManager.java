@@ -6,9 +6,12 @@ import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.*;
+import com.mefy.platemate.dataAccess.abstracts.IUserRoleDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
+import com.mefy.platemate.entities.concrete.UserRole;
+import com.mefy.platemate.entities.concrete.UserRoleCode;
 import com.mefy.platemate.entities.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class UserManager implements IUserService {
 
     private final IUserDao userDao;
+    private final IUserRoleDao userRoleDao;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IMessageService messageService;
@@ -37,7 +41,13 @@ public class UserManager implements IUserService {
             return new ErrorDataResult<>(result.getMessage());
         }
 
+        UserRole normalRole = userRoleDao.findByCode(UserRoleCode.NORMAL).orElse(null);
+        if (normalRole == null) {
+            return new ErrorDataResult<>(messageService.getMessage(Messages.USER_ROLE_NOT_FOUND));
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(normalRole);
 
         UserProfile profile = new UserProfile();
         profile.setUser(user);

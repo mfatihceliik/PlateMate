@@ -1,7 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.FriendshipStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,10 +10,12 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FriendshipDto implements IDto {
+public class UserSubscriptionDto implements IDto {
     private Long id;
-    private Long friendUserId;
-    private String friendUsername;
-    private FriendshipStatus status;
+    private Integer purchasedDays;
+    private String status;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

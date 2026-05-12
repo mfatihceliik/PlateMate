@@ -12,10 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddReviewRequest implements IDto {
-    @NotNull(message = "{validation.review.target.notnull}")
-    private Long targetProfileId;
-
+public class UpdatePlateReviewRequest implements IDto {
     @NotNull(message = "{validation.review.rating.notnull}")
     @Min(value = 1, message = "{validation.review.rating.min}")
     @Max(value = 5, message = "{validation.review.rating.max}")

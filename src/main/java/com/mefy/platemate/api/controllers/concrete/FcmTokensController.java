@@ -5,7 +5,6 @@ import com.mefy.platemate.core.utilities.results.Result;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,8 +15,10 @@ public class FcmTokensController {
     private final IFcmTokenService fcmTokenService;
 
     @PostMapping("/register")
-    public ResponseEntity<Result> register(@RequestBody RegisterTokenRequest request) {
-        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public ResponseEntity<Result> register(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody RegisterTokenRequest request
+    ) {
         return ResponseEntity.ok(fcmTokenService.registerToken(userId, request.getToken(), request.getDeviceId()));
     }
 
