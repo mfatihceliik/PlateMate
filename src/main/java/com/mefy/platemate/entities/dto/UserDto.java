@@ -15,6 +15,7 @@ public class UserDto implements IDto {
     private String username;
     private String email;
     private String token;
+    private String refreshToken;
     private LocalDateTime premiumUntil;
     private boolean premiumActive;
     private String roleCode;

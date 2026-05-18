@@ -1,8 +1,10 @@
 package com.mefy.platemate.api.controllers.abstracts;
 
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserDto;
 import com.mefy.platemate.entities.dto.request.LoginRequest;
+import com.mefy.platemate.entities.dto.request.RefreshTokenRequest;
 import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,4 +20,10 @@ public interface IAuthController {
 
     @PostMapping("/login")
     ResponseEntity<DataResult<UserDto>> login(@Valid @RequestBody LoginRequest request);
+
+    @PostMapping("/refresh")
+    ResponseEntity<DataResult<UserDto>> refresh(@Valid @RequestBody RefreshTokenRequest request);
+
+    @PostMapping("/logout")
+    ResponseEntity<Result> logout(@Valid @RequestBody RefreshTokenRequest request);
 }
