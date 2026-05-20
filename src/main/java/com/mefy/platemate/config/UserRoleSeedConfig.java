@@ -35,6 +35,7 @@ public class UserRoleSeedConfig {
     private void seedRoles() {
         seedRole(UserRoleCode.NORMAL, "Normal User");
         seedRole(UserRoleCode.PREMIUM, "Premium User");
+        seedRole(UserRoleCode.ADMIN, "Admin User");
     }
 
     private void seedRole(UserRoleCode code, String name) {
@@ -58,6 +59,10 @@ public class UserRoleSeedConfig {
         LocalDateTime now = LocalDateTime.now();
         List<User> users = userDao.findAll();
         for (User user : users) {
+            if (user.hasRole(UserRoleCode.ADMIN)) {
+                continue;
+            }
+
             List<UserSubscription> subscriptions = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(user.getId());
             boolean hasActiveNow = subscriptions.stream().anyMatch(subscription ->
                     subscription.getStatus() != UserSubscriptionStatus.CANCELED

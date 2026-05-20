@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,4 +22,6 @@ public class UpdatePlateReviewRequest implements IDto {
 
     @NotBlank(message = "{validation.review.comment.notblank}")
     private String comment;
+
+    private List<String> reportTypeCodes;
 }

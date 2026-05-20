@@ -31,6 +31,8 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             LocalDateTime end
     );
 
+    long countByPlateIdAndActiveTrue(Long plateId);
+
     @Query("""
             select coalesce(sum(r.reportType.weight), 0)
             from PlateReport r
@@ -46,6 +48,14 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
     );
 
     @Query("""
+            select coalesce(sum(r.reportType.weight), 0)
+            from PlateReport r
+            where r.plate.id = :plateId
+              and r.active = true
+            """)
+    Long getWeightedScoreByPlateId(@Param("plateId") Long plateId);
+
+    @Query("""
             select max(r.lastReportedAt)
             from PlateReport r
             where r.plate.id = :plateId
@@ -58,6 +68,14 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("""
+            select max(r.lastReportedAt)
+            from PlateReport r
+            where r.plate.id = :plateId
+              and r.active = true
+            """)
+    LocalDateTime findLastReportedAtByPlateId(@Param("plateId") Long plateId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

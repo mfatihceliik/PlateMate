@@ -3,6 +3,7 @@ package com.mefy.platemate.api.controllers.concrete;
 import com.mefy.platemate.api.controllers.abstracts.IUserProfileController;
 
 import com.mefy.platemate.business.abstracts.IUserProfileService;
+import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.entities.dto.UserProfileDto;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,8 @@ public class UserProfileController implements IUserProfileController {
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        DataResult<UserProfileDto> result = userProfileService.getByUserId(userId, page, size);
+        PaginationRequest paginationRequest = PaginationRequest.of(page, size);
+        DataResult<UserProfileDto> result = userProfileService.getByUserId(userId, paginationRequest);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

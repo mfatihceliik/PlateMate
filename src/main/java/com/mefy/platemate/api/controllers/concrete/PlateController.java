@@ -2,22 +2,20 @@ package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IPlateController;
 import com.mefy.platemate.business.abstracts.IPlateService;
+import com.mefy.platemate.core.utilities.pagination.PagedData;
+import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.entities.dto.PlateDto;
+import com.mefy.platemate.entities.dto.PlateDetailDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
+import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,8 +24,11 @@ public class PlateController implements IPlateController {
     private final IPlateService plateService;
 
     @Override
-    public ResponseEntity<DataResult<PlateDto>> search(@RequestParam String plate) {
-        DataResult<PlateDto> result = plateService.searchByPlateCode(plate);
+    public ResponseEntity<DataResult<PlateDetailDto>> search(
+            @RequestParam String plate,
+            @RequestAttribute("userId") Long currentUserId
+    ) {
+        DataResult<PlateDetailDto> result = plateService.searchByPlateCode(plate, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -35,12 +36,13 @@ public class PlateController implements IPlateController {
     }
 
     @Override
-    public ResponseEntity<DataResult<Page<PlateReviewDto>>> getReviews(
+    public ResponseEntity<DataResult<PagedData<PlateReviewDto>>> getReviews(
             @PathVariable String plateCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        DataResult<Page<PlateReviewDto>> result = plateService.getReviewsByPlateCode(plateCode, page, size);
+        PaginationRequest paginationRequest = PaginationRequest.of(page, size);
+        DataResult<PagedData<PlateReviewDto>> result = plateService.getReviewsByPlateCode(plateCode, paginationRequest);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -79,6 +81,19 @@ public class PlateController implements IPlateController {
             @RequestAttribute("userId") Long currentUserId
     ) {
         Result result = plateService.deleteReview(id, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Result> syncReports(
+            @PathVariable String plateCode,
+            @RequestAttribute("userId") Long currentUserId,
+            @Valid @RequestBody SyncPlateReportsRequest request
+    ) {
+        Result result = plateService.syncReports(plateCode, currentUserId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

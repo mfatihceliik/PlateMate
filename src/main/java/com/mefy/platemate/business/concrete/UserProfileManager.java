@@ -6,6 +6,8 @@ import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.mappers.UserProfileMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
+import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
+import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.*;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
@@ -27,7 +29,7 @@ public class UserProfileManager implements IUserProfileService {
     private final IMessageService messageService;
 
     @Override
-    public DataResult<UserProfileDto> getByUserId(Long userId, int page, int size) {
+    public DataResult<UserProfileDto> getByUserId(Long userId, PaginationRequest paginationRequest) {
         UserProfile profile = userProfileDao.findById(userId).orElse(null);
         
         Result result = BusinessRules.run(checkIfProfileExists(profile));
@@ -37,14 +39,18 @@ public class UserProfileManager implements IUserProfileService {
 
         UserProfileDto dto = userProfileMapper.entityToDto(profile);
 
-        var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        var pageable = PageRequest.of(
+                paginationRequest.getPage(),
+                paginationRequest.getSize(),
+                Sort.by("createdAt").descending()
+        );
         var plateReviews = plateReviewDao.findByUserId(userId, pageable).map(plateReviewMapper::entityToDto);
         long reviewCountLong = plateReviewDao.countByUserId(userId);
         int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
         long totalRatingSum = plateReviewDao.sumRatingByUserId(userId);
         double ratingAverage = reviewCount > 0 ? (double) totalRatingSum / reviewCount : 0.0;
 
-        dto.setPlateReviews(plateReviews);
+        dto.setPlateReviews(PaginationMapper.fromPage(plateReviews));
         dto.setReviewCount(reviewCount);
         dto.setTotalRatingSum(totalRatingSum);
         dto.setDriverRating(ratingAverage);

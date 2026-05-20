@@ -40,6 +40,13 @@ public interface IPlateReviewDao extends JpaRepository<PlateReview, Long> {
             select max(r.createdAt)
             from PlateReview r
             where r.plate.id = :plateId
+            """)
+    LocalDateTime findLastReviewAtByPlateId(@Param("plateId") Long plateId);
+
+    @Query("""
+            select max(r.createdAt)
+            from PlateReview r
+            where r.plate.id = :plateId
               and r.createdAt >= :start
               and r.createdAt < :end
             """)

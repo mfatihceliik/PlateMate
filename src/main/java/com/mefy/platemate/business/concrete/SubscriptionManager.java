@@ -211,7 +211,8 @@ public class SubscriptionManager implements ISubscriptionService {
         UserRole expectedRole = hasActiveNow ? premiumRole : normalRole;
 
         boolean changed = false;
-        if (user.getRole() == null || user.getRole().getCode() != expectedRole.getCode()) {
+        if (!user.hasRole(UserRoleCode.ADMIN)
+                && (user.getRole() == null || user.getRole().getCode() != expectedRole.getCode())) {
             user.setRole(expectedRole);
             changed = true;
         }

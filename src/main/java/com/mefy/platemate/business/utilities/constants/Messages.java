@@ -22,12 +22,30 @@ public final class Messages {
     public static final String SUBSCRIPTION_ACTIVATED = "subscription.activated";
     public static final String SUBSCRIPTION_STATUS_FOUND = "subscription.status.found";
     public static final String SUBSCRIPTION_HISTORY_LISTED = "subscription.history.listed";
+    // Pagination Messages
+    public static final String PAGINATION_INVALID = "pagination.invalid";
+    public static final String PAGINATION_PAGE_INVALID = "pagination.page.invalid";
+    public static final String PAGINATION_SIZE_MIN_INVALID = "pagination.size.min.invalid";
+    public static final String PAGINATION_SIZE_MAX_INVALID = "pagination.size.max.invalid";
     // Review Messages
     public static final String REVIEW_ADDED = "review.added";
     public static final String REVIEW_UPDATED = "review.updated";
     public static final String REVIEWS_LISTED = "reviews.listed";
     public static final String REVIEW_NOT_FOUND = "review.not.found";
     public static final String REVIEW_DELETED = "review.deleted";
+    // Plate Report Messages
+    public static final String PLATE_REPORT_TYPES_LISTED = "plate.report.types.listed";
+    public static final String PLATE_REPORTS_SYNCED = "plate.reports.synced";
+    public static final String REPORT_TYPE_INVALID = "report.type.invalid";
+    public static final String REPORT_TYPE_ALREADY_EXISTS = "report.type.already.exists";
+    public static final String REPORT_TYPE_NOT_FOUND = "report.type.not.found";
+    public static final String PLATE_REPORT_TYPE_ADDED = "plate.report.type.added";
+    public static final String PLATE_REPORT_TYPE_UPDATED = "plate.report.type.updated";
+    public static final String PLATE_REPORT_TYPE_STATUS_UPDATED = "plate.report.type.status.updated";
+    // Discovery Messages
+    public static final String DISCOVERY_HOME_FOUND = "discovery.home.found";
+    public static final String DISCOVERY_TAB_LISTED = "discovery.tab.listed";
+    public static final String DISCOVERY_CITY_PLATES_LISTED = "discovery.city.plates.listed";
     // Chat & Message Messages
     public static final String CHAT_ROOM_FOUND = "chat.room.found";
     public static final String CHAT_ROOM_CREATED = "chat.room.created";
@@ -64,14 +82,6 @@ public final class Messages {
     public static final String SETTINGS_UPDATED = "settings.updated";
     public static final String SETTINGS_FOUND = "settings.found";
     public static final String MESSAGING_DISABLED = "messaging.disabled";
-
-    // Report Messages
-    public static final String REPORT_ADDED = "report.added";
-    public static final String REPORT_NOT_FOUND = "report.not.found";
-    public static final String REPORT_REVIEWED = "report.reviewed";
-    public static final String REPORT_RESOLVED = "report.resolved";
-    public static final String REPORTS_LISTED = "reports.listed";
-    public static final String REPORT_SELF_NOT_ALLOWED = "report.self.not.allowed";
 
     // Notification Messages
     public static final String NOTIFICATION_NEW_MESSAGE_TITLE = "notification.new_message.title";

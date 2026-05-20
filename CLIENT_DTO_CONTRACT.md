@@ -120,13 +120,21 @@ export interface UserProfileDto {
 ### Plate / PlateReview
 
 ```ts
-export interface PlateDto {
+export interface PlateDetailDto {
   id: number
   plateCode: string
   cityName: string | null
   ratingAverage: number
   reviewCount: number
   totalRatingSum: number
+  todaySearchCount: number
+  todayReviewCount: number
+  todayReportCount: number
+  todayWeightedReportScore: number
+  score: number
+  lastActivityAt: IsoDateTime | null
+  recentReviews: PlateReviewDto[]
+  recentReportTypes: PlateReportTypeDto[]
 }
 
 export interface PlateReviewDto {
@@ -221,6 +229,8 @@ export interface CityPlateActivityDto {
   reviewCount: number
 }
 ```
+
+Not: `GET /api/plates/search` artik `PlateDetailDto` doner. `recentReviews` yalnizca son 20 kaydi (`createdAt desc`) icerir; devam verisi `GET /api/plates/{plateCode}/reviews?page=1,2,...` ile alinmalidir.
 
 ### Settings / Subscription
 
@@ -407,7 +417,7 @@ export interface RegisterFcmTokenRequest {
 - `GET /api/profiles/{userId}` -> `DataResultResponse<UserProfileDto>`
 - `GET /api/settings/{userId}` -> `DataResultResponse<UserSettingsDto>`
 - `PUT /api/settings/{userId}` -> `ResultResponse`
-- `GET /api/plates/search` -> `DataResultResponse<PlateDto>`
+- `GET /api/plates/search` -> `DataResultResponse<PlateDetailDto>`
 - `GET /api/plates/{plateCode}/reviews` -> `DataResultResponse<PagedData<PlateReviewDto>>`
 - `POST /api/plates/{plateCode}/reviews` -> `ResultResponse`
 - `PUT /api/plates/reviews/{id}` -> `ResultResponse`

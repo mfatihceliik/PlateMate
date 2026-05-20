@@ -13,11 +13,15 @@ public interface IPlateSearchEventDao extends JpaRepository<PlateSearchEvent, Lo
 
     long countBySearchedAtGreaterThanEqualAndSearchedAtLessThan(LocalDateTime start, LocalDateTime end);
 
+    long deleteBySearchedAtBefore(LocalDateTime cutoff);
+
     long countByPlateIdAndSearchedAtGreaterThanEqualAndSearchedAtLessThan(
             Long plateId,
             LocalDateTime start,
             LocalDateTime end
     );
+
+    long countByPlateId(Long plateId);
 
     @Query("""
             select max(e.searchedAt)
@@ -31,6 +35,13 @@ public interface IPlateSearchEventDao extends JpaRepository<PlateSearchEvent, Lo
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("""
+            select max(e.searchedAt)
+            from PlateSearchEvent e
+            where e.plate.id = :plateId
+            """)
+    LocalDateTime findLastSearchedAtByPlateId(@Param("plateId") Long plateId);
 
     @Query("""
             select e.plate.id as plateId,

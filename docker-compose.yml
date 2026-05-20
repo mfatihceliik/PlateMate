@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: platemate-backend
+    ports:
+      - "8080:8080" # Spring Boot varsayılan portu
+      - "9092:9092" # Socket.io portu
+    environment:
+      # Veritabanı bağlantı bilgilerini eziyoruz (localhost yerine db konteynerine bağlanması için)
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/PlateMate
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123456
+    depends_on:
+      db:
+        condition: service_healthy # db konteyneri tamamen hazır olmadan app ayağa kalkmaz
+
+  db:
+    # PostGIS destekli PostgreSQL kullanıyoruz, build.gradle'da spatial kütüphanesi var
+    image: postgis/postgis:15-3.3
+    container_name: platemate-db
+    environment:
+      - POSTGRES_DB=PlateMate
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d PlateMate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

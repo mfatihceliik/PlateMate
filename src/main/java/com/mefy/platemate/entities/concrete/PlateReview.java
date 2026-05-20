@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -20,9 +21,14 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "plate_reviews", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "plate_id"})
-})
+@Table(name = "plate_reviews",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_id", "plate_id"})
+        },
+        indexes = {
+                @Index(name = "idx_plate_reviews_created_at", columnList = "created_at"),
+                @Index(name = "idx_plate_reviews_plate_id_created_at", columnList = "plate_id,created_at")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -47,9 +53,9 @@ public class PlateReview implements IEntity {
     @Column(nullable = false, length = 1000)
     private String comment;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 }

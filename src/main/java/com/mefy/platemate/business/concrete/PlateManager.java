@@ -1,33 +1,22 @@
 package com.mefy.platemate.business.concrete;
 
-import com.mefy.platemate.business.abstracts.IPlateService;
 import com.mefy.platemate.business.abstracts.IPlateReportService;
+import com.mefy.platemate.business.abstracts.IPlateService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
 import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.PlateMapper;
+import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
-import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.core.utilities.results.ErrorDataResult;
-import com.mefy.platemate.core.utilities.results.ErrorResult;
-import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.core.utilities.results.SuccessDataResult;
-import com.mefy.platemate.core.utilities.results.SuccessResult;
-import com.mefy.platemate.dataAccess.abstracts.ICityDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
-import com.mefy.platemate.entities.concrete.Plate;
-import com.mefy.platemate.entities.concrete.PlateSearchEvent;
-import com.mefy.platemate.entities.concrete.PlateReview;
-import com.mefy.platemate.entities.concrete.User;
-import com.mefy.platemate.entities.dto.PlateDto;
+import com.mefy.platemate.core.utilities.results.*;
+import com.mefy.platemate.dataAccess.abstracts.*;
+import com.mefy.platemate.entities.concrete.*;
+import com.mefy.platemate.entities.dto.PlateDetailDto;
+import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
@@ -39,8 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -54,7 +43,6 @@ public class PlateManager implements IPlateService {
     private final ICityDao cityDao;
     private final IPlateReportService plateReportService;
     private final com.mefy.platemate.dataAccess.abstracts.IPlateReportDao plateReportDao;
-    private final PlateMapper plateMapper;
     private final PlateReviewMapper plateReviewMapper;
     private final IPlateValidator plateValidator;
     private final TrPlateCityResolver plateCityResolver;
@@ -62,61 +50,14 @@ public class PlateManager implements IPlateService {
 
     @Override
     @Transactional
-    public DataResult<PlateDto> searchByPlateCode(String plateCode) {
+    public DataResult<PlateDetailDto> searchByPlateCode(String plateCode, Long currentUserId) {
         String normalizedPlate = normalizePlate(plateCode);
         Result result = BusinessRules.run(checkIfPlateValid(normalizedPlate));
         if (result != null) return new ErrorDataResult<>(result.getMessage());
 
         Plate plate = getOrCreatePlate(normalizedPlate);
-        recordSearchEvent(plate);
-        PlateDto dto = plateMapper.entityToDto(plate);
-        if (dto.getCityName() == null) {
-            dto.setCityName(plateCityResolver.resolveCityName(normalizedPlate).orElse(null));
-        }
-
-        return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PLATE_FOUND));
-    }
-
-    @Override
-    @Transactional(jakarta.transaction.Transactional.TxType.SUPPORTS)
-    public DataResult<com.mefy.platemate.entities.dto.PlateDetailDto> getPlateDetail(String plateCode) {
-        String normalizedPlate = normalizePlate(plateCode);
-        Result result = BusinessRules.run(checkIfPlateValid(normalizedPlate));
-        if (result != null) return new ErrorDataResult<>(result.getMessage());
-
-        Plate plate = plateDao.findByPlateCode(normalizedPlate).orElse(null);
-        if (plate == null) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.PLATE_INVALID));
-        }
-
-        com.mefy.platemate.entities.dto.PlateDetailDto dto = new com.mefy.platemate.entities.dto.PlateDetailDto();
-        dto.setId(plate.getId());
-        dto.setPlateCode(plate.getPlateCode());
-        dto.setCityName(plate.getCity() != null ? plate.getCity().getName() : null);
-        dto.setRatingAverage(plate.getRatingAverage() == null ? 0.0 : plate.getRatingAverage());
-        dto.setReviewCount(plate.getReviewCount() == null ? 0 : plate.getReviewCount());
-        dto.setTotalRatingSum(plate.getTotalRatingSum() == null ? 0L : plate.getTotalRatingSum());
-
-        // Fetch max 20 reviews
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
-        java.util.List<com.mefy.platemate.entities.dto.PlateReviewDto> reviews = plateReviewDao
-                .findByPlatePlateCode(normalizedPlate, pageable)
-                .map(plateReviewMapper::entityToDto)
-                .getContent();
-        dto.setRecentReviews(reviews);
-
-        // Fetch active report types
-        java.util.List<com.mefy.platemate.entities.concrete.PlateReport> reports = plateReportDao
-                .findByPlateIdInAndActiveTrue(java.util.List.of(plate.getId()));
-        
-        com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper plateReportTypeMapper = new com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper();
-        java.util.List<com.mefy.platemate.entities.dto.PlateReportTypeDto> reportTypes = reports.stream()
-                .map(r -> plateReportTypeMapper.entityToDto(r.getReportType()))
-                .distinct()
-                .toList();
-        dto.setRecentReportTypes(reportTypes);
-
-        populateTodayMetrics(plate, dto);
+        recordSearchEvent(plate, currentUserId);
+        PlateDetailDto dto = buildPlateDetailDto(plate, normalizedPlate);
 
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PLATE_FOUND));
     }
@@ -276,59 +217,81 @@ public class PlateManager implements IPlateService {
         plateDao.save(plate);
     }
 
-    private void recordSearchEvent(Plate plate) {
+    private void recordSearchEvent(Plate plate, Long userId) {
         if (plate == null || plate.getId() == null) return;
         LocalDateTime now = LocalDateTime.now();
         PlateSearchEvent event = new PlateSearchEvent();
         event.setPlate(plate);
+        event.setUserId(userId);
         event.setSearchedAt(now);
         event.setCreatedAt(now);
         plateSearchEventDao.save(event);
     }
 
-    private void populateTodayMetrics(Plate plate, com.mefy.platemate.entities.dto.PlateDetailDto dto) {
+    private PlateDetailDto buildPlateDetailDto(Plate plate, String normalizedPlate) {
+        PlateDetailDto dto = new PlateDetailDto();
+        dto.setId(plate.getId());
+        dto.setPlateCode(plate.getPlateCode());
+        dto.setCityName(
+                plate.getCity() != null
+                        ? plate.getCity().getName()
+                        : plateCityResolver.resolveCityName(normalizedPlate).orElse(null)
+        );
+        dto.setRatingAverage(plate.getRatingAverage() == null ? 0.0 : plate.getRatingAverage());
+        dto.setReviewCount(plate.getReviewCount() == null ? 0 : plate.getReviewCount());
+        dto.setTotalRatingSum(plate.getTotalRatingSum() == null ? 0L : plate.getTotalRatingSum());
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+        List<PlateReviewDto> reviews = plateReviewDao
+                .findByPlatePlateCode(normalizedPlate, pageable)
+                .map(plateReviewMapper::entityToDto)
+                .getContent();
+        dto.setRecentReviews(reviews);
+
+        List<PlateReport> reports = plateReportDao
+                .findByPlateIdInAndActiveTrue(java.util.List.of(plate.getId()));
+        PlateReportTypeMapper plateReportTypeMapper = new PlateReportTypeMapper();
+        List<PlateReportTypeDto> reportTypes = reports.stream()
+                .map(r -> plateReportTypeMapper.entityToDto(r.getReportType()))
+                .distinct()
+                .toList();
+        dto.setRecentReportTypes(reportTypes);
+
+        populateTotalMetrics(plate, dto);
+        return dto;
+    }
+
+    private void populateTotalMetrics(Plate plate, PlateDetailDto dto) {
         if (plate == null || plate.getId() == null) {
-            dto.setTodaySearchCount(0L);
-            dto.setTodayReviewCount(0L);
-            dto.setTodayReportCount(0L);
-            dto.setTodayWeightedReportScore(0L);
+            dto.setTotalSearchCount(0L);
+            dto.setTotalReviewCount(0L);
+            dto.setTotalReportCount(0L);
+            dto.setTotalWeightedReportScore(0L);
             dto.setScore(0.0);
             dto.setLastActivityAt(null);
             return;
         }
 
-        LocalDateTime start = LocalDate.now(com.mefy.platemate.business.utilities.time.TimeWindowService.TURKEY_ZONE)
-                .atStartOfDay();
-        LocalDateTime end = start.plusDays(1);
-
-        long todaySearchCount = plateSearchEventDao.countByPlateIdAndSearchedAtGreaterThanEqualAndSearchedAtLessThan(
-                plate.getId(), start, end
-        );
-        long todayReviewCount = plateReviewDao.countByPlateIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-                plate.getId(), start, end
-        );
-        long todayReportCount = plateReportDao.countByPlateIdAndActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(
-                plate.getId(), start, end
-        );
-        long todayWeightedReportScore = safeLong(plateReportDao.getWeightedScoreByPlateIdAndWindow(
-                plate.getId(), start, end
-        ));
+        long totalSearchCount = plateSearchEventDao.countByPlateId(plate.getId());
+        long totalReviewCount = plateReviewDao.countByPlateId(plate.getId());
+        long totalReportCount = plateReportDao.countByPlateIdAndActiveTrue(plate.getId());
+        long totalWeightedReportScore = safeLong(plateReportDao.getWeightedScoreByPlateId(plate.getId()));
 
         LocalDateTime lastActivityAt = maxDate(
-                plateSearchEventDao.findLastSearchedAtByPlateIdAndWindow(plate.getId(), start, end),
-                plateReviewDao.findLastReviewAtByPlateIdAndWindow(plate.getId(), start, end),
-                plateReportDao.findLastReportedAtByPlateIdAndWindow(plate.getId(), start, end),
+                plateSearchEventDao.findLastSearchedAtByPlateId(plate.getId()),
+                plateReviewDao.findLastReviewAtByPlateId(plate.getId()),
+                plateReportDao.findLastReportedAtByPlateId(plate.getId()),
                 plate.getUpdatedAt()
         );
 
-        double score = todaySearchCount
-                + (todayReviewCount * 2.0)
-                + (todayWeightedReportScore * 3.0);
+        double score = totalSearchCount
+                + (totalReviewCount * 2.0)
+                + (totalWeightedReportScore * 3.0);
 
-        dto.setTodaySearchCount(todaySearchCount);
-        dto.setTodayReviewCount(todayReviewCount);
-        dto.setTodayReportCount(todayReportCount);
-        dto.setTodayWeightedReportScore(todayWeightedReportScore);
+        dto.setTotalSearchCount(totalSearchCount);
+        dto.setTotalReviewCount(totalReviewCount);
+        dto.setTotalReportCount(totalReportCount);
+        dto.setTotalWeightedReportScore(totalWeightedReportScore);
         dto.setScore(score);
         dto.setLastActivityAt(lastActivityAt);
     }

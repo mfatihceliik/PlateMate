@@ -13,8 +13,6 @@ Bu dokuman mevcut backend kodundaki endpointleri yansitir.
   - `POST /api/auth/refresh`
   - `POST /api/auth/logout`
   - `GET /api/cities/**`
-  - `GET /api/plates/search`
-  - `GET /api/plates/search/**`
 - Token omurleri:
   - Access token: `15 dakika`
   - Refresh token: `30 gun`
@@ -187,12 +185,16 @@ veya
 ### Search Plate
 - **Method**: `GET`
 - **URL**: `/api/plates/search?plate=34ABC123`
-- **Public**: Evet (JWT istemez)
+- **Auth**: Evet (`Authorization: Bearer <token>` zorunlu)
 - **Not**:
   - Plaka formati gecersizse `400`
+  - Token eksik/gecersizse `401`
   - Gecerli plaka ise `200`
   - Kayit yoksa backend plate kaydini olusturur (upsert davranisi)
-  - Yorumsuz plakada aggregate alanlar `0` doner
+  - Search cevabi `PlateDetailDto` yapisindadir (core alanlar + today metrics + `recentReviews` + `recentReportTypes`)
+  - `recentReviews` yalnizca son 20 yorumu (`createdAt desc`) doner
+  - Daha fazla yorum icin `GET /api/plates/{plateCode}/reviews?page=1,2,...` kullanilir
+  - `GET /api/plates/{plateCode}/detail` endpointi kaldirilmistir
 
 ### Get Plate Reviews
 - **Method**: `GET`

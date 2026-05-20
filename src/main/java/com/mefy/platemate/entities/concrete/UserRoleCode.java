@@ -2,5 +2,6 @@ package com.mefy.platemate.entities.concrete;
 
 public enum UserRoleCode {
     NORMAL,
-    PREMIUM
+    PREMIUM,
+    ADMIN
 }
