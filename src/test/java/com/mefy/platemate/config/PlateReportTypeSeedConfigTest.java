@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,19 +21,13 @@ class PlateReportTypeSeedConfigTest {
 
     @Test
     void seedDefaultsOnlyCreatesMissingRecords() throws Exception {
-        when(plateReportTypeDao.existsByCode("HIT_AND_RUN")).thenReturn(true);
-        when(plateReportTypeDao.existsByCode("AGGRESSIVE_DRIVER")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("RED_LIGHT_VIOLATION")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("WRONG_WAY")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("DRUNK_DRIVING")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("PHONE_USAGE")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("SPEEDING")).thenReturn(false);
-        when(plateReportTypeDao.existsByCode("ILLEGAL_PARKING")).thenReturn(false);
+        when(plateReportTypeDao.existsByCode(anyString())).thenReturn(false);
+        when(plateReportTypeDao.existsByCode("TRAFFIC_RULE_VIOLATION")).thenReturn(true);
 
         PlateReportTypeSeedConfig config = new PlateReportTypeSeedConfig(plateReportTypeDao);
         config.seedPlateReportTypes().run(null);
 
-        verify(plateReportTypeDao, never()).save(org.mockito.ArgumentMatchers.argThat(type -> "HIT_AND_RUN".equals(type.getCode())));
-        verify(plateReportTypeDao, times(7)).save(any());
+        verify(plateReportTypeDao, never()).save(org.mockito.ArgumentMatchers.argThat(type -> "TRAFFIC_RULE_VIOLATION".equals(type.getCode())));
+        verify(plateReportTypeDao, times(13)).save(any());
     }
 }

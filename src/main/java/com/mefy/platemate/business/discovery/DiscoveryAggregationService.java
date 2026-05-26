@@ -7,6 +7,7 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.entities.concrete.Plate;
+import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryCityStatDto;
 import com.mefy.platemate.entities.dto.DiscoveryDailyStatsDto;
@@ -32,8 +33,8 @@ public class DiscoveryAggregationService {
     public DiscoveryDailyStatsDto getDailyStats(TimeWindow window) {
         return new DiscoveryDailyStatsDto(
                 plateSearchEventDao.countBySearchedAtGreaterThanEqualAndSearchedAtLessThan(window.getStart(), window.getEnd()),
-                plateReviewDao.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(window.getStart(), window.getEnd()),
-                plateReportDao.countByActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(window.getStart(), window.getEnd())
+                plateReviewDao.countApprovedByCreatedAtWindow(window.getStart(), window.getEnd()),
+                plateReportDao.countActiveByReportedAtWindow(window.getStart(), window.getEnd())
         );
     }
 
@@ -102,7 +103,7 @@ public class DiscoveryAggregationService {
         List<CityPlateActivityDto> rows = new ArrayList<>();
         for (Map.Entry<Long, PlateDailyMetrics> entry : metricsByPlateId.entrySet()) {
             Plate plate = plateById.get(entry.getKey());
-            if (plate == null) continue;
+            if (plate == null || plate.getStatus() != PlateStatus.ACTIVE) continue;
 
             PlateDailyMetrics metrics = entry.getValue();
             rows.add(new CityPlateActivityDto(

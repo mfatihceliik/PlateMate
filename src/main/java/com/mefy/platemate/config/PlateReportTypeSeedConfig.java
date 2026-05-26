@@ -22,11 +22,18 @@ public class PlateReportTypeSeedConfig {
     }
 
     private void seedDefaultsIfMissing() {
-        createIfMissing("HIT_AND_RUN", "Carpip Kacti", "Araca veya kisiye carpip olay yerinden ayrildi", "hit_and_run", PlateReportSeverity.RED, "#E53935", 5, 1);
-        createIfMissing("AGGRESSIVE_DRIVER", "Agresif Surucu", "Tehlikeli, sinirli veya saldirgan surucu", "aggressive_driver", PlateReportSeverity.YELLOW, "#F9A825", 3, 2);
+        // Neutral policy-first vocabulary (preferred)
+        createIfMissing("UNSAFE_LANE_CHANGE", "Guvensiz Serit Degisimi", "Guvensiz serit degisimi davranisi bildirildi", "unsafe_lane_change", PlateReportSeverity.YELLOW, "#F9A825", 3, 1);
+        createIfMissing("SPEEDING_REPORT", "Hiz Bildirimi", "Hiz limiti ihlali supheli davranis bildirildi", "speeding_report", PlateReportSeverity.YELLOW, "#F9A825", 3, 2);
+        createIfMissing("PARKING_ISSUE", "Park Sorunu", "Trafik akisina etki eden park davranisi bildirildi", "parking_issue", PlateReportSeverity.YELLOW, "#F9A825", 2, 3);
+        createIfMissing("HONKING_DISTURBANCE", "Korna Rahatsizligi", "Asiri korna kullanimi bildirildi", "honking_disturbance", PlateReportSeverity.YELLOW, "#F9A825", 2, 4);
+        createIfMissing("TRAFFIC_RULE_VIOLATION", "Trafik Kurali Ihlali", "Trafik kurali ihlaline iliskin davranis bildirildi", "traffic_rule_violation", PlateReportSeverity.RED, "#E53935", 4, 5);
+        createIfMissing("POSITIVE_DRIVER", "Olumlu Surucu", "Olumlu ve dikkatli surus davranisi bildirildi", "positive_driver", PlateReportSeverity.YELLOW, "#43A047", 1, 6);
+        createIfMissing("HELPFUL_DRIVER", "Yardimci Surucu", "Trafikte yardimci davranis bildirildi", "helpful_driver", PlateReportSeverity.YELLOW, "#43A047", 1, 7);
+        createIfMissing("RESPECTFUL_DRIVER", "Saygili Surucu", "Saygili ve guvenli davranis bildirildi", "respectful_driver", PlateReportSeverity.YELLOW, "#43A047", 1, 8);
+        createIfMissing("THANK_YOU_REPORT", "Tesekkur Bildirimi", "Genel tesekkur veya memnuniyet bildirimi", "thank_you_report", PlateReportSeverity.YELLOW, "#43A047", 1, 9);
         createIfMissing("RED_LIGHT_VIOLATION", "Kirmizi Isik", "Kirmizi isik ihlali yapti", "red_light_violation", PlateReportSeverity.RED, "#E53935", 5, 3);
         createIfMissing("WRONG_WAY", "Ters Yon", "Ters yonde arac kullandi", "wrong_way", PlateReportSeverity.RED, "#E53935", 5, 4);
-        createIfMissing("DRUNK_DRIVING", "Alkollu", "Alkollu arac kullaniyor", "drunk_driving", PlateReportSeverity.RED, "#E53935", 5, 5);
         createIfMissing("PHONE_USAGE", "Telefon Kullanimi", "Arac surerken telefon ile ilgileniyor", "phone_usage", PlateReportSeverity.YELLOW, "#F9A825", 3, 6);
         createIfMissing("SPEEDING", "Asiri Hiz", "Belirgin sekilde hiz sinirini asiyor", "speeding", PlateReportSeverity.RED, "#E53935", 4, 7);
         createIfMissing("ILLEGAL_PARKING", "Yasak Park", "Yasak veya engelli park alanina park etti", "illegal_parking", PlateReportSeverity.YELLOW, "#F9A825", 2, 8);

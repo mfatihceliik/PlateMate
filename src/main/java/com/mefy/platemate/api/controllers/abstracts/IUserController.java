@@ -2,7 +2,7 @@ package com.mefy.platemate.api.controllers.abstracts;
 
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.request.UpdateUserRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +14,19 @@ import java.util.List;
 public interface IUserController {
 
     @GetMapping
-    ResponseEntity<DataResult<List<UserDto>>> getAll();
+    ResponseEntity<DataResult<List<UserAdminDto>>> getAll(@RequestAttribute("userId") Long currentUserId);
 
     @GetMapping("/{id}")
-    ResponseEntity<DataResult<UserDto>> getById(@PathVariable Long id);
+    ResponseEntity<DataResult<UserAdminDto>> getById(
+            @PathVariable Long id,
+            @RequestAttribute("userId") Long currentUserId
+    );
 
     @GetMapping("/search")
-    ResponseEntity<DataResult<UserDto>> getByUsername(@RequestParam String username);
+    ResponseEntity<DataResult<UserAdminDto>> getByUsername(
+            @RequestParam String username,
+            @RequestAttribute("userId") Long currentUserId
+    );
 
     @PutMapping("/{userId}")
     ResponseEntity<Result> update(
@@ -30,5 +36,8 @@ public interface IUserController {
     );
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Result> delete(@PathVariable Long id);
+    ResponseEntity<Result> delete(
+            @PathVariable Long id,
+            @RequestAttribute("userId") Long tokenUserId
+    );
 }

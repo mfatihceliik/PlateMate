@@ -20,6 +20,7 @@ import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryCityStatDto;
 import com.mefy.platemate.entities.dto.DiscoveryHomeDto;
+import com.mefy.platemate.entities.dto.DiscoveryRecentActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryTabsDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +34,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DiscoveryManager implements IDiscoveryService {
+
+    private static final int HOME_FALLBACK_DAYS = 7;
 
     private static final Comparator<CityPlateActivityDto> BY_LAST_ACTIVITY_DESC =
             Comparator.comparing(CityPlateActivityDto::getLastActivityAt,
@@ -55,7 +58,8 @@ public class DiscoveryManager implements IDiscoveryService {
         }
 
         TimeWindow today = timeWindowService.todayWindow();
-        return new SuccessDataResult<>(buildHomeDto(today, limit, cityLimit, activityLimit),
+        TimeWindow fallbackWindow = timeWindowService.lastDaysWindow(HOME_FALLBACK_DAYS);
+        return new SuccessDataResult<>(buildHomeDto(today, fallbackWindow, limit, cityLimit, activityLimit),
                 messageService.getMessage(Messages.DISCOVERY_HOME_FOUND));
     }
 
@@ -73,27 +77,45 @@ public class DiscoveryManager implements IDiscoveryService {
         return new SuccessDataResult<>(page, messageService.getMessage(Messages.DISCOVERY_CITY_PLATES_LISTED));
     }
 
-    private DiscoveryHomeDto buildHomeDto(TimeWindow today, int limit, int cityLimit, int activityLimit) {
+    private DiscoveryHomeDto buildHomeDto(
+            TimeWindow today,
+            TimeWindow fallbackWindow,
+            int limit,
+            int cityLimit,
+            int activityLimit
+    ) {
         DiscoveryTabsDto tabs             = discoveryTabService.buildTabs(limit);
         List<DiscoveryCityStatDto> cities = discoveryAggregationService.getTopCityStats(today, cityLimit);
-        List<CityPlateActivityDto> topPlates = fetchTopCityPlates(cities, today);
+        TimeWindow cityWindow = today;
+        if (cities.isEmpty()) {
+            cities = discoveryAggregationService.getTopCityStats(fallbackWindow, cityLimit);
+            if (!cities.isEmpty()) {
+                cityWindow = fallbackWindow;
+            }
+        }
+
+        List<CityPlateActivityDto> topPlates = fetchTopCityPlates(cities, cityWindow);
+        List<DiscoveryRecentActivityDto> recentActivities = discoveryActivityService.buildRecentActivities(activityLimit, today);
+        if (recentActivities.isEmpty()) {
+            recentActivities = discoveryActivityService.buildRecentActivities(activityLimit, fallbackWindow);
+        }
 
         return new DiscoveryHomeDto(
                 discoveryAggregationService.getDailyStats(today),
                 tabs,
                 cities,
                 topPlates,
-                discoveryActivityService.buildRecentActivities(activityLimit)
+                recentActivities
         );
     }
 
     private List<CityPlateActivityDto> fetchTopCityPlates(List<DiscoveryCityStatDto> cities,
-                                                          TimeWindow today) {
+                                                          TimeWindow window) {
         if (cities.isEmpty()) {
             return List.of();
         }
         Integer topCityId = cities.get(0).getCityId();
-        return fetchAndSortCityPlates(topCityId, today);
+        return fetchAndSortCityPlates(topCityId, window);
     }
 
     private List<CityPlateActivityDto> fetchAndSortCityPlates(Integer cityId, TimeWindow today) {

@@ -5,18 +5,25 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
-import com.mefy.platemate.core.utilities.results.*;
+import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorDataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
+import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.core.utilities.results.SuccessDataResult;
+import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IUserRoleDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRole;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
+import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,7 +66,9 @@ public class UserManager implements IUserService {
 
     @Override
     public DataResult<List<UserDto>> getAll() {
-        List<User> users = userDao.findAll();
+        List<User> users = userDao.findAll().stream()
+                .filter(User::isActive)
+                .collect(Collectors.toList());
         List<UserDto> userDtos = users.stream()
                 .map(userMapper::entityToDto)
                 .collect(Collectors.toList());
@@ -68,8 +77,16 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<List<UserAdminDto>> getAllForAdmin() {
+        List<UserAdminDto> userDtos = userDao.findAll().stream()
+                .map(this::toAdminDto)
+                .collect(Collectors.toList());
+        return new SuccessDataResult<>(userDtos, messageService.getMessage(Messages.USERS_LISTED));
+    }
+
+    @Override
     public DataResult<UserDto> getById(Long id) {
-        User user = userDao.findById(id).orElse(null);
+        User user = userDao.findByIdAndActiveTrue(id).orElse(null);
         
         Result result = BusinessRules.run(checkIfUserExists(user));
         if (result != null) {
@@ -80,8 +97,20 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<UserAdminDto> getByIdForAdmin(Long id) {
+        User user = userDao.findById(id).orElse(null);
+
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
+        }
+
+        return new SuccessDataResult<>(toAdminDto(user), messageService.getMessage(Messages.USER_FOUND));
+    }
+
+    @Override
     public Result update(User user) {
-        User existingUser = userDao.findById(user.getId()).orElse(null);
+        User existingUser = userDao.findByIdAndActiveTrue(user.getId()).orElse(null);
         
         Result result = BusinessRules.run(
                 checkIfUserExists(existingUser),
@@ -105,16 +134,19 @@ public class UserManager implements IUserService {
 
     @Override
     public Result delete(Long id) {
-        Result result = BusinessRules.run(checkIfUserExistsById(id));
+        User user = userDao.findByIdAndActiveTrue(id).orElse(null);
+        Result result = BusinessRules.run(checkIfUserExists(user));
         if (result != null) return result;
 
-        userDao.deleteById(id);
+        user.setActive(false);
+        user.setDeletedAt(LocalDateTime.now());
+        userDao.save(user);
         return new SuccessResult(messageService.getMessage(Messages.USER_DELETED));
     }
 
     @Override
     public DataResult<UserDto> getByUsername(String username) {
-        User user = userDao.findByUsername(username).orElse(null);
+        User user = userDao.findByUsernameAndActiveTrue(username).orElse(null);
         
         Result result = BusinessRules.run(checkIfUserExists(user));
         if (result != null) {
@@ -125,8 +157,20 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<UserAdminDto> getByUsernameForAdmin(String username) {
+        User user = userDao.findByUsername(username).orElse(null);
+
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
+        }
+
+        return new SuccessDataResult<>(toAdminDto(user), messageService.getMessage(Messages.USER_FOUND));
+    }
+
+    @Override
     public DataResult<User> getByUsernameOrEmailForAuth(String identifier) {
-        User user = userDao.findByUsernameOrEmail(identifier, identifier).orElse(null);
+        User user = userDao.findByUsernameOrEmailAndActiveTrue(identifier, identifier).orElse(null);
         
         Result result = BusinessRules.run(checkIfUserExists(user));
         if (result != null) {
@@ -145,13 +189,6 @@ public class UserManager implements IUserService {
         return new SuccessResult();
     }
 
-    private Result checkIfUserExistsById(Long id) {
-        if (!userDao.existsById(id)) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
-        return new SuccessResult();
-    }
-
     private Result checkIfEmailExists(String email) {
         if (email != null && userDao.existsByEmail(email)) {
             return new ErrorResult(messageService.getMessage(Messages.USER_EMAIL_EXISTS));
@@ -164,6 +201,24 @@ public class UserManager implements IUserService {
             return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
         }
         return new SuccessResult();
+    }
+
+    private UserAdminDto toAdminDto(User user) {
+        String roleCode = null;
+        if (user.getRole() != null && user.getRole().getCode() != null) {
+            roleCode = user.getRole().getCode().name();
+        }
+        return new UserAdminDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                roleCode,
+                user.isPremiumActive(),
+                user.getPremiumUntil(),
+                user.isActive(),
+                user.getCreatedAt(),
+                user.getDeletedAt()
+        );
     }
 
     private Result checkEmailUpdate(String newEmail, User existingUser) {

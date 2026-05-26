@@ -21,7 +21,7 @@ public class AdminAccessManager implements IAdminAccessService {
 
     @Override
     public Result checkAdmin(Long userId) {
-        User user = userDao.findById(userId).orElse(null);
+        User user = userDao.findByIdAndActiveTrue(userId).orElse(null);
         if (user == null) {
             return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
         }

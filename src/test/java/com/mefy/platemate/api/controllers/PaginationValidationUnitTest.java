@@ -39,7 +39,7 @@ class PaginationValidationUnitTest {
 
         assertThrows(
                 InvalidPaginationException.class,
-                () -> controller.getByUserId(1L, 0, 101)
+                () -> controller.getByUserId(1L, 1L, 0, 101)
         );
     }
 

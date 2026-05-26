@@ -25,6 +25,19 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
 
     long countByActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(LocalDateTime start, LocalDateTime end);
 
+    @Query("""
+            select count(r.id)
+            from PlateReport r
+            where r.active = true
+              and r.lastReportedAt >= :start
+              and r.lastReportedAt < :end
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+            """)
+    long countActiveByReportedAtWindow(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
     long countByPlateIdAndActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(
             Long plateId,
             LocalDateTime start,
@@ -101,6 +114,7 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             where r.active = true
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
             group by r.plate.id
             """)
     List<PlateReportAggregateProjection> getActiveReportAggregates(
@@ -118,6 +132,7 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
               and r.plate.city.id = :cityId
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
             group by r.plate.id
             """)
     List<PlateReportAggregateProjection> getCityActiveReportAggregates(
@@ -134,6 +149,7 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
               and r.plate.id in :plateIds
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
             group by r.plate.id
             """)
     List<PlateWeightedScoreProjection> getWeightedScoresByPlateIds(
@@ -151,7 +167,28 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
                    r.lastReportedAt as occurredAt
             from PlateReport r
             where r.active = true
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
             order by r.lastReportedAt desc
             """)
     List<RecentReportActivityProjection> getRecentReportActivities(Pageable pageable);
+
+    @Query("""
+            select r.id as reportId,
+                   r.user.username as username,
+                   r.plate.plateCode as plateCode,
+                   r.reportType.code as reportTypeCode,
+                   r.reportType.label as reportTypeLabel,
+                   r.lastReportedAt as occurredAt
+            from PlateReport r
+            where r.active = true
+              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.lastReportedAt >= :start
+              and r.lastReportedAt < :end
+            order by r.lastReportedAt desc
+            """)
+    List<RecentReportActivityProjection> getRecentReportActivitiesByWindow(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
 }

@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.discovery;
 
-import com.mefy.platemate.business.discovery.model.DiscoveryTimeWindow;
+import com.mefy.platemate.business.utilities.time.TimeWindow;
+import com.mefy.platemate.business.utilities.time.TimeWindowService;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -16,9 +17,9 @@ class DiscoveryTimeWindowServiceTest {
 
     @Test
     void todayWindowUsesIstanbulBoundaries() {
-        DiscoveryTimeWindowService service = new DiscoveryTimeWindowService();
+        TimeWindowService service = new TimeWindowService();
 
-        DiscoveryTimeWindow window = service.todayWindow();
+        TimeWindow window = service.todayWindow();
 
         assertEquals(LocalTime.MIDNIGHT, window.getStart().toLocalTime());
         assertEquals(window.getStart().plusDays(1), window.getEnd());
@@ -27,9 +28,9 @@ class DiscoveryTimeWindowServiceTest {
 
     @Test
     void lastDaysWindowReturnsExpectedRange() {
-        DiscoveryTimeWindowService service = new DiscoveryTimeWindowService();
+        TimeWindowService service = new TimeWindowService();
 
-        DiscoveryTimeWindow window = service.lastDaysWindow(7);
+        TimeWindow window = service.lastDaysWindow(7);
 
         assertEquals(Duration.ofDays(7), Duration.between(window.getStart(), window.getEnd()));
     }

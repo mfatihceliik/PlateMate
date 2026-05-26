@@ -21,9 +21,6 @@ public class UserProfileMapper implements ModelMapperService<UserProfile, UserPr
         if (entity.getUser() != null) {
             dto.setUsername(entity.getUser().getUsername());
         }
-        dto.setDriverRating(entity.getDriverRating());
-        dto.setReviewCount(entity.getReviewCount());
-        dto.setTotalRatingSum(entity.getTotalRatingSum());
 
         if (entity.getSocialMediaLinks() != null) {
             dto.setSocialMediaLinks(entity.getSocialMediaLinks().stream()

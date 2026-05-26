@@ -89,13 +89,13 @@ data class ActivateSubscriptionRequest(
 
 data class AddPlateReviewRequest(
     val rating: Int, // 1..5
-    val comment: String, // not blank
+    val comment: String? = null, // premium users can send free-text; non-premium should keep empty/null
     val reportTypeCodes: List<String>? = null // null => reports untouched, [] => clear all active reports
 )
 
 data class UpdatePlateReviewRequest(
     val rating: Int, // 1..5
-    val comment: String, // not blank
+    val comment: String? = null, // premium users can send free-text; non-premium should keep empty/null
     val reportTypeCodes: List<String>? = null // null => reports untouched, [] => clear all active reports
 )
 
@@ -202,11 +202,21 @@ data class PlateReviewDto(
     val plateCode: String,
     val rating: Int,
     val comment: String,
+    val reviewStatus: PlateReviewStatus,
     val userId: Long,
     val username: String,
     val createdAt: IsoDateTime,
     val updatedAt: IsoDateTime
 )
+
+enum class PlateReviewStatus {
+    PENDING_REVIEW,
+    APPROVED,
+    REJECTED,
+    REMOVED_BY_USER,
+    REMOVED_BY_MODERATOR,
+    REMOVED_BY_LEGAL_REQUEST
+}
 
 enum class PlateReportSeverity { RED, YELLOW }
 
@@ -247,6 +257,7 @@ data class DiscoveryDailyStatsDto(
 
 data class DiscoveryPlateCardDto(
     val plateCode: String,
+    val cityName: String?,
     val ratingAverage: Double,
     val reviewCount: Int,
     val todaySearchCount: Long,
@@ -254,12 +265,13 @@ data class DiscoveryPlateCardDto(
     val todayReportCount: Long,
     val todayWeightedReportScore: Long,
     val score: Double,
-    val lastActivityAt: IsoDateTime?
+    val lastActivityAt: IsoDateTime?,
+    val trendPlates: List<PlateReportTypeDto>
 )
 
 data class DiscoveryTabsDto(
     val trendPlates: List<DiscoveryPlateCardDto>,
-    val dangerousPlates: List<DiscoveryPlateCardDto>,
+    val attentionPlates: List<DiscoveryPlateCardDto>,
     val goodDriverPlates: List<DiscoveryPlateCardDto>,
     val newPlates: List<DiscoveryPlateCardDto>
 )
@@ -285,6 +297,7 @@ data class DiscoveryHomeDto(
     val dailyStats: DiscoveryDailyStatsDto,
     val tabs: DiscoveryTabsDto,
     val cityStats: List<DiscoveryCityStatDto>,
+    val topCityPlates: List<CityPlateActivityDto>,
     val recentActivities: List<DiscoveryRecentActivityDto>
 )
 
@@ -300,11 +313,48 @@ data class CityPlateActivityDto(
 data class UserProfileDto(
     val id: Long,
     val username: String,
-    val driverRating: Double?,
+    val averageGivenRating: Double?,
     val reviewCount: Int?,
-    val totalRatingSum: Long?,
+    val joinedAt: IsoDateTime?,
+    val premiumActive: Boolean,
+    val premiumUntil: IsoDateTime?,
+    val userSettings: UserSettingsDto?,
+    val reviewStatusCounts: UserReviewStatusCountsDto,
     val socialMediaLinks: List<SocialMediaLinkDto>,
-    val plateReviews: PagedData<PlateReviewDto>
+    val plateReviews: UserProfileReviewPageDto
+)
+
+data class UserProfileReviewPageDto(
+    val items: List<PlateReviewDto>,
+    val meta: UserProfileReviewPageMetaDto
+)
+
+data class UserProfileReviewPageMetaDto(
+    val page: Int,
+    val size: Int,
+    val totalElements: Long,
+    val totalPages: Int,
+    val hasNext: Boolean,
+    val hasPrevious: Boolean,
+    val evaluationTotals: UserReviewEvaluationTotalsDto
+)
+
+data class UserReviewStatusCountsDto(
+    val approved: Int,
+    val pendingReview: Int,
+    val rejected: Int,
+    val removedByUser: Int,
+    val removedByModerator: Int,
+    val removedByLegalRequest: Int
+)
+
+data class UserReviewEvaluationTotalsDto(
+    val totalApproved: Int,
+    val totalPendingReview: Int,
+    val totalRejected: Int,
+    val totalRemovedByUser: Int,
+    val totalRemovedByModerator: Int,
+    val totalRemovedByLegalRequest: Int
 )
 
 data class UserSettingsDto(

@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -42,7 +43,12 @@ class PlateReportManagerTest {
 
     @BeforeEach
     void setUp() {
-        plateReportManager = new PlateReportManager(plateReportDao, plateReportTypeDao, messageService);
+        plateReportManager = new PlateReportManager(
+                plateReportDao,
+                plateReportTypeDao,
+                new PlateReportTypePolicyService(),
+                messageService
+        );
     }
 
     @Test

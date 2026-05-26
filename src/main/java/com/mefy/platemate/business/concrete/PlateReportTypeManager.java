@@ -2,6 +2,7 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateReportTypeService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -30,6 +31,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
 
     private final IPlateReportDao plateReportDao;
     private final IPlateReportTypeDao plateReportTypeDao;
+    private final PlateReportTypePolicyService plateReportTypePolicyService;
     private final IMessageService messageService;
 
     @Override
@@ -129,14 +131,14 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     }
 
     private String normalizeCode(String code) {
-        return code.trim().toUpperCase(Locale.ROOT);
+        return plateReportTypePolicyService.normalizeIncomingCode(code);
     }
 
     private PlateReportTypeDto toPublicDto(PlateReportType type) {
         return new PlateReportTypeDto(
                 type.getCode(),
-                type.getLabel(),
-                type.getDescription(),
+                plateReportTypePolicyService.neutralLabel(type.getCode(), type.getLabel()),
+                plateReportTypePolicyService.neutralDescription(type.getCode(), type.getDescription()),
                 type.getIconKey(),
                 type.getSeverity(),
                 type.getColorHex(),

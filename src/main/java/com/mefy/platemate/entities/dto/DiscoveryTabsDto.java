@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 public class DiscoveryTabsDto implements IDto {
     private List<DiscoveryPlateCardDto> trendPlates;
-    private List<DiscoveryPlateCardDto> dangerousPlates;
+    private List<DiscoveryPlateCardDto> attentionPlates;
     private List<DiscoveryPlateCardDto> goodDriverPlates;
     private List<DiscoveryPlateCardDto> newPlates;
 }

@@ -19,10 +19,11 @@ public class UserProfileController implements IUserProfileController {
     @Override
     public ResponseEntity<DataResult<UserProfileDto>> getByUserId(
             @PathVariable Long userId,
+            @RequestAttribute("userId") Long requesterUserId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PaginationRequest paginationRequest = PaginationRequest.of(page, size);
-        DataResult<UserProfileDto> result = userProfileService.getByUserId(userId, paginationRequest);
+        DataResult<UserProfileDto> result = userProfileService.getByUserId(userId, requesterUserId, paginationRequest);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

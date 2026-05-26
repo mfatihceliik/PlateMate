@@ -1,11 +1,11 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.core.utilities.pagination.PagedData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -14,9 +14,13 @@ import java.util.List;
 public class UserProfileDto implements IDto {
     private Long id;
     private String username;
-    private Double driverRating;
+    private Double averageGivenRating;
     private Integer reviewCount;
-    private Long totalRatingSum;
+    private LocalDateTime joinedAt;
+    private Boolean premiumActive;
+    private LocalDateTime premiumUntil;
+    private UserSettingsDto userSettings;
+    private UserReviewStatusCountsDto reviewStatusCounts;
     private List<SocialMediaLinkDto> socialMediaLinks;
-    private PagedData<PlateReviewDto> plateReviews;
+    private UserProfileReviewPageDto plateReviews;
 }

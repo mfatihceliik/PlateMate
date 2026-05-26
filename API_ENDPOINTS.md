@@ -129,7 +129,10 @@ veya
 ### Get Profile By User Id
 - **Method**: `GET`
 - **URL**: `/api/profiles/{userId}?page=0&size=20`
-- **Not**: Profile cevabinda `username`, `driverRating`, `reviewCount`, `totalRatingSum`, `socialMediaLinks`, `plateReviews(PagedData)` doner.
+- **Not**: Profile cevabinda `username`, `averageGivenRating`, `reviewCount`, `joinedAt`, `premiumActive`, `premiumUntil`, `userSettings(self-only)`, `socialMediaLinks`, `plateReviews(UserProfileReviewPageDto)` doner.
+- **Gorunurluk Kurali**: `requesterUserId == userId` ise tum review statusleri doner; diger kullanicilar sadece `APPROVED` gorur.
+- **Status Counts Kurali**: Top-level `reviewStatusCounts` profile-wide toplamlari doner. Self profile icin tum statuslar doludur; baska profil goruntulemede yalnizca `approved` dolu, diger alanlar `0` doner.
+- **Evaluation Totals Kurali**: `plateReviews.meta.evaluationTotals` profile-wide total metrikleri (`totalApproved`, `totalPendingReview`, `totalRejected`, `totalRemovedByUser`, `totalRemovedByModerator`, `totalRemovedByLegalRequest`) self/non-self fark etmeksizin full doner.
 - **Plate Reviews Alan Ornegi**:
 ```json
 {
@@ -139,6 +142,7 @@ veya
       "plateCode": "34ABC123",
       "rating": 5,
       "comment": "Temiz kullanim.",
+      "reviewStatus": "APPROVED",
       "userId": 7,
       "username": "fatih",
       "createdAt": "2026-05-12T11:20:00",
@@ -151,10 +155,32 @@ veya
     "totalElements": 1,
     "totalPages": 1,
     "hasNext": false,
-    "hasPrevious": false
+    "hasPrevious": false,
+    "evaluationTotals": {
+      "totalApproved": 8,
+      "totalPendingReview": 1,
+      "totalRejected": 1,
+      "totalRemovedByUser": 1,
+      "totalRemovedByModerator": 1,
+      "totalRemovedByLegalRequest": 0
+    }
   }
 }
 ```
+- **Top-level Status Counts Ornegi**:
+```json
+{
+  "reviewStatusCounts": {
+    "approved": 8,
+    "pendingReview": 1,
+    "rejected": 1,
+    "removedByUser": 1,
+    "removedByModerator": 1,
+    "removedByLegalRequest": 0
+  }
+}
+```
+- **User Settings Notu**: `userSettings` sadece kullanici kendi profiline baktiginda dolu doner, diger profillerde `null` doner.
 
 ---
 
@@ -208,6 +234,7 @@ veya
       "plateCode": "34ABC123",
       "rating": 4,
       "comment": "Yol kurallarina dikkat ediyor.",
+      "reviewStatus": "APPROVED",
       "userId": 15,
       "username": "ali",
       "createdAt": "2026-05-12T09:30:00",
@@ -232,10 +259,16 @@ veya
 ```json
 {
   "rating": 5,
-  "comment": "Temiz kullanim.",
+  "comment": "Temiz kullanim. (premium icin serbest metin)",
   "reportTypeCodes": ["RED_LIGHT_VIOLATION", "WRONG_WAY"]
 }
 ```
+- **Kural**:
+  - `rating` her zaman `1..5`
+  - Premium olmayan kullanici serbest metin yorum gonderemez (`comment` bos/null olmalidir)
+  - Premium olmayan kullanici en az bir `reportTypeCodes` etiketi secmelidir
+  - Premium kullanici serbest metin yorum gonderebilir, etiket opsiyoneldir
+  - Yeni/updated yorumlar her zaman `PENDING_REVIEW` olarak kaydedilir
 - **Not**:
   - `reportTypeCodes` opsiyoneldir.
   - `reportTypeCodes` `null` ise ihbar alanina dokunulmaz.
@@ -264,7 +297,7 @@ veya
 - **Body**:
 ```json
 {
-  "reportTypeCodes": ["HIT_AND_RUN", "RED_LIGHT_VIOLATION"]
+  "reportTypeCodes": ["TRAFFIC_RULE_VIOLATION", "PHONE_USAGE"]
 }
 ```
 - **Not**:
@@ -334,7 +367,8 @@ veya
 - **Not**:
   - Tum metrikler `Europe/Istanbul` gun penceresiyle hesaplanir.
   - `dailyStats`: `todaySearchCount`, `todayReviewCount`, `todayReportCount`
-  - `tabs`: `trendPlates`, `dangerousPlates`, `goodDriverPlates`, `newPlates`
+  - `tabs`: `trendPlates`, `attentionPlates`, `goodDriverPlates`, `newPlates`
+  - Kart alanlari: `trendPlates` (eski `topReportTypes`) en cok one cikan 2 report type bilgisini icerir
   - `cityStats`: bugunun en cok yorum alan sehirleri
   - `recentActivities`: `REVIEW_ADDED`, `RATING_GIVEN`, `REPORT_SUBMITTED`
 

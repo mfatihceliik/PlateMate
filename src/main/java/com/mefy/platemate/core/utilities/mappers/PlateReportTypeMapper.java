@@ -1,11 +1,16 @@
 package com.mefy.platemate.core.utilities.mappers;
 
+import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.entities.concrete.PlateReportType;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class PlateReportTypeMapper implements ModelMapperService<PlateReportType, PlateReportTypeDto> {
+
+    private final PlateReportTypePolicyService plateReportTypePolicyService;
 
     @Override
     public PlateReportTypeDto entityToDto(PlateReportType entity) {
@@ -13,8 +18,8 @@ public class PlateReportTypeMapper implements ModelMapperService<PlateReportType
 
         PlateReportTypeDto dto = new PlateReportTypeDto();
         dto.setCode(entity.getCode());
-        dto.setLabel(entity.getLabel());
-        dto.setDescription(entity.getDescription());
+        dto.setLabel(plateReportTypePolicyService.neutralLabel(entity.getCode(), entity.getLabel()));
+        dto.setDescription(plateReportTypePolicyService.neutralDescription(entity.getCode(), entity.getDescription()));
         dto.setIconKey(entity.getIconKey());
         dto.setSeverity(entity.getSeverity());
         dto.setColorHex(entity.getColorHex());

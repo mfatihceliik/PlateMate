@@ -29,7 +29,7 @@ Validation hatasi (`400`):
   "message": "Dogrulama hatalari",
   "data": {
     "rating": "Puan en az 1 olmali.",
-    "comment": "Yorum bos olamaz."
+    "comment": "Yorum en fazla 250 karakter olabilir."
   }
 }
 ```
@@ -109,11 +109,48 @@ export interface SocialMediaLinkDto {
 export interface UserProfileDto {
   id: number
   username: string
-  driverRating: number
+  averageGivenRating: number
   reviewCount: number
-  totalRatingSum: number
+  joinedAt: IsoDateTime | null
+  premiumActive: boolean
+  premiumUntil: IsoDateTime | null
+  userSettings: UserSettingsDto | null
+  reviewStatusCounts: UserReviewStatusCountsDto
   socialMediaLinks: SocialMediaLinkDto[]
-  plateReviews: PagedData<PlateReviewDto>
+  plateReviews: UserProfileReviewPageDto
+}
+
+export interface UserProfileReviewPageDto {
+  items: PlateReviewDto[]
+  meta: UserProfileReviewPageMetaDto
+}
+
+export interface UserProfileReviewPageMetaDto {
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+  evaluationTotals: UserReviewEvaluationTotalsDto
+}
+
+export interface UserReviewStatusCountsDto {
+  approved: number
+  pendingReview: number
+  rejected: number
+  removedByUser: number
+  removedByModerator: number
+  removedByLegalRequest: number
+}
+
+export interface UserReviewEvaluationTotalsDto {
+  totalApproved: number
+  totalPendingReview: number
+  totalRejected: number
+  totalRemovedByUser: number
+  totalRemovedByModerator: number
+  totalRemovedByLegalRequest: number
 }
 ```
 
@@ -142,11 +179,20 @@ export interface PlateReviewDto {
   plateCode: string
   rating: number
   comment: string
+  reviewStatus: PlateReviewStatus
   userId: number
   username: string
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
 }
+
+export type PlateReviewStatus =
+  | "PENDING_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "REMOVED_BY_USER"
+  | "REMOVED_BY_MODERATOR"
+  | "REMOVED_BY_LEGAL_REQUEST"
 
 export type PlateReportSeverity = "RED" | "YELLOW"
 
@@ -179,6 +225,7 @@ export interface DiscoveryDailyStatsDto {
 
 export interface DiscoveryPlateCardDto {
   plateCode: string
+  cityName: string | null
   ratingAverage: number
   reviewCount: number
   todaySearchCount: number
@@ -187,11 +234,12 @@ export interface DiscoveryPlateCardDto {
   todayWeightedReportScore: number
   score: number
   lastActivityAt: IsoDateTime | null
+  trendPlates: PlateReportTypeDto[]
 }
 
 export interface DiscoveryTabsDto {
   trendPlates: DiscoveryPlateCardDto[]
-  dangerousPlates: DiscoveryPlateCardDto[]
+  attentionPlates: DiscoveryPlateCardDto[]
   goodDriverPlates: DiscoveryPlateCardDto[]
   newPlates: DiscoveryPlateCardDto[]
 }
@@ -345,13 +393,13 @@ export interface ActivateSubscriptionRequest {
 
 export interface AddPlateReviewRequest {
   rating: number // 1..5
-  comment: string
+  comment?: string | null // premium users can send free-text; non-premium must keep empty/null
   reportTypeCodes?: string[] | null // null => reports untouched, [] => clear all active reports
 }
 
 export interface UpdatePlateReviewRequest {
   rating: number // 1..5
-  comment: string
+  comment?: string | null // premium users can send free-text; non-premium must keep empty/null
   reportTypeCodes?: string[] | null // null => reports untouched, [] => clear all active reports
 }
 
@@ -485,6 +533,7 @@ export interface RegisterFcmTokenRequest {
         "plateCode": "34ABC123",
         "rating": 4,
         "comment": "Yol kurallarina dikkat ediyor.",
+        "reviewStatus": "APPROVED",
         "userId": 15,
         "username": "ali",
         "createdAt": "2026-05-12T09:30:00",
@@ -512,9 +561,20 @@ export interface RegisterFcmTokenRequest {
   "data": {
     "id": 7,
     "username": "fatih",
-    "driverRating": 4.5,
+    "averageGivenRating": 4.5,
     "reviewCount": 12,
-    "totalRatingSum": 54,
+    "joinedAt": "2026-01-10T10:00:00",
+    "premiumActive": true,
+    "premiumUntil": "2026-12-31T23:59:00",
+    "userSettings": null,
+    "reviewStatusCounts": {
+      "approved": 8,
+      "pendingReview": 1,
+      "rejected": 1,
+      "removedByUser": 1,
+      "removedByModerator": 1,
+      "removedByLegalRequest": 0
+    },
     "socialMediaLinks": [
       {
         "platform": "INSTAGRAM",
@@ -529,7 +589,15 @@ export interface RegisterFcmTokenRequest {
         "totalElements": 0,
         "totalPages": 0,
         "hasNext": false,
-        "hasPrevious": false
+        "hasPrevious": false,
+        "evaluationTotals": {
+          "totalApproved": 8,
+          "totalPendingReview": 1,
+          "totalRejected": 1,
+          "totalRemovedByUser": 1,
+          "totalRemovedByModerator": 1,
+          "totalRemovedByLegalRequest": 0
+        }
       }
     }
   }

@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -42,14 +43,19 @@ class PlateReportTypeManagerTest {
 
     @BeforeEach
     void setUp() {
-        manager = new PlateReportTypeManager(plateReportDao, plateReportTypeDao, messageService);
+        manager = new PlateReportTypeManager(
+                plateReportDao,
+                plateReportTypeDao,
+                new PlateReportTypePolicyService(),
+                messageService
+        );
     }
 
     @Test
     void addReportTypeReturnsErrorWhenCodeAlreadyExists() {
-        AddPlateReportTypeRequest request = request("HIT_AND_RUN");
+        AddPlateReportTypeRequest request = request("TRAFFIC_RULE_VIOLATION");
 
-        when(plateReportTypeDao.existsByCode("HIT_AND_RUN")).thenReturn(true);
+        when(plateReportTypeDao.existsByCode("TRAFFIC_RULE_VIOLATION")).thenReturn(true);
         when(messageService.getMessage(Messages.REPORT_TYPE_ALREADY_EXISTS)).thenReturn("exists");
 
         DataResult<PlateReportTypeAdminDto> result = manager.addReportType(request);
@@ -60,10 +66,10 @@ class PlateReportTypeManagerTest {
 
     @Test
     void addReportTypeCreatesRecordWhenCodeUnique() {
-        AddPlateReportTypeRequest request = request("phone_usage");
-        PlateReportType saved = entity(11L, "PHONE_USAGE");
+        AddPlateReportTypeRequest request = request("tailgating");
+        PlateReportType saved = entity(11L, "TAILGATING");
 
-        when(plateReportTypeDao.existsByCode("PHONE_USAGE")).thenReturn(false);
+        when(plateReportTypeDao.existsByCode("TAILGATING")).thenReturn(false);
         when(plateReportTypeDao.save(any(PlateReportType.class))).thenReturn(saved);
         when(messageService.getMessage(Messages.PLATE_REPORT_TYPE_ADDED)).thenReturn("added");
 
@@ -71,17 +77,17 @@ class PlateReportTypeManagerTest {
 
         assertTrue(result.isSuccess());
         assertEquals("added", result.getMessage());
-        assertEquals("PHONE_USAGE", result.getData().getCode());
+        assertEquals("TAILGATING", result.getData().getCode());
     }
 
     @Test
     void updateReportTypeReturnsErrorForDuplicateCode() {
         PlateReportType existing = entity(1L, "OLD_CODE");
-        PlateReportType duplicate = entity(2L, "HIT_AND_RUN");
-        UpdatePlateReportTypeRequest request = updateRequest("HIT_AND_RUN");
+        PlateReportType duplicate = entity(2L, "TRAFFIC_RULE_VIOLATION");
+        UpdatePlateReportTypeRequest request = updateRequest("TRAFFIC_RULE_VIOLATION");
 
         when(plateReportTypeDao.findById(1L)).thenReturn(Optional.of(existing));
-        when(plateReportTypeDao.findByCode("HIT_AND_RUN")).thenReturn(Optional.of(duplicate));
+        when(plateReportTypeDao.findByCode("TRAFFIC_RULE_VIOLATION")).thenReturn(Optional.of(duplicate));
         when(messageService.getMessage(Messages.REPORT_TYPE_ALREADY_EXISTS)).thenReturn("exists");
 
         DataResult<PlateReportTypeAdminDto> result = manager.updateReportType(1L, request);

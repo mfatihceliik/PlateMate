@@ -19,6 +19,7 @@ public final class Messages {
     // Plate Messages
     public static final String PLATE_INVALID = "plate.invalid";
     public static final String PLATE_FOUND = "plate.found";
+    public static final String PLATE_NOT_AVAILABLE = "plate.not.available";
     public static final String SUBSCRIPTION_ACTIVATED = "subscription.activated";
     public static final String SUBSCRIPTION_STATUS_FOUND = "subscription.status.found";
     public static final String SUBSCRIPTION_HISTORY_LISTED = "subscription.history.listed";
@@ -33,6 +34,11 @@ public final class Messages {
     public static final String REVIEWS_LISTED = "reviews.listed";
     public static final String REVIEW_NOT_FOUND = "review.not.found";
     public static final String REVIEW_DELETED = "review.deleted";
+    public static final String REVIEW_RESPONSIBILITY_REQUIRED = "review.responsibility.required";
+    public static final String REVIEW_CONTENT_NOT_ALLOWED = "review.content.not.allowed";
+    public static final String REVIEW_PENDING_REVIEW = "review.pending.review";
+    public static final String REVIEW_COMMENT_PREMIUM_REQUIRED = "review.comment.premium.required";
+    public static final String REVIEW_REPORT_TYPE_REQUIRED_FOR_NON_PREMIUM = "review.report.type.required.for.non.premium";
     // Plate Report Messages
     public static final String PLATE_REPORT_TYPES_LISTED = "plate.report.types.listed";
     public static final String PLATE_REPORTS_SYNCED = "plate.reports.synced";

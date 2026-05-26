@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.discovery;
 
+import com.mefy.platemate.business.utilities.time.TimeWindow;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.entities.dto.DiscoveryActivityActionType;
@@ -21,10 +22,19 @@ public class DiscoveryActivityService {
     private final IPlateReportDao plateReportDao;
 
     public List<DiscoveryRecentActivityDto> buildRecentActivities(int activityLimit) {
+        return buildRecentActivities(activityLimit, null);
+    }
+
+    public List<DiscoveryRecentActivityDto> buildRecentActivities(int activityLimit, TimeWindow window) {
         int sourceLimit = Math.max(activityLimit * 2, activityLimit);
         List<DiscoveryRecentActivityDto> activities = new ArrayList<>();
 
-        plateReviewDao.getRecentReviewActivities(PageRequest.of(0, sourceLimit)).forEach(review -> {
+        var pageable = PageRequest.of(0, sourceLimit);
+        var recentReviews = window == null
+                ? plateReviewDao.getRecentReviewActivities(pageable)
+                : plateReviewDao.getRecentReviewActivitiesByWindow(window.getStart(), window.getEnd(), pageable);
+
+        recentReviews.forEach(review -> {
             DiscoveryActivityActionType actionType = isCreatedAndNotUpdated(review.getCreatedAt(), review.getUpdatedAt())
                     ? DiscoveryActivityActionType.REVIEW_ADDED
                     : DiscoveryActivityActionType.RATING_GIVEN;
@@ -41,7 +51,11 @@ public class DiscoveryActivityService {
             ));
         });
 
-        plateReportDao.getRecentReportActivities(PageRequest.of(0, sourceLimit)).forEach(report -> {
+        var recentReports = window == null
+                ? plateReportDao.getRecentReportActivities(pageable)
+                : plateReportDao.getRecentReportActivitiesByWindow(window.getStart(), window.getEnd(), pageable);
+
+        recentReports.forEach(report -> {
             activities.add(new DiscoveryRecentActivityDto(
                     report.getUsername(),
                     report.getPlateCode(),

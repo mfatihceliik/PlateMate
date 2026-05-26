@@ -10,6 +10,7 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReport;
+import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
 import com.mefy.platemate.entities.dto.DiscoveryTabsDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
@@ -42,27 +43,27 @@ public class DiscoveryTabService {
 
     public DiscoveryTabsDto buildTabs(int limit) {
         List<ScoredDiscoveryPlate> trendScored = buildTrendTabScored(limit, timeWindowService.todayWindow());
-        List<ScoredDiscoveryPlate> dangerousScored = buildDangerousTabScored(limit, timeWindowService.lastDaysWindow(7));
+        List<ScoredDiscoveryPlate> attentionScored = buildDangerousTabScored(limit, timeWindowService.lastDaysWindow(7));
         List<ScoredDiscoveryPlate> goodDriverScored = buildGoodDriverTabScored(limit, timeWindowService.lastDaysWindow(30));
         List<ScoredDiscoveryPlate> newScored = buildNewTabScored(limit);
 
         Set<Long> allPlateIds = new HashSet<>();
         trendScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
-        dangerousScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
+        attentionScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
         goodDriverScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
         newScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
 
-        Map<Long, List<PlateReportTypeDto>> topReportTypesMap = buildTopReportTypesMap(allPlateIds);
+        Map<Long, List<PlateReportTypeDto>> trendPlatesMap = buildTrendPlatesMap(allPlateIds);
 
         return new DiscoveryTabsDto(
-                trendScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
-                dangerousScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
-                goodDriverScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
-                newScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList()
+                trendScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
+                attentionScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
+                goodDriverScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
+                newScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList()
         );
     }
 
-    private Map<Long, List<PlateReportTypeDto>> buildTopReportTypesMap(Set<Long> plateIds) {
+    private Map<Long, List<PlateReportTypeDto>> buildTrendPlatesMap(Set<Long> plateIds) {
         Map<Long, List<PlateReportTypeDto>> map = new HashMap<>();
         if (plateIds.isEmpty()) return map;
 
@@ -101,7 +102,7 @@ public class DiscoveryTabService {
         List<ScoredDiscoveryPlate> scoredPlates = new ArrayList<>();
         for (Map.Entry<Long, PlateDailyMetrics> entry : metricsByPlateId.entrySet()) {
             Plate plate = plateById.get(entry.getKey());
-            if (plate == null) continue;
+            if (plate == null || plate.getStatus() != PlateStatus.ACTIVE) continue;
 
             PlateDailyMetrics metrics = entry.getValue();
             double score = metrics.getTodaySearchCount()
@@ -133,7 +134,7 @@ public class DiscoveryTabService {
         List<ScoredDiscoveryPlate> scoredPlates = new ArrayList<>();
         for (PlateReportAggregateProjection projection : projections) {
             Plate plate = plateById.get(projection.getPlateId());
-            if (plate == null) continue;
+            if (plate == null || plate.getStatus() != PlateStatus.ACTIVE) continue;
 
             PlateDailyMetrics metrics = new PlateDailyMetrics();
             metrics.addTodayReportCount(safeLong(projection.getReportCount()));
@@ -176,6 +177,9 @@ public class DiscoveryTabService {
 
         List<ScoredDiscoveryPlate> scoredPlates = new ArrayList<>();
         for (Plate plate : candidates) {
+            if (plate.getStatus() != PlateStatus.ACTIVE) {
+                continue;
+            }
             PlateDailyMetrics metrics = new PlateDailyMetrics();
             metrics.addTodayWeightedReportScore(weightedPenaltyByPlate.getOrDefault(plate.getId(), 0L));
             double score = (safeDouble(plate.getRatingAverage()) * 20.0)
@@ -195,6 +199,9 @@ public class DiscoveryTabService {
         List<ScoredDiscoveryPlate> data = new ArrayList<>();
 
         for (Plate plate : newest) {
+            if (plate.getStatus() != PlateStatus.ACTIVE) {
+                continue;
+            }
             PlateDailyMetrics metrics = new PlateDailyMetrics();
             metrics.mergeLastActivityAt(plate.getCreatedAt());
             double score = plate.getCreatedAt() == null ? 0.0
@@ -205,7 +212,7 @@ public class DiscoveryTabService {
         return data;
     }
 
-    private DiscoveryPlateCardDto toPlateCard(ScoredDiscoveryPlate scored, Map<Long, List<PlateReportTypeDto>> topReportTypesMap) {
+    private DiscoveryPlateCardDto toPlateCard(ScoredDiscoveryPlate scored, Map<Long, List<PlateReportTypeDto>> trendPlatesMap) {
         Plate plate = scored.getPlate();
         PlateDailyMetrics metrics = scored.getMetrics();
         return new DiscoveryPlateCardDto(
@@ -219,7 +226,7 @@ public class DiscoveryTabService {
                 metrics.getTodayWeightedReportScore(),
                 scored.getScore(),
                 metrics.getLastActivityAt(),
-                topReportTypesMap.getOrDefault(plate.getId(), List.of())
+                trendPlatesMap.getOrDefault(plate.getId(), List.of())
         );
     }
 
