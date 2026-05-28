@@ -14,8 +14,30 @@ public class PlateReportTypeDto implements IDto {
     private String label;
     private String description;
     private String iconKey;
-    private PlateReportSeverity severity;
+    private Long severityId;
+    private String severityCode;
     private String colorHex;
     private Integer weight;
     private Integer sortOrder;
+
+    public PlateReportTypeDto(
+            String code,
+            String label,
+            String description,
+            String iconKey,
+            PlateReportSeverity severity,
+            String colorHex,
+            Integer weight,
+            Integer sortOrder
+    ) {
+        this.code = code;
+        this.label = label;
+        this.description = description;
+        this.iconKey = iconKey;
+        this.severityId = severity == null ? null : severity.getId();
+        this.severityCode = severity == null ? null : severity.getCode();
+        this.colorHex = colorHex;
+        this.weight = weight;
+        this.sortOrder = sortOrder;
+    }
 }

@@ -1,11 +1,8 @@
 package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.ISocialMediaLinkController;
-
 import com.mefy.platemate.business.abstracts.ISocialMediaLinkService;
 import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.entities.concrete.SocialMediaLink;
-import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.request.AddSocialLinkRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
 import jakarta.validation.Valid;
@@ -25,16 +22,7 @@ public class SocialMediaLinkController implements ISocialMediaLinkController {
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddSocialLinkRequest request
     ) {
-
-        UserProfile profile = new UserProfile();
-        profile.setId(currentUserId);
-
-        SocialMediaLink link = new SocialMediaLink();
-        link.setPlatform(request.getPlatform());
-        link.setUrl(request.getUrl());
-        link.setUserProfile(profile);
-
-        Result result = socialMediaLinkService.add(link);
+        Result result = socialMediaLinkService.add(request, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -46,13 +34,7 @@ public class SocialMediaLinkController implements ISocialMediaLinkController {
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdateSocialLinkRequest request
     ) {
-
-        SocialMediaLink link = new SocialMediaLink();
-        link.setId(request.getId());
-        link.setPlatform(request.getPlatform());
-        link.setUrl(request.getUrl());
-
-        Result result = socialMediaLinkService.update(link, currentUserId);
+        Result result = socialMediaLinkService.update(request, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

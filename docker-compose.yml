@@ -9,7 +9,9 @@ services:
       # Veritabanı bağlantı bilgilerini eziyoruz (localhost yerine db konteynerine bağlanması için)
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/PlateMate
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-local-dev-password}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JWT_SECRET=${JWT_SECRET:-platemate-local-dev-jwt-secret-key-2026-minimum-32-chars}
     depends_on:
       db:
         condition: service_healthy # db konteyneri tamamen hazır olmadan app ayağa kalkmaz
@@ -21,11 +23,12 @@ services:
     environment:
       - POSTGRES_DB=PlateMate
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123456
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-local-dev-password}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d PlateMate"]
       interval: 10s

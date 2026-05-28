@@ -1,7 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.PlateStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +13,8 @@ import java.time.LocalDateTime;
 public class PlateAdminDto implements IDto {
     private Long id;
     private String plateCode;
-    private PlateStatus status;
+    private Long statusId;
+    private String statusCode;
     private String hiddenReason;
     private Integer reviewCount;
     private Integer reportCount;

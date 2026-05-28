@@ -121,7 +121,7 @@ public class DiscoveryTabService {
 
     private List<ScoredDiscoveryPlate> buildDangerousTabScored(int limit, TimeWindow window) {
         List<PlateReportAggregateProjection> projections =
-                plateReportDao.getActiveReportAggregates(window.getStart(), window.getEnd());
+                plateReportDao.getActiveReportAggregatesAndPlateStatus(window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId());
         if (projections.isEmpty()) {
             return List.of();
         }
@@ -171,7 +171,7 @@ public class DiscoveryTabService {
 
         Map<Long, Long> weightedPenaltyByPlate = new HashMap<>();
         if (!candidateIds.isEmpty()) {
-            plateReportDao.getWeightedScoresByPlateIds(candidateIds, penaltyWindow.getStart(), penaltyWindow.getEnd())
+            plateReportDao.getWeightedScoresByPlateIdsAndPlateStatus(candidateIds, penaltyWindow.getStart(), penaltyWindow.getEnd(), PlateStatus.ACTIVE.getId())
                     .forEach(projection -> weightedPenaltyByPlate.put(projection.getPlateId(), safeLong(projection.getWeightedScore())));
         }
 

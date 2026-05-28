@@ -8,7 +8,6 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.request.UpdateUserRequest;
 import jakarta.validation.Valid;
@@ -79,12 +78,7 @@ public class UserController implements IUserController {
                     .body(new ErrorResult(messageService.getMessage("auth.unauthorized")));
         }
 
-        User user = new User();
-        user.setId(userId);
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-
-        Result result = userService.update(user);
+        Result result = userService.update(userId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

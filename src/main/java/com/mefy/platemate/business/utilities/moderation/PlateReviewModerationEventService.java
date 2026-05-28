@@ -4,7 +4,6 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateReviewModerationEventDao;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationEvent;
-import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +17,20 @@ public class PlateReviewModerationEventService {
 
     public void logEvent(
             PlateReview review,
-            PlateReviewStatus fromStatus,
-            PlateReviewStatus toStatus,
+            Long fromStatusId,
+            Long toStatusId,
             PlateReviewModerationActionType actionType,
             Long actorUserId,
             String reason
     ) {
-        if (review == null || review.getId() == null || toStatus == null || actionType == null) {
+        if (review == null || review.getId() == null || toStatusId == null || actionType == null) {
             return;
         }
 
         PlateReviewModerationEvent event = new PlateReviewModerationEvent();
         event.setPlateReview(review);
-        event.setFromStatus(fromStatus);
-        event.setToStatus(toStatus);
+        event.setFromStatusId(fromStatusId);
+        event.setToStatusId(toStatusId);
         event.setActionType(actionType);
         event.setActorUserId(actorUserId);
         event.setReason(normalizeReason(reason));

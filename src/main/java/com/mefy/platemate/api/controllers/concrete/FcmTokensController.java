@@ -2,7 +2,7 @@ package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.business.abstracts.IFcmTokenService;
 import com.mefy.platemate.core.utilities.results.Result;
-import lombok.Data;
+import com.mefy.platemate.entities.dto.request.RegisterTokenRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,17 +19,22 @@ public class FcmTokensController {
             @RequestAttribute("userId") Long userId,
             @RequestBody RegisterTokenRequest request
     ) {
-        return ResponseEntity.ok(fcmTokenService.registerToken(userId, request.getToken(), request.getDeviceId()));
+        Result result = fcmTokenService.registerToken(userId, request.getToken(), request.getDeviceId());
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/unregister")
-    public ResponseEntity<Result> unregister(@RequestParam String token) {
-        return ResponseEntity.ok(fcmTokenService.unregisterToken(token));
-    }
-
-    @Data
-    public static class RegisterTokenRequest {
-        private String token;
-        private String deviceId;
+    public ResponseEntity<Result> unregister(
+            @RequestAttribute("userId") Long currentUserId,
+            @RequestParam String token
+    ) {
+        Result result = fcmTokenService.unregisterToken(currentUserId, token);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 }

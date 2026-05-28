@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 public class UserSubscriptionDto implements IDto {
     private Long id;
     private Integer purchasedDays;
-    private String status;
+    private Long statusId;
+    private String statusCode;
     private LocalDateTime startedAt;
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;

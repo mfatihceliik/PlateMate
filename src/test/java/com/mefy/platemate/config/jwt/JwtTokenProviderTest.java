@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JwtTokenProviderTest {
 
-    private static final String SECRET = "PlateMateSecretKeyForJWTTokenGeneration2026!";
+    private static final String SECRET = "test-only-jwt-secret-for-unit-tests-2026";
 
     @Test
     void validateAndGetRefreshClaimsReturnsClaimsForValidRefreshToken() {

@@ -1,7 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.PlateReportSeverity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +16,8 @@ public class PlateReportTypeAdminDto implements IDto {
     private String label;
     private String description;
     private String iconKey;
-    private PlateReportSeverity severity;
+    private Long severityId;
+    private String severityCode;
     private String colorHex;
     private Integer weight;
     private Integer sortOrder;

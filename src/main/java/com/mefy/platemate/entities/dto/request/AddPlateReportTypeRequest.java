@@ -26,8 +26,9 @@ public class AddPlateReportTypeRequest implements IDto {
     @NotBlank(message = "{validation.report.type.icon.notblank}")
     private String iconKey;
 
-    @NotNull(message = "{validation.report.type.severity.notnull}")
-    private PlateReportSeverity severity;
+    private Long severityId;
+
+    private String severityCode;
 
     @NotBlank(message = "{validation.report.type.color.notblank}")
     @Pattern(regexp = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$", message = "{validation.report.type.color.invalid}")
@@ -40,4 +41,25 @@ public class AddPlateReportTypeRequest implements IDto {
     @NotNull(message = "{validation.report.type.sort.notnull}")
     @Min(value = 1, message = "{validation.report.type.sort.min}")
     private Integer sortOrder;
+
+    public AddPlateReportTypeRequest(
+            String code,
+            String label,
+            String description,
+            String iconKey,
+            PlateReportSeverity severity,
+            String colorHex,
+            Integer weight,
+            Integer sortOrder
+    ) {
+        this.code = code;
+        this.label = label;
+        this.description = description;
+        this.iconKey = iconKey;
+        this.severityId = severity == null ? null : severity.getId();
+        this.severityCode = severity == null ? null : severity.getCode();
+        this.colorHex = colorHex;
+        this.weight = weight;
+        this.sortOrder = sortOrder;
+    }
 }

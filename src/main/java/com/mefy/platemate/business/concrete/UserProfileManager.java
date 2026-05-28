@@ -7,29 +7,40 @@ import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.mappers.UserProfileMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
-import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
-import com.mefy.platemate.core.utilities.results.*;
-import com.mefy.platemate.entities.concrete.PlateReviewStatus;
+import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorDataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
+import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.core.utilities.results.SuccessDataResult;
+import com.mefy.platemate.core.utilities.results.SuccessResult;
+import com.mefy.platemate.dataAccess.abstracts.IFriendshipDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
+import com.mefy.platemate.entities.concrete.Friendship;
+import com.mefy.platemate.entities.concrete.FriendshipRequestStatusCodes;
+import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.UserProfileDto;
-import com.mefy.platemate.entities.dto.UserProfileReviewPageDto;
-import com.mefy.platemate.entities.dto.UserProfileReviewPageMetaDto;
+import com.mefy.platemate.entities.dto.UserProfileFriendRequestDto;
 import com.mefy.platemate.entities.dto.UserReviewEvaluationTotalsDto;
 import com.mefy.platemate.entities.dto.UserReviewStatusCountsDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserProfileManager implements IUserProfileService {
 
+    private static final int PROFILE_RECENT_LIMIT = 10;
+
     private final IUserProfileDao userProfileDao;
+    private final IFriendshipDao friendshipDao;
     private final IPlateReviewDao plateReviewDao;
     private final UserProfileMapper userProfileMapper;
     private final PlateReviewMapper plateReviewMapper;
@@ -37,53 +48,94 @@ public class UserProfileManager implements IUserProfileService {
     private final IMessageService messageService;
 
     @Override
-    public DataResult<UserProfileDto> getByUserId(Long userId, Long requesterUserId, PaginationRequest paginationRequest) {
-        UserProfile profile = userProfileDao.findById(userId).orElse(null);
-        
+    public DataResult<UserProfileDto> getByUserId(Long userId, Long requesterUserId) {
+        UserProfile profile = userProfileDao.findByIdWithSocialMediaLinks(userId).orElse(null);
+
         Result result = BusinessRules.run(checkIfProfileExists(profile));
         if (result != null) {
             return new ErrorDataResult<>(result.getMessage());
         }
 
         UserProfileDto dto = userProfileMapper.entityToDto(profile);
-
-        var pageable = PageRequest.of(
-                paginationRequest.getPage(),
-                paginationRequest.getSize(),
-                Sort.by("createdAt").descending()
-        );
         boolean selfViewer = requesterUserId != null && requesterUserId.equals(userId);
-        var plateReviews = (selfViewer
-                ? plateReviewDao.findByUserId(userId, pageable)
-                : plateReviewDao.findByUserIdAndStatus(userId, PlateReviewStatus.APPROVED, pageable))
-                .map(plateReviewMapper::entityToDto);
+
+        List<PlateReviewDto> plateReviews = fetchRecentReviews(userId, selfViewer);
+        List<UserProfileFriendRequestDto> friendRequests = fetchRecentFriendRequests(userId, selfViewer);
+
         long reviewCountLong = plateReviewDao.countByUserId(userId);
+        long totalFriendCountsLong = friendshipDao.countByUserIdAndStatusId(userId, FriendshipRequestStatusCodes.ACCEPTED_ID);
         int reviewCount = toSafeInt(reviewCountLong);
+        int totalFriendCounts = toSafeInt(totalFriendCountsLong);
         long totalRatingSum = safeLong(plateReviewDao.sumRatingByUserId(userId));
         double averageGivenRating = reviewCount > 0 ? (double) totalRatingSum / reviewCount : 0.0;
+
         UserReviewStatusCountsDto fullStatusCounts = buildFullReviewStatusCounts(userId);
         UserReviewStatusCountsDto statusCounts = buildViewerStatusCounts(fullStatusCounts, selfViewer);
         UserReviewEvaluationTotalsDto evaluationTotals = toEvaluationTotals(fullStatusCounts);
 
-        dto.setPlateReviews(toReviewPageDto(plateReviews, evaluationTotals));
+        dto.setPlateReviews(plateReviews);
+        dto.setFriendRequests(friendRequests);
         dto.setReviewStatusCounts(statusCounts);
+        dto.setEvaluationTotals(evaluationTotals);
+        dto.setTotalFriendCounts(totalFriendCounts);
         dto.setReviewCount(reviewCount);
         dto.setAverageGivenRating(averageGivenRating);
 
+        populateProfileDetails(dto, profile, userId, selfViewer);
+
+        return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PROFILE_FOUND));
+    }
+
+    private List<PlateReviewDto> fetchRecentReviews(Long userId, boolean selfViewer) {
+        var reviewPageable = PageRequest.of(
+                0,
+                PROFILE_RECENT_LIMIT,
+                Sort.by("createdAt").descending()
+        );
+        return (selfViewer
+                ? plateReviewDao.findByUserId(userId, reviewPageable)
+                : plateReviewDao.findByUserIdAndStatusId(userId, PlateReviewStatus.APPROVED.getId(), reviewPageable))
+                .map(plateReviewMapper::entityToDto)
+                .getContent();
+    }
+
+    private List<UserProfileFriendRequestDto> fetchRecentFriendRequests(Long userId, boolean selfViewer) {
+        return selfViewer
+                ? friendshipDao.findRecentByUserId(userId, PageRequest.of(0, PROFILE_RECENT_LIMIT)).stream()
+                    .map(this::toUserProfileFriendRequestDto)
+                    .toList()
+                : List.of();
+    }
+
+    private void populateProfileDetails(UserProfileDto dto, UserProfile profile, Long userId, boolean selfViewer) {
         if (profile.getUser() != null) {
             dto.setJoinedAt(profile.getUser().getCreatedAt());
             dto.setPremiumActive(profile.getUser().isPremiumActive());
-            dto.setPremiumUntil(profile.getUser().getPremiumUntil());
         }
 
         if (selfViewer) {
             dto.setUserSettings(userSettingsService.getByUserId(userId).getData());
         }
-
-        return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PROFILE_FOUND));
     }
 
-    /// ----- BUSINESS RULES -----
+    private UserProfileFriendRequestDto toUserProfileFriendRequestDto(Friendship friendship) {
+        LocalDateTime lastActionAt = friendship.getRespondedAt() != null
+                ? friendship.getRespondedAt()
+                : friendship.getCreatedAt();
+
+        return new UserProfileFriendRequestDto(
+                friendship.getId(),
+                friendship.getRequester() == null ? null : friendship.getRequester().getId(),
+                friendship.getRequester() == null ? null : friendship.getRequester().getUsername(),
+                friendship.getAddressee() == null ? null : friendship.getAddressee().getId(),
+                friendship.getAddressee() == null ? null : friendship.getAddressee().getUsername(),
+                friendship.getStatusId(),
+                friendship.getStatusCode(),
+                friendship.getCreatedAt(),
+                friendship.getRespondedAt(),
+                lastActionAt
+        );
+    }
 
     private Result checkIfProfileExists(UserProfile profile) {
         if (profile == null) {
@@ -94,19 +146,16 @@ public class UserProfileManager implements IUserProfileService {
 
     private UserReviewStatusCountsDto buildFullReviewStatusCounts(Long userId) {
         return new UserReviewStatusCountsDto(
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.APPROVED)),
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.PENDING_REVIEW)),
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.REJECTED)),
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.REMOVED_BY_USER)),
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.REMOVED_BY_MODERATOR)),
-                toSafeInt(plateReviewDao.countByUserIdAndStatus(userId, PlateReviewStatus.REMOVED_BY_LEGAL_REQUEST))
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.APPROVED.getId())),
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.PENDING_REVIEW.getId())),
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.REJECTED.getId())),
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.REMOVED_BY_USER.getId())),
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.REMOVED_BY_MODERATOR.getId())),
+                toSafeInt(plateReviewDao.countByUserIdAndStatusId(userId, PlateReviewStatus.REMOVED_BY_LEGAL_REQUEST.getId()))
         );
     }
 
-    private UserReviewStatusCountsDto buildViewerStatusCounts(
-            UserReviewStatusCountsDto fullStatusCounts,
-            boolean selfViewer
-    ) {
+    private UserReviewStatusCountsDto buildViewerStatusCounts(UserReviewStatusCountsDto fullStatusCounts, boolean selfViewer) {
         if (selfViewer) {
             return fullStatusCounts;
         }
@@ -130,22 +179,6 @@ public class UserProfileManager implements IUserProfileService {
                 fullStatusCounts.getRemovedByModerator(),
                 fullStatusCounts.getRemovedByLegalRequest()
         );
-    }
-
-    private UserProfileReviewPageDto toReviewPageDto(
-            Page<PlateReviewDto> page,
-            UserReviewEvaluationTotalsDto evaluationTotals
-    ) {
-        UserProfileReviewPageMetaDto meta = new UserProfileReviewPageMetaDto(
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.hasNext(),
-                page.hasPrevious(),
-                evaluationTotals
-        );
-        return new UserProfileReviewPageDto(page.getContent(), meta);
     }
 
     private int toSafeInt(long value) {

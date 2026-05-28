@@ -18,10 +18,12 @@ public class UserDto implements IDto {
     private String refreshToken;
     private LocalDateTime premiumUntil;
     private boolean premiumActive;
+    private Long roleId;
     private String roleCode;
     private LocalDateTime currentSubscriptionStartedAt;
     private LocalDateTime currentSubscriptionExpiresAt;
     private Integer currentSubscriptionPurchasedDays;
-    private String currentSubscriptionStatus;
+    private Long currentSubscriptionStatusId;
+    private String currentSubscriptionStatusCode;
     // Password yok!
 }

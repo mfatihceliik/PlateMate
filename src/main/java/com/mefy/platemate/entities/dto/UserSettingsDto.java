@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserSettingsDto implements IDto {
     private boolean messagingEnabled;
-    private boolean locationSharingEnabled;
     private boolean messageNotificationsEnabled;
     private boolean friendNotificationsEnabled;
 }

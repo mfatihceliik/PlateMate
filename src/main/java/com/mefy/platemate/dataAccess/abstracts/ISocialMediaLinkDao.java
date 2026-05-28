@@ -5,5 +5,9 @@ import com.mefy.platemate.entities.concrete.SocialPlatform;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ISocialMediaLinkDao extends JpaRepository<SocialMediaLink, Long> {
-    boolean existsByUserProfileIdAndPlatform(Long userProfileId, SocialPlatform platform);
+    boolean existsByUserProfileIdAndPlatformId(Long userProfileId, Long platformId);
+
+    default boolean existsByUserProfileIdAndPlatform(Long userProfileId, SocialPlatform platform) {
+        return existsByUserProfileIdAndPlatformId(userProfileId, platform == null ? null : platform.getId());
+    }
 }

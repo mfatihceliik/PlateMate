@@ -22,9 +22,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +51,6 @@ public class SubscriptionManager implements ISubscriptionService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        ensureBackfillForLegacyPremiumUser(user, now);
         syncSubscriptionStatuses(user.getId(), now);
 
         LocalDateTime base = resolveBaseStart(user.getId(), now);
@@ -68,7 +67,7 @@ public class SubscriptionManager implements ISubscriptionService {
         userSubscriptionDao.save(subscription);
 
         syncSubscriptionStatuses(user.getId(), now);
-        syncRoleAndPremiumUntil(user, normalRole, premiumRole, now);
+        syncRoleFromSubscriptions(user, normalRole, premiumRole, now);
 
         UserDto dto = buildSubscriptionAwareUserDto(user, now);
 
@@ -93,9 +92,8 @@ public class SubscriptionManager implements ISubscriptionService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        ensureBackfillForLegacyPremiumUser(user, now);
         syncSubscriptionStatuses(user.getId(), now);
-        syncRoleAndPremiumUntil(user, normalRole, premiumRole, now);
+        syncRoleFromSubscriptions(user, normalRole, premiumRole, now);
 
         UserDto dto = buildSubscriptionAwareUserDto(user, now);
 
@@ -114,7 +112,6 @@ public class SubscriptionManager implements ISubscriptionService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        ensureBackfillForLegacyPremiumUser(user, now);
         syncSubscriptionStatuses(user.getId(), now);
 
         List<UserSubscriptionDto> history = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(currentUserId).stream()
@@ -131,30 +128,6 @@ public class SubscriptionManager implements ISubscriptionService {
                 .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
                 .max(LocalDateTime::compareTo)
                 .orElse(now);
-    }
-
-    private void ensureBackfillForLegacyPremiumUser(User user, LocalDateTime now) {
-        List<UserSubscription> existing = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(user.getId());
-        if (!existing.isEmpty()) {
-            return;
-        }
-
-        if (user.getPremiumUntil() == null || !user.getPremiumUntil().isAfter(now)) {
-            return;
-        }
-
-        long betweenDays = ChronoUnit.DAYS.between(now, user.getPremiumUntil());
-        int purchasedDays = (int) Math.max(1, betweenDays == 0 ? 1 : betweenDays);
-
-        UserSubscription migrated = new UserSubscription();
-        migrated.setUser(user);
-        migrated.setPurchasedDays(purchasedDays);
-        migrated.setStartedAt(now);
-        migrated.setExpiresAt(user.getPremiumUntil());
-        migrated.setStatus(UserSubscriptionStatus.ACTIVE);
-        migrated.setCreatedAt(now);
-        migrated.setUpdatedAt(now);
-        userSubscriptionDao.save(migrated);
     }
 
     private void syncSubscriptionStatuses(Long userId, LocalDateTime now) {
@@ -191,15 +164,8 @@ public class SubscriptionManager implements ISubscriptionService {
         return UserSubscriptionStatus.ACTIVE;
     }
 
-    private void syncRoleAndPremiumUntil(User user, UserRole normalRole, UserRole premiumRole, LocalDateTime now) {
+    private void syncRoleFromSubscriptions(User user, UserRole normalRole, UserRole premiumRole, LocalDateTime now) {
         List<UserSubscription> subscriptions = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(user.getId());
-
-        LocalDateTime latestFutureExpiry = subscriptions.stream()
-                .filter(s -> s.getStatus() != UserSubscriptionStatus.CANCELED)
-                .map(UserSubscription::getExpiresAt)
-                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
 
         boolean hasActiveNow = subscriptions.stream()
                 .anyMatch(s -> s.getStatus() == UserSubscriptionStatus.ACTIVE
@@ -212,14 +178,8 @@ public class SubscriptionManager implements ISubscriptionService {
 
         boolean changed = false;
         if (!user.hasRole(UserRoleCode.ADMIN)
-                && (user.getRole() == null || user.getRole().getCode() != expectedRole.getCode())) {
+                && (user.getRole() == null || !Objects.equals(user.getRole().getCodeId(), expectedRole.getCodeId()))) {
             user.setRole(expectedRole);
-            changed = true;
-        }
-
-        if ((user.getPremiumUntil() == null && latestFutureExpiry != null)
-                || (user.getPremiumUntil() != null && !user.getPremiumUntil().equals(latestFutureExpiry))) {
-            user.setPremiumUntil(latestFutureExpiry);
             changed = true;
         }
 
@@ -232,6 +192,7 @@ public class SubscriptionManager implements ISubscriptionService {
         UserDto dto = userMapper.entityToDto(user);
 
         List<UserSubscription> subscriptions = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(user.getId());
+        dto.setPremiumUntil(resolveLatestFutureExpiry(subscriptions, now));
         UserSubscription currentSubscription = subscriptions.stream()
                 .filter(s -> s.getStatus() == UserSubscriptionStatus.ACTIVE
                         && s.getStartedAt() != null
@@ -245,17 +206,31 @@ public class SubscriptionManager implements ISubscriptionService {
             dto.setCurrentSubscriptionStartedAt(currentSubscription.getStartedAt());
             dto.setCurrentSubscriptionExpiresAt(currentSubscription.getExpiresAt());
             dto.setCurrentSubscriptionPurchasedDays(currentSubscription.getPurchasedDays());
-            dto.setCurrentSubscriptionStatus(currentSubscription.getStatus().name());
+            dto.setCurrentSubscriptionStatusId(currentSubscription.getStatusId());
+            dto.setCurrentSubscriptionStatusCode(currentSubscription.getStatusCode());
         }
 
         return dto;
+    }
+
+    private LocalDateTime resolveLatestFutureExpiry(List<UserSubscription> subscriptions, LocalDateTime now) {
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return null;
+        }
+        return subscriptions.stream()
+                .filter(s -> s.getStatus() != UserSubscriptionStatus.CANCELED)
+                .map(UserSubscription::getExpiresAt)
+                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
     }
 
     private UserSubscriptionDto mapToDto(UserSubscription subscription) {
         UserSubscriptionDto dto = new UserSubscriptionDto();
         dto.setId(subscription.getId());
         dto.setPurchasedDays(subscription.getPurchasedDays());
-        dto.setStatus(subscription.getStatus().name());
+        dto.setStatusId(subscription.getStatusId());
+        dto.setStatusCode(subscription.getStatusCode());
         dto.setStartedAt(subscription.getStartedAt());
         dto.setExpiresAt(subscription.getExpiresAt());
         dto.setCreatedAt(subscription.getCreatedAt());

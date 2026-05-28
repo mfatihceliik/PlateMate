@@ -1,7 +1,10 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IParticipantService;
+import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
@@ -23,6 +26,7 @@ public class ParticipantManager implements IParticipantService {
 
     private final IParticipantDao participantDao;
     private final IUserDao userDao;
+    private final IMessageService messageService;
 
     @Override
     public Result add(Participant participant) {
@@ -32,7 +36,10 @@ public class ParticipantManager implements IParticipantService {
 
     @Override
     public Result addParticipantToRoom(ChatRoom room, Long userId) {
-        User user = userDao.findById(userId).orElseThrow();
+        User user = userDao.findById(userId).orElse(null);
+        if (user == null) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
         Participant participant = new Participant();
         participant.setChatRoom(room);
         participant.setUser(user);

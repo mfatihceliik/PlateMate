@@ -14,13 +14,15 @@ import java.util.List;
 public class UserProfileDto implements IDto {
     private Long id;
     private String username;
+    private Integer totalFriendCounts;
     private Double averageGivenRating;
     private Integer reviewCount;
     private LocalDateTime joinedAt;
     private Boolean premiumActive;
-    private LocalDateTime premiumUntil;
     private UserSettingsDto userSettings;
     private UserReviewStatusCountsDto reviewStatusCounts;
+    private UserReviewEvaluationTotalsDto evaluationTotals;
     private List<SocialMediaLinkDto> socialMediaLinks;
-    private UserProfileReviewPageDto plateReviews;
+    private List<PlateReviewDto> plateReviews;
+    private List<UserProfileFriendRequestDto> friendRequests;
 }

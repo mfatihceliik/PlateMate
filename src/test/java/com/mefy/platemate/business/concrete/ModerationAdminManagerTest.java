@@ -72,8 +72,8 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(90L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(1L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(5L);
+        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
+        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
         when(messageService.getMessage("admin.comment.approved")).thenReturn("approved");
 
         Result result = manager.approveComment(90L, 7L);
@@ -87,8 +87,8 @@ class ModerationAdminManagerTest {
 
         verify(moderationEventService).logEvent(
                 eq(review),
-                eq(PlateReviewStatus.PENDING_REVIEW),
-                eq(PlateReviewStatus.APPROVED),
+                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
+                eq(PlateReviewStatus.APPROVED.getId()),
                 eq(PlateReviewModerationActionType.APPROVED_BY_ADMIN),
                 eq(7L),
                 eq("APPROVED_BY_ADMIN")
@@ -107,8 +107,8 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(91L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(0L);
+        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("admin.comment.rejected")).thenReturn("rejected");
 
         Result result = manager.rejectComment(91L, 8L, "icerik kurali");
@@ -118,8 +118,8 @@ class ModerationAdminManagerTest {
         assertEquals(PlateReviewStatus.REJECTED, review.getStatus());
         verify(moderationEventService).logEvent(
                 eq(review),
-                eq(PlateReviewStatus.PENDING_REVIEW),
-                eq(PlateReviewStatus.REJECTED),
+                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
+                eq(PlateReviewStatus.REJECTED.getId()),
                 eq(PlateReviewModerationActionType.REJECTED_BY_ADMIN),
                 eq(8L),
                 eq("icerik kurali")
@@ -138,8 +138,8 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(92L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED)).thenReturn(0L);
+        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("admin.comment.removed")).thenReturn("removed");
 
         Result result = manager.removeComment(92L, 9L, "hakaret");
@@ -149,8 +149,8 @@ class ModerationAdminManagerTest {
         assertEquals(PlateReviewStatus.REMOVED_BY_MODERATOR, review.getStatus());
         verify(moderationEventService).logEvent(
                 eq(review),
-                eq(PlateReviewStatus.PENDING_REVIEW),
-                eq(PlateReviewStatus.REMOVED_BY_MODERATOR),
+                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
+                eq(PlateReviewStatus.REMOVED_BY_MODERATOR.getId()),
                 eq(PlateReviewModerationActionType.REMOVED_BY_MODERATOR),
                 eq(9L),
                 eq("hakaret")
@@ -177,3 +177,7 @@ class ModerationAdminManagerTest {
         assertEquals(3, result.getData().getItems().get(0).getReportCount());
     }
 }
+
+
+
+

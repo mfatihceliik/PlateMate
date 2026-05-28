@@ -14,6 +14,7 @@ public class UserAdminDto implements IDto {
     private Long id;
     private String username;
     private String email;
+    private Long roleId;
     private String roleCode;
     private boolean premiumActive;
     private LocalDateTime premiumUntil;

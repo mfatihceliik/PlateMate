@@ -3,6 +3,7 @@ package com.mefy.platemate.business.discovery;
 import com.mefy.platemate.business.utilities.time.TimeWindow;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
+import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.DiscoveryActivityActionType;
 import com.mefy.platemate.entities.dto.DiscoveryRecentActivityDto;
 import lombok.RequiredArgsConstructor;
@@ -52,8 +53,8 @@ public class DiscoveryActivityService {
         });
 
         var recentReports = window == null
-                ? plateReportDao.getRecentReportActivities(pageable)
-                : plateReportDao.getRecentReportActivitiesByWindow(window.getStart(), window.getEnd(), pageable);
+                ? plateReportDao.getRecentReportActivitiesAndPlateStatus(PlateStatus.ACTIVE.getId(), pageable)
+                : plateReportDao.getRecentReportActivitiesByWindowAndPlateStatus(window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId(), pageable);
 
         recentReports.forEach(report -> {
             activities.add(new DiscoveryRecentActivityDto(

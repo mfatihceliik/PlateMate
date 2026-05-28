@@ -9,7 +9,12 @@ public class SocialMediaLinkMapper implements ModelMapperService<SocialMediaLink
     @Override
     public SocialMediaLinkDto entityToDto(SocialMediaLink entity) {
         if (entity == null) return null;
-        return new SocialMediaLinkDto(entity.getPlatform(), entity.getUrl());
+        return new SocialMediaLinkDto(
+                entity.getId(),
+                entity.getPlatformId(),
+                entity.getPlatformCode(),
+                entity.getUrl()
+        );
     }
 
     @Override

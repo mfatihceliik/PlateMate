@@ -25,10 +25,6 @@ public class UserProfile implements IEntity {
     @Id
     private Long id;
 
-    private Double driverRating = 0.0;
-    private Integer reviewCount = 0;
-    private Long totalRatingSum = 0L;
-
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")

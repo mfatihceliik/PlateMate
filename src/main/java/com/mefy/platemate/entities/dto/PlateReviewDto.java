@@ -1,7 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +15,8 @@ public class PlateReviewDto implements IDto {
     private String plateCode;
     private Integer rating;
     private String comment;
-    private PlateReviewStatus reviewStatus;
+    private Long reviewStatusId;
+    private String reviewStatusCode;
     private Long userId;
     private String username;
     private LocalDateTime createdAt;

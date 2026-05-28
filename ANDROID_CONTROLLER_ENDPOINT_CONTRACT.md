@@ -1,7 +1,13 @@
 # PlateMate Controller Request/Response Contract (Kotlin Android)
 
-Last updated: 2026-05-13
+Last updated: 2026-05-27
 Source of truth: `src/main/java/com/mefy/platemate/api/controllers/**`
+
+## Lookup Geçiş Kuralı
+
+- Persist edilen enum alanlar lookup modeline tasinmistir; response modellerinde `...Id` + `...Code` birlikte tutulmalidir.
+- Write request'lerde gecis doneminde `id` veya `code` gonderilebilir; ikisi birden varsa `id` backend tarafinda authoritative kabul edilir.
+- `premiumUntil` response'ta bulunmaya devam eder ancak artik `users` tablosundan degil `user_subscriptions` verisinden hesaplanir.
 
 ## 1) Base URL and Auth
 
@@ -78,7 +84,6 @@ data class UpdateUserRequest(
 
 data class UpdateSettingsRequest(
     val messagingEnabled: Boolean? = null,
-    val locationSharingEnabled: Boolean? = null,
     val messageNotificationsEnabled: Boolean? = null,
     val friendNotificationsEnabled: Boolean? = null
 )
@@ -154,7 +159,6 @@ data class RegisterFcmTokenRequest(
 ## 4) Response Models (Android)
 
 ```kotlin
-enum class FriendshipStatus { PENDING, ACCEPTED, REJECTED }
 enum class UserRoleCode { NORMAL, PREMIUM, ADMIN }
 enum class UserSubscriptionStatus { PENDING, ACTIVE, EXPIRED, CANCELED }
 
@@ -173,6 +177,7 @@ data class UserDto(
 )
 
 data class SocialMediaLinkDto(
+    val id: Long,
     val platform: SocialPlatform,
     val url: String
 )
@@ -202,21 +207,13 @@ data class PlateReviewDto(
     val plateCode: String,
     val rating: Int,
     val comment: String,
-    val reviewStatus: PlateReviewStatus,
+    val reviewStatusId: Long,
+    val reviewStatusCode: String,
     val userId: Long,
     val username: String,
     val createdAt: IsoDateTime,
     val updatedAt: IsoDateTime
 )
-
-enum class PlateReviewStatus {
-    PENDING_REVIEW,
-    APPROVED,
-    REJECTED,
-    REMOVED_BY_USER,
-    REMOVED_BY_MODERATOR,
-    REMOVED_BY_LEGAL_REQUEST
-}
 
 enum class PlateReportSeverity { RED, YELLOW }
 
@@ -313,30 +310,30 @@ data class CityPlateActivityDto(
 data class UserProfileDto(
     val id: Long,
     val username: String,
+    val totalFriendCounts: Int,
     val averageGivenRating: Double?,
     val reviewCount: Int?,
     val joinedAt: IsoDateTime?,
     val premiumActive: Boolean,
-    val premiumUntil: IsoDateTime?,
     val userSettings: UserSettingsDto?,
     val reviewStatusCounts: UserReviewStatusCountsDto,
+    val evaluationTotals: UserReviewEvaluationTotalsDto,
     val socialMediaLinks: List<SocialMediaLinkDto>,
-    val plateReviews: UserProfileReviewPageDto
+    val plateReviews: List<PlateReviewDto>,
+    val friendRequests: List<UserProfileFriendRequestDto>
 )
 
-data class UserProfileReviewPageDto(
-    val items: List<PlateReviewDto>,
-    val meta: UserProfileReviewPageMetaDto
-)
-
-data class UserProfileReviewPageMetaDto(
-    val page: Int,
-    val size: Int,
-    val totalElements: Long,
-    val totalPages: Int,
-    val hasNext: Boolean,
-    val hasPrevious: Boolean,
-    val evaluationTotals: UserReviewEvaluationTotalsDto
+data class UserProfileFriendRequestDto(
+    val id: Long,
+    val requesterUserId: Long,
+    val requesterUsername: String,
+    val addresseeUserId: Long,
+    val addresseeUsername: String,
+    val statusId: Long,
+    val statusCode: String, // REQUESTED | ACCEPTED | REJECTED | REMOVED
+    val createdAt: IsoDateTime,
+    val respondedAt: IsoDateTime?,
+    val lastActionAt: IsoDateTime
 )
 
 data class UserReviewStatusCountsDto(
@@ -359,10 +356,20 @@ data class UserReviewEvaluationTotalsDto(
 
 data class UserSettingsDto(
     val messagingEnabled: Boolean,
-    val locationSharingEnabled: Boolean,
     val messageNotificationsEnabled: Boolean,
     val friendNotificationsEnabled: Boolean
 )
+
+data class UserSettingsOverviewDto(
+    val email: String?,
+    val premiumActive: Boolean,
+    val premiumUntil: IsoDateTime?,
+    val userSettings: UserSettingsDto,
+    val socialMediaLinks: List<SocialMediaLinkDto>
+)
+
+// Note: Password response payload'larinda donmez.
+// Password update icin PUT /api/users/{userId} kullanilir.
 
 data class UserSubscriptionDto(
     val id: Long,
@@ -378,7 +385,8 @@ data class FriendshipDto(
     val id: Long,
     val friendUserId: Long,
     val friendUsername: String,
-    val status: FriendshipStatus,
+    val statusId: Long,
+    val statusCode: String, // REQUESTED | ACCEPTED | REJECTED | REMOVED
     val createdAt: IsoDateTime?
 )
 
@@ -401,15 +409,6 @@ data class ChatMessageDto(
     val read: Boolean
 )
 
-data class UserLocationDto(
-    val id: Long,
-    val userId: Long,
-    val username: String,
-    val latitude: Double,
-    val longitude: Double,
-    val lastUpdatedAt: IsoDateTime?
-)
-
 data class CityDto(
     val id: Int,
     val name: String
@@ -427,8 +426,9 @@ data class CityDto(
 | Users | GET | `/api/users/search?username=...` | Yes | Query: `username: String` | HTTP `200`, `ApiDataResult<UserDto>` |
 | Users | PUT | `/api/users/{userId}` | Yes | Path: `userId: Long`, Body: `UpdateUserRequest` | HTTP `200`, `ApiResult` |
 | Users | DELETE | `/api/users/{id}` | Yes | Path: `id: Long` | HTTP `200`, `ApiResult` |
-| Profiles | GET | `/api/profiles/{userId}?page=0&size=20` | Yes | Path: `userId: Long`, Query: `page`, `size` | HTTP `200`, `ApiDataResult<UserProfileDto>` |
+| Profiles | GET | `/api/profiles/{userId}` | Yes | Path: `userId: Long` | HTTP `200`, `ApiDataResult<UserProfileDto>` |
 | Settings | GET | `/api/settings/{userId}` | Yes | Path: `userId: Long` | HTTP `200`, `ApiDataResult<UserSettingsDto>` |
+| Settings | GET | `/api/settings/{userId}/overview` | Yes | Path: `userId: Long` | HTTP `200`, `ApiDataResult<UserSettingsOverviewDto>` |
 | Settings | PUT | `/api/settings/{userId}` | Yes | Path: `userId: Long`, Body: `UpdateSettingsRequest` | HTTP `200`, `ApiResult` |
 | Plates | GET | `/api/plates/search?plate=...` | Yes | Query: `plate: String` | HTTP `200`, `ApiDataResult<PlateDetailDto>` |
 | Plates | GET | `/api/plates/{plateCode}/reviews?page=0&size=20` | Yes | Path: `plateCode: String`, Query: `page`, `size` | HTTP `200`, `ApiDataResult<PagedData<PlateReviewDto>>` |
@@ -461,11 +461,6 @@ data class CityDto(
 | Chat | GET | `/api/chat/rooms/{roomId}/messages` | Yes | Path: `roomId: Long` | HTTP `200`, `ApiDataResult<List<ChatMessageDto>>` |
 | Chat | POST | `/api/chat/rooms/messages` | Yes | Body: `SendMessageRequest` | HTTP `201`, `ApiDataResult<ChatMessageDto>` |
 | Chat | PUT | `/api/chat/rooms/{roomId}/read` | Yes | Path: `roomId: Long` | HTTP `200`, `ApiResult` |
-| Locations | GET | `/api/locations/user/{userId}` | Yes | Path: `userId: Long` | HTTP `200`, `ApiDataResult<UserLocationDto>` |
-| Locations | GET | `/api/locations/visible` | Yes | - | HTTP `200`, `ApiDataResult<List<UserLocationDto>>` |
-| Locations | POST | `/api/locations/block/{targetUserId}` | Yes | Path: `targetUserId: Long` | HTTP `200`, `ApiResult` |
-| Locations | DELETE | `/api/locations/block/{targetUserId}` | Yes | Path: `targetUserId: Long` | HTTP `200`, `ApiResult` |
-| Locations | GET | `/api/locations/blocked` | Yes | - | HTTP `200`, `ApiDataResult<List<Long>>` |
 | Cities | GET | `/api/cities` | No | - | HTTP `200`, `ApiDataResult<List<CityDto>>` |
 | Cities | GET | `/api/cities/{id}` | No | Path: `id: Int` | HTTP `200`, `ApiDataResult<CityDto>` |
 | FCM | POST | `/api/fcm-tokens/register` | Yes | Body: `RegisterFcmTokenRequest` | HTTP `200`, `ApiResult` |
@@ -517,13 +512,14 @@ interface PlateMateApi {
 
     @GET("api/profiles/{userId}")
     suspend fun getProfile(
-        @Path("userId") userId: Long,
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
+        @Path("userId") userId: Long
     ): Response<ApiDataResult<UserProfileDto>>
 
     @GET("api/settings/{userId}")
     suspend fun getSettings(@Path("userId") userId: Long): Response<ApiDataResult<UserSettingsDto>>
+
+    @GET("api/settings/{userId}/overview")
+    suspend fun getSettingsOverview(@Path("userId") userId: Long): Response<ApiDataResult<UserSettingsOverviewDto>>
 
     @PUT("api/settings/{userId}")
     suspend fun updateSettings(
@@ -656,21 +652,6 @@ interface PlateMateApi {
 
     @PUT("api/chat/rooms/{roomId}/read")
     suspend fun markRoomAsRead(@Path("roomId") roomId: Long): Response<ApiResult>
-
-    @GET("api/locations/user/{userId}")
-    suspend fun getUserLocation(@Path("userId") userId: Long): Response<ApiDataResult<UserLocationDto>>
-
-    @GET("api/locations/visible")
-    suspend fun getVisibleLocations(): Response<ApiDataResult<List<UserLocationDto>>>
-
-    @POST("api/locations/block/{targetUserId}")
-    suspend fun blockUserLocation(@Path("targetUserId") targetUserId: Long): Response<ApiResult>
-
-    @DELETE("api/locations/block/{targetUserId}")
-    suspend fun unblockUserLocation(@Path("targetUserId") targetUserId: Long): Response<ApiResult>
-
-    @GET("api/locations/blocked")
-    suspend fun getBlockedUsers(): Response<ApiDataResult<List<Long>>>
 
     @GET("api/cities")
     suspend fun getCities(): Response<ApiDataResult<List<CityDto>>>

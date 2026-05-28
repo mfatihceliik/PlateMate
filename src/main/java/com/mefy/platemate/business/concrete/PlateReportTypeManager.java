@@ -12,6 +12,7 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeDao;
+import com.mefy.platemate.entities.concrete.PlateReportSeverity;
 import com.mefy.platemate.entities.concrete.PlateReportType;
 import com.mefy.platemate.entities.dto.PlateReportTypeAdminDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
@@ -53,6 +54,10 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     @Override
     @Transactional
     public DataResult<PlateReportTypeAdminDto> addReportType(AddPlateReportTypeRequest request) {
+        PlateReportSeverity severity = PlateReportSeverity.resolve(request.getSeverityId(), request.getSeverityCode());
+        if (severity == null) {
+            return new ErrorDataResult<>(messageService.getMessage("validation.report.type.severity.notnull"));
+        }
         String normalizedCode = normalizeCode(request.getCode());
         if (plateReportTypeDao.existsByCode(normalizedCode)) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.REPORT_TYPE_ALREADY_EXISTS));
@@ -61,7 +66,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
         LocalDateTime now = LocalDateTime.now();
         PlateReportType type = new PlateReportType();
         type.setCode(normalizedCode);
-        applyFields(type, request.getLabel(), request.getDescription(), request.getIconKey(), request.getSeverity(), request.getColorHex(), request.getWeight(), request.getSortOrder());
+        applyFields(type, request.getLabel(), request.getDescription(), request.getIconKey(), severity, request.getColorHex(), request.getWeight(), request.getSortOrder());
         type.setActive(true);
         type.setCreatedAt(now);
         type.setUpdatedAt(now);
@@ -73,6 +78,10 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     @Override
     @Transactional
     public DataResult<PlateReportTypeAdminDto> updateReportType(Long id, UpdatePlateReportTypeRequest request) {
+        PlateReportSeverity severity = PlateReportSeverity.resolve(request.getSeverityId(), request.getSeverityCode());
+        if (severity == null) {
+            return new ErrorDataResult<>(messageService.getMessage("validation.report.type.severity.notnull"));
+        }
         PlateReportType existing = plateReportTypeDao.findById(id).orElse(null);
         if (existing == null) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.REPORT_TYPE_NOT_FOUND));
@@ -84,7 +93,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
             return new ErrorDataResult<>(messageService.getMessage(Messages.REPORT_TYPE_ALREADY_EXISTS));
         }
 
-        applyFields(existing, request.getLabel(), request.getDescription(), request.getIconKey(), request.getSeverity(), request.getColorHex(), request.getWeight(), request.getSortOrder());
+        applyFields(existing, request.getLabel(), request.getDescription(), request.getIconKey(), severity, request.getColorHex(), request.getWeight(), request.getSortOrder());
         existing.setCode(normalizedCode);
         existing.setUpdatedAt(LocalDateTime.now());
 
@@ -116,7 +125,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
             String label,
             String description,
             String iconKey,
-            com.mefy.platemate.entities.concrete.PlateReportSeverity severity,
+            PlateReportSeverity severity,
             String colorHex,
             Integer weight,
             Integer sortOrder
@@ -140,7 +149,8 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
                 plateReportTypePolicyService.neutralLabel(type.getCode(), type.getLabel()),
                 plateReportTypePolicyService.neutralDescription(type.getCode(), type.getDescription()),
                 type.getIconKey(),
-                type.getSeverity(),
+                type.getSeverityId(),
+                type.getSeverityCode(),
                 type.getColorHex(),
                 type.getWeight(),
                 type.getSortOrder()
@@ -154,7 +164,8 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
                 type.getLabel(),
                 type.getDescription(),
                 type.getIconKey(),
-                type.getSeverity(),
+                type.getSeverityId(),
+                type.getSeverityCode(),
                 type.getColorHex(),
                 type.getWeight(),
                 type.getSortOrder(),

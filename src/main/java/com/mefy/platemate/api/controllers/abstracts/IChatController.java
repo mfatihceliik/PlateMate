@@ -24,10 +24,13 @@ public interface IChatController {
     );
 
     @GetMapping("/rooms/{roomId}/messages")
-    ResponseEntity<DataResult<List<ChatMessageDto>>> getMessages(@PathVariable Long roomId);
+    ResponseEntity<DataResult<List<ChatMessageDto>>> getMessages(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
 
     @PostMapping("/rooms/messages")
-    ResponseEntity<?> sendMessage(
+    ResponseEntity<DataResult<ChatMessageDto>> sendMessage(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody SendMessageRequest request
     );

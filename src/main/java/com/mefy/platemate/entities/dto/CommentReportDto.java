@@ -1,8 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.CommentReportReason;
-import com.mefy.platemate.entities.concrete.CommentReportStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,9 +15,11 @@ public class CommentReportDto implements IDto {
     private Long commentId;
     private Long reporterUserId;
     private String plateCode;
-    private CommentReportReason reason;
+    private Long reasonId;
+    private String reasonCode;
     private String description;
-    private CommentReportStatus status;
+    private Long statusId;
+    private String statusCode;
     private String adminNote;
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;

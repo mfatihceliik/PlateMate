@@ -37,8 +37,7 @@ public class AdminCommentReportController implements IAdminCommentReportControll
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ErrorDataResult<>(authResult.getMessage()));
         }
-        DataResult<PagedData<CommentReportDto>> result =
-                commentReportService.getReports(PaginationRequest.of(page, size));
+        DataResult<PagedData<CommentReportDto>> result = commentReportService.getReports(PaginationRequest.of(page, size));
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

@@ -39,6 +39,7 @@ public final class Messages {
     public static final String REVIEW_PENDING_REVIEW = "review.pending.review";
     public static final String REVIEW_COMMENT_PREMIUM_REQUIRED = "review.comment.premium.required";
     public static final String REVIEW_REPORT_TYPE_REQUIRED_FOR_NON_PREMIUM = "review.report.type.required.for.non.premium";
+    public static final String REVIEW_ALREADY_EXISTS_FOR_PLATE = "review.already.exists.for.plate";
     // Plate Report Messages
     public static final String PLATE_REPORT_TYPES_LISTED = "plate.report.types.listed";
     public static final String PLATE_REPORTS_SYNCED = "plate.reports.synced";
@@ -78,12 +79,6 @@ public final class Messages {
     public static final String FRIENDSHIP_SELF_REQUEST = "friendship.self.request";
     public static final String FRIENDS_LISTED = "friends.listed";
     public static final String PENDING_REQUESTS_LISTED = "pending.requests.listed";
-    // User Location Messages
-    public static final String LOCATION_UPDATED = "location.updated";
-    public static final String LOCATION_VISIBILITY_UPDATED = "location.visibility.updated";
-    public static final String LOCATION_NOT_FOUND = "location.not.found";
-    public static final String LOCATIONS_LISTED = "locations.listed";
-
     // Settings Messages
     public static final String SETTINGS_UPDATED = "settings.updated";
     public static final String SETTINGS_FOUND = "settings.found";

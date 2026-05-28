@@ -2,6 +2,7 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateRemovalRequestService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
@@ -17,6 +18,7 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateRemovalRequestDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequest;
+import com.mefy.platemate.entities.concrete.PlateRemovalRequestReason;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequestStatus;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.PlateRemovalRequestDto;
@@ -52,12 +54,18 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             Long requesterUserId,
             AddPlateRemovalRequestRequest request
     ) {
+        PlateRemovalRequestReason reason = request == null
+                ? null
+                : PlateRemovalRequestReason.resolve(request.getReasonId(), request.getReasonCode());
         Plate plate = plateDao.findById(plateId).orElse(null);
-        if (plate == null) {
-            return new ErrorDataResult<>(messageService.getMessage("plate.removal.plate.not.found"));
-        }
-        if (userDao.findByIdAndActiveTrue(requesterUserId).isEmpty()) {
-            return new ErrorDataResult<>(messageService.getMessage(Messages.USER_NOT_FOUND));
+
+        Result validationResult = BusinessRules.run(
+                checkIfReasonExists(reason),
+                checkIfPlateExists(plate),
+                checkIfUserExists(requesterUserId)
+        );
+        if (validationResult != null) {
+            return new ErrorDataResult<>(validationResult.getMessage());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -65,7 +73,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         removalRequest.setPlate(plate);
         removalRequest.setRequesterUserId(requesterUserId);
         removalRequest.setRequesterEmail(request.getRequesterEmail() == null ? null : request.getRequesterEmail().trim());
-        removalRequest.setReason(request.getReason());
+        removalRequest.setReason(reason);
         removalRequest.setDescription(request.getDescription().trim());
         removalRequest.setStatus(PlateRemovalRequestStatus.OPEN);
         removalRequest.setCreatedAt(now);
@@ -80,6 +88,27 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         }
 
         return new SuccessDataResult<>(toDto(saved), messageService.getMessage("plate.removal.request.created"));
+    }
+
+    private Result checkIfReasonExists(PlateRemovalRequestReason reason) {
+        if (reason == null) {
+            return new ErrorResult(messageService.getMessage("validation.plate.removal.reason.notnull"));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfPlateExists(Plate plate) {
+        if (plate == null) {
+            return new ErrorResult(messageService.getMessage("plate.removal.plate.not.found"));
+        }
+        return new SuccessResult();
+    }
+
+    private Result checkIfUserExists(Long userId) {
+        if (userDao.findByIdAndActiveTrue(userId).isEmpty()) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+        return new SuccessResult();
     }
 
     @Override
@@ -103,10 +132,16 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         if (removalRequest == null) {
             return new ErrorResult(messageService.getMessage("plate.removal.request.not.found"));
         }
+        PlateRemovalRequestStatus nextStatus = request == null
+                ? null
+                : PlateRemovalRequestStatus.resolve(request.getStatusId(), request.getStatusCode());
+        if (nextStatus == null) {
+            return new ErrorResult(messageService.getMessage("validation.plate.removal.status.notnull"));
+        }
 
         Plate plate = removalRequest.getPlate();
         LocalDateTime now = LocalDateTime.now();
-        removalRequest.setStatus(request.getStatus());
+        removalRequest.setStatus(nextStatus);
         removalRequest.setAdminNote(request.getAdminNote() == null ? null : request.getAdminNote().trim());
         removalRequest.setReviewedBy(reviewerUserId);
         removalRequest.setReviewedAt(now);
@@ -114,7 +149,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         plateRemovalRequestDao.save(removalRequest);
 
         if (plate != null) {
-            if (request.getStatus() == PlateRemovalRequestStatus.ACCEPTED) {
+            if (nextStatus == PlateRemovalRequestStatus.ACCEPTED) {
                 plate.setStatus(PlateStatus.HIDDEN_BY_REQUEST);
                 if (request.getAdminNote() != null && !request.getAdminNote().isBlank()) {
                     plate.setHiddenReason(request.getAdminNote().trim());
@@ -123,7 +158,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
                 }
                 plate.setUpdatedAt(now);
                 plateDao.save(plate);
-            } else if (request.getStatus() == PlateRemovalRequestStatus.REJECTED
+            } else if (nextStatus == PlateRemovalRequestStatus.REJECTED
                     && plate.getStatus() == PlateStatus.HIDDEN_BY_REQUEST
                     && plate.getHiddenReason() != null
                     && plate.getHiddenReason().startsWith(AUTO_HIDE_MARKER + ":")) {
@@ -146,9 +181,11 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
                 plateCode,
                 request.getRequesterUserId(),
                 request.getRequesterEmail(),
-                request.getReason(),
+                request.getReasonId(),
+                request.getReasonCode(),
                 request.getDescription(),
-                request.getStatus(),
+                request.getStatusId(),
+                request.getStatusCode(),
                 request.getAdminNote(),
                 request.getCreatedAt(),
                 request.getReviewedAt(),

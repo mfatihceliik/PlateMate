@@ -41,7 +41,7 @@ class AdminAccessManagerTest {
         role.setCode(UserRoleCode.ADMIN);
         user.setRole(role);
 
-        when(userDao.findById(1L)).thenReturn(Optional.of(user));
+        when(userDao.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(user));
 
         Result result = manager.checkAdmin(1L);
 
@@ -50,7 +50,7 @@ class AdminAccessManagerTest {
 
     @Test
     void checkAdminReturnsErrorForMissingUser() {
-        when(userDao.findById(9L)).thenReturn(Optional.empty());
+        when(userDao.findByIdAndActiveTrue(9L)).thenReturn(Optional.empty());
         when(messageService.getMessage(Messages.USER_NOT_FOUND)).thenReturn("not-found");
 
         Result result = manager.checkAdmin(9L);

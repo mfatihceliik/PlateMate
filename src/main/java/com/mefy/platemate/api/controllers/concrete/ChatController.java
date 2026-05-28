@@ -14,7 +14,6 @@ import com.mefy.platemate.entities.dto.ChatRoomDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,37 +39,35 @@ public class ChatController implements IChatController {
             @RequestParam Long otherUserId
     ) {
         DataResult<ChatRoomDto> result = chatRoomService.getOrCreateChatRoom(currentUserId, otherUserId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @Override
-    public ResponseEntity<DataResult<List<ChatMessageDto>>> getMessages(@PathVariable Long roomId) {
-        return ResponseEntity.ok(chatMessageService.getMessagesByRoomId(roomId));
+    public ResponseEntity<DataResult<List<ChatMessageDto>>> getMessages(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    ) {
+        DataResult<List<ChatMessageDto>> result = chatMessageService.getMessagesByRoomId(roomId, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     // REST ile mesaj gönderme (Socket alternatifi — offline fallback)
     @Override
-    public ResponseEntity<?> sendMessage(
+    public ResponseEntity<DataResult<ChatMessageDto>> sendMessage(
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody SendMessageRequest request
     ) {
-
-        User sender = new User();
-        sender.setId(currentUserId);
-
-        ChatRoom room = new ChatRoom();
-        room.setId(request.getChatRoomId());
-
-        ChatMessage message = new ChatMessage();
-        message.setSender(sender);
-        message.setChatRoom(room);
-        message.setContent(request.getContent());
-
-        DataResult<ChatMessageDto> result = chatMessageService.sendMessage(message);
+        DataResult<ChatMessageDto> result = chatMessageService.sendMessage(request, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        return ResponseEntity.ok(result);
     }
 
     @Override
@@ -78,6 +75,10 @@ public class ChatController implements IChatController {
             @PathVariable Long roomId,
             @RequestAttribute("userId") Long currentUserId
     ) {
-        return ResponseEntity.ok(chatMessageService.markAsRead(roomId, currentUserId));
+        Result result = chatMessageService.markAsRead(roomId, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 }

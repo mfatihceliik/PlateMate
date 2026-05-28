@@ -9,5 +9,7 @@ import java.util.Optional;
 public interface IFcmTokenDao extends JpaRepository<UserFcmToken, Long> {
     List<UserFcmToken> findByUserId(Long userId);
     Optional<UserFcmToken> findByToken(String token);
+    Optional<UserFcmToken> findByTokenAndUserId(String token, Long userId);
     void deleteByToken(String token);
 }
+

@@ -14,6 +14,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -49,8 +50,6 @@ public class User implements IEntity {
 
     private LocalDateTime deletedAt;
 
-    private LocalDateTime premiumUntil;
-
     @ManyToOne
     @JoinColumn(name = "role_id")
     private UserRole role;
@@ -70,18 +69,43 @@ public class User implements IEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserSettings settings;
 
+    @Transient
+    private LocalDateTime premiumUntil;
+
     public boolean hasRole(UserRoleCode roleCode) {
-        return role != null && role.getCode() == roleCode;
+        if (role == null || roleCode == null) {
+            return false;
+        }
+        return roleCode.getId().equals(role.getCodeId());
     }
 
     public boolean isPremiumActive() {
-        return hasRole(UserRoleCode.PREMIUM)
-                && premiumUntil != null
-                && premiumUntil.isAfter(LocalDateTime.now());
+        return hasRole(UserRoleCode.PREMIUM);
     }
 
     public boolean isSubscriptionActive() {
         return isPremiumActive();
+    }
+
+    @Transient
+    public LocalDateTime getPremiumUntil() {
+        if (premiumUntil != null) {
+            return premiumUntil;
+        }
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return null;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return subscriptions.stream()
+                .filter(subscription -> subscription.getStatus() != UserSubscriptionStatus.CANCELED)
+                .map(UserSubscription::getExpiresAt)
+                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+    }
+
+    public void setPremiumUntil(LocalDateTime premiumUntil) {
+        this.premiumUntil = premiumUntil;
     }
 
     @PrePersist

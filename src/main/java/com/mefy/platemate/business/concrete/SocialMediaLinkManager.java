@@ -10,6 +10,9 @@ import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ISocialMediaLinkDao;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
 import com.mefy.platemate.entities.concrete.SocialPlatform;
+import com.mefy.platemate.entities.concrete.UserProfile;
+import com.mefy.platemate.entities.dto.request.AddSocialLinkRequest;
+import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +23,23 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     private final IMessageService messageService;
 
     @Override
-    public Result add(SocialMediaLink link) {
+    public Result add(AddSocialLinkRequest request, Long currentUserId) {
+        SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
+
         Result result = BusinessRules.run(
-                checkIfPlatformExists(link.getUserProfile().getId(), link.getPlatform())
+                checkIfPlatformProvided(platform),
+                checkIfPlatformExists(currentUserId, platform)
         );
 
         if (result != null) return result;
+
+        UserProfile profile = new UserProfile();
+        profile.setId(currentUserId);
+
+        SocialMediaLink link = new SocialMediaLink();
+        link.setPlatform(platform);
+        link.setUrl(request.getUrl());
+        link.setUserProfile(profile);
 
         socialMediaLinkDao.save(link);
         return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_ADDED));
@@ -38,19 +52,28 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         return new SuccessResult();
     }
 
+    private Result checkIfPlatformProvided(SocialPlatform platform) {
+        if (platform == null) {
+            return new ErrorResult(messageService.getMessage("validation.social.platform.notnull"));
+        }
+        return new SuccessResult();
+    }
+
     @Override
-    public Result update(SocialMediaLink link, Long currentUserId) {
-        SocialMediaLink existingLink = socialMediaLinkDao.findById(link.getId()).orElse(null);
+    public Result update(UpdateSocialLinkRequest request, Long currentUserId) {
+        SocialMediaLink existingLink = socialMediaLinkDao.findById(request.getId()).orElse(null);
+        SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
         
         Result result = BusinessRules.run(
                 checkIfLinkExists(existingLink),
                 checkIfUserAuthorizedForLink(existingLink, currentUserId),
-                checkPlatformUpdate(link.getPlatform(), existingLink, currentUserId)
+                checkIfPlatformProvided(platform),
+                checkPlatformUpdate(platform, existingLink, currentUserId)
         );
         if (result != null) return result;
 
-        existingLink.setPlatform(link.getPlatform());
-        existingLink.setUrl(link.getUrl());
+        existingLink.setPlatform(platform);
+        existingLink.setUrl(request.getUrl());
         socialMediaLinkDao.save(existingLink);
 
         return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_UPDATED));

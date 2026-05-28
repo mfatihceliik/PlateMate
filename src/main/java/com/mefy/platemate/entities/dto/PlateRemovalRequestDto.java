@@ -1,8 +1,6 @@
 package com.mefy.platemate.entities.dto;
 
 import com.mefy.platemate.entities.abstracts.IDto;
-import com.mefy.platemate.entities.concrete.PlateRemovalRequestReason;
-import com.mefy.platemate.entities.concrete.PlateRemovalRequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,9 +16,11 @@ public class PlateRemovalRequestDto implements IDto {
     private String plateCode;
     private Long requesterUserId;
     private String requesterEmail;
-    private PlateRemovalRequestReason reason;
+    private Long reasonId;
+    private String reasonCode;
     private String description;
-    private PlateRemovalRequestStatus status;
+    private Long statusId;
+    private String statusCode;
     private String adminNote;
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;

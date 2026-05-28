@@ -8,7 +8,6 @@ import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
@@ -29,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,7 +49,7 @@ public class ModerationAdminManager implements IModerationAdminService {
                 Sort.by("createdAt").descending()
         );
         var page = plateReviewDao
-                .findByStatusOrderByCreatedAtDesc(PlateReviewStatus.PENDING_REVIEW, pageable)
+                .findByStatusIdOrderByCreatedAtDesc(PlateReviewStatus.PENDING_REVIEW.getId(), pageable)
                 .map(this::toAdminDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
@@ -63,25 +61,13 @@ public class ModerationAdminManager implements IModerationAdminService {
     @Transactional
     public Result approveComment(Long commentId, Long adminUserId) {
         PlateReview review = plateReviewDao.findById(commentId).orElse(null);
-        if (review == null) {
-            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
-        }
+        Result existenceCheck = checkCommentExists(review);
+        if (existenceCheck != null) return existenceCheck;
 
         PlateReviewStatus previousStatus = review.getStatus();
-        review.setStatus(PlateReviewStatus.APPROVED);
-        review.setModerationReason("APPROVED_BY_ADMIN");
-        review.setDeletedAt(null);
-        review.setUpdatedAt(LocalDateTime.now());
-        plateReviewDao.save(review);
-        moderationEventService.logEvent(
-                review,
-                previousStatus,
-                review.getStatus(),
-                PlateReviewModerationActionType.APPROVED_BY_ADMIN,
-                adminUserId,
-                "APPROVED_BY_ADMIN"
-        );
-        refreshPlateStatistics(review.getPlate());
+        applyApproveMutation(review);
+        logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.APPROVED_BY_ADMIN, adminUserId, "APPROVED_BY_ADMIN");
+
         return new SuccessResult(messageService.getMessage("admin.comment.approved"));
     }
 
@@ -89,24 +75,13 @@ public class ModerationAdminManager implements IModerationAdminService {
     @Transactional
     public Result rejectComment(Long commentId, Long adminUserId, String reason) {
         PlateReview review = plateReviewDao.findById(commentId).orElse(null);
-        if (review == null) {
-            return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
-        }
+        Result existenceCheck = checkCommentExists(review);
+        if (existenceCheck != null) return existenceCheck;
 
         PlateReviewStatus previousStatus = review.getStatus();
-        review.setStatus(PlateReviewStatus.REJECTED);
-        review.setModerationReason(resolveReason("REJECTED_BY_ADMIN", reason));
-        review.setUpdatedAt(LocalDateTime.now());
-        plateReviewDao.save(review);
-        moderationEventService.logEvent(
-                review,
-                previousStatus,
-                review.getStatus(),
-                PlateReviewModerationActionType.REJECTED_BY_ADMIN,
-                adminUserId,
-                reason
-        );
-        refreshPlateStatistics(review.getPlate());
+        applyRejectMutation(review, reason);
+        logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.REJECTED_BY_ADMIN, adminUserId, reason);
+
         return new SuccessResult(messageService.getMessage("admin.comment.rejected"));
     }
 
@@ -114,26 +89,62 @@ public class ModerationAdminManager implements IModerationAdminService {
     @Transactional
     public Result removeComment(Long commentId, Long adminUserId, String reason) {
         PlateReview review = plateReviewDao.findById(commentId).orElse(null);
+        Result existenceCheck = checkCommentExists(review);
+        if (existenceCheck != null) return existenceCheck;
+
+        PlateReviewStatus previousStatus = review.getStatus();
+        applyRemoveMutation(review, reason);
+        logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.REMOVED_BY_MODERATOR, adminUserId, reason);
+
+        return new SuccessResult(messageService.getMessage("admin.comment.removed"));
+    }
+
+    private Result checkCommentExists(PlateReview review) {
         if (review == null) {
             return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
         }
+        return null;
+    }
 
-        PlateReviewStatus previousStatus = review.getStatus();
+    private void applyApproveMutation(PlateReview review) {
+        review.setStatus(PlateReviewStatus.APPROVED);
+        review.setModerationReason("APPROVED_BY_ADMIN");
+        review.setDeletedAt(null);
+        review.setUpdatedAt(LocalDateTime.now());
+        plateReviewDao.save(review);
+    }
+
+    private void applyRejectMutation(PlateReview review, String reason) {
+        review.setStatus(PlateReviewStatus.REJECTED);
+        review.setModerationReason(resolveReason("REJECTED_BY_ADMIN", reason));
+        review.setUpdatedAt(LocalDateTime.now());
+        plateReviewDao.save(review);
+    }
+
+    private void applyRemoveMutation(PlateReview review, String reason) {
         review.setStatus(PlateReviewStatus.REMOVED_BY_MODERATOR);
         review.setModerationReason(resolveReason("REMOVED_BY_MODERATOR", reason));
         review.setDeletedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
         plateReviewDao.save(review);
+    }
+
+    private void logModerationEventAndRefresh(
+            PlateReview review,
+            PlateReviewStatus previousStatus,
+            PlateReviewModerationActionType actionType,
+            Long adminUserId,
+            String details
+    ) {
         moderationEventService.logEvent(
                 review,
-                previousStatus,
-                review.getStatus(),
-                PlateReviewModerationActionType.REMOVED_BY_MODERATOR,
+                previousStatus == null ? null : previousStatus.getId(),
+                review.getStatusId(),
+                actionType,
                 adminUserId,
-                reason
+                details
         );
         refreshPlateStatistics(review.getPlate());
-        return new SuccessResult(messageService.getMessage("admin.comment.removed"));
     }
 
     @Override
@@ -194,7 +205,8 @@ public class ModerationAdminManager implements IModerationAdminService {
                 review.getUser() == null ? null : review.getUser().getUsername(),
                 review.getRating(),
                 review.getComment(),
-                review.getStatus(),
+                review.getStatusId(),
+                review.getStatusCode(),
                 review.getModerationReason(),
                 review.getReportCount(),
                 review.getUserAcceptedResponsibility(),
@@ -212,7 +224,8 @@ public class ModerationAdminManager implements IModerationAdminService {
         return new PlateAdminDto(
                 plate.getId(),
                 plate.getPlateCode(),
-                plate.getStatus(),
+                plate.getStatusId(),
+                plate.getStatusCode(),
                 plate.getHiddenReason(),
                 plate.getReviewCount(),
                 reportCount,
@@ -230,9 +243,9 @@ public class ModerationAdminManager implements IModerationAdminService {
     private void refreshPlateStatistics(Plate plate) {
         if (plate == null || plate.getId() == null) return;
 
-        long reviewCountLong = plateReviewDao.countByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED);
+        long reviewCountLong = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), PlateReviewStatus.APPROVED.getId());
         int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
-        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED));
+        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED.getId()));
 
         plate.setReviewCount(reviewCount);
         plate.setTotalRatingSum(totalRatingSum);

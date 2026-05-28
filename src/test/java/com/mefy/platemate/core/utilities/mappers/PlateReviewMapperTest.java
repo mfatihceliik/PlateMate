@@ -38,7 +38,8 @@ class PlateReviewMapperTest {
         PlateReviewDto dto = mapper.entityToDto(review);
 
         assertNotNull(dto);
-        assertEquals(PlateReviewStatus.REJECTED, dto.getReviewStatus());
+        assertEquals(PlateReviewStatus.REJECTED.getId(), dto.getReviewStatusId());
+        assertEquals(PlateReviewStatus.REJECTED.getCode(), dto.getReviewStatusCode());
         assertEquals("34ABC123", dto.getPlateCode());
         assertEquals(17L, dto.getUserId());
     }

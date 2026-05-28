@@ -1,9 +1,7 @@
 package com.mefy.platemate.api.controllers;
 
 import com.mefy.platemate.api.controllers.concrete.PlateController;
-import com.mefy.platemate.api.controllers.concrete.UserProfileController;
 import com.mefy.platemate.business.abstracts.IPlateService;
-import com.mefy.platemate.business.abstracts.IUserProfileService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.exceptions.GlobalExceptionHandler;
 import com.mefy.platemate.core.exceptions.InvalidPaginationException;
@@ -29,17 +27,6 @@ class PaginationValidationUnitTest {
         assertThrows(
                 InvalidPaginationException.class,
                 () -> controller.getReviews("34ABC123", -1, 20)
-        );
-    }
-
-    @Test
-    void userProfileControllerThrowsForOversizedSize() {
-        IUserProfileService userProfileService = mock(IUserProfileService.class);
-        UserProfileController controller = new UserProfileController(userProfileService);
-
-        assertThrows(
-                InvalidPaginationException.class,
-                () -> controller.getByUserId(1L, 1L, 0, 101)
         );
     }
 

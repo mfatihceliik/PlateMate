@@ -30,7 +30,8 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
 
         FriendshipDto dto = new FriendshipDto();
         dto.setId(entity.getId());
-        dto.setStatus(entity.getStatus());
+        dto.setStatusId(entity.getStatusId());
+        dto.setStatusCode(entity.getStatusCode());
         dto.setCreatedAt(entity.getCreatedAt());
 
         // Karşı tarafı belirle

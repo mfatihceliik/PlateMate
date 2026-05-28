@@ -120,9 +120,9 @@ public class PlateManager implements IPlateService {
                 paginationRequest.getSize(),
                 Sort.by("createdAt").descending()
         );
-        var page = plateReviewDao.findByPlatePlateCodeAndStatus(
+        var page = plateReviewDao.findByPlatePlateCodeAndStatusId(
                         normalizedPlate,
-                        PlateReviewStatus.APPROVED,
+                        approvedStatusId(),
                         pageable
                 )
                 .map(plateReviewMapper::entityToDto);
@@ -137,12 +137,8 @@ public class PlateManager implements IPlateService {
         String normalizedPlate = normalizePlate(plateCode);
         User user = userDao.findByIdAndActiveTrue(currentUserId).orElse(null);
 
-        Result result = BusinessRules.run(
-                checkIfPlateValid(normalizedPlate),
-                checkIfUserExists(user),
-                checkIfResponsibilityAccepted(request.getAcceptedResponsibility())
-        );
-        if (result != null) return result;
+        Result validationResult = validateAddReviewInput(normalizedPlate, user, request);
+        if (validationResult != null) return validationResult;
 
         String normalizedComment = normalizeComment(request.getComment());
         Result submissionRulesResult = validateSubmissionRules(user, normalizedComment, request.getReportTypeCodes());
@@ -157,78 +153,30 @@ public class PlateManager implements IPlateService {
         Result visibilityResult = checkIfPlatePubliclyVisible(plate);
         if (!visibilityResult.isSuccess()) return visibilityResult;
 
+        PlateReview existingReview = plateReviewDao.findByPlateIdAndUserId(plate.getId(), currentUserId).orElse(null);
+        Result existingReviewCheck = checkExistingReviewStatus(existingReview);
+        if (!existingReviewCheck.isSuccess()) return existingReviewCheck;
+
         if (request.getReportTypeCodes() != null) {
             Result syncResult = plateReportService.syncReportsForUserAndPlate(plate, currentUserId, request.getReportTypeCodes());
             if (!syncResult.isSuccess()) return syncResult;
         }
-        PlateReview existingReview = plateReviewDao.findByPlateIdAndUserId(plate.getId(), currentUserId).orElse(null);
 
         if (existingReview != null) {
-            PlateReviewStatus previousStatus = existingReview.getStatus();
-            applyReviewMutation(
-                    existingReview,
-                    request.getRating(),
-                    moderation,
-                    resolveResponsibilityAcceptance(request.getAcceptedResponsibility()),
-                    request.getResponsibilityPolicyVersion()
-            );
-            plateReviewDao.save(existingReview);
-            moderationEventService.logEvent(
-                    existingReview,
-                    previousStatus,
-                    existingReview.getStatus(),
-                    PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
-                    currentUserId,
-                    "USER_UPDATED_REVIEW"
-            );
-            refreshPlateStatistics(plate);
-            return new SuccessResult(resolveReviewSuccessMessage(true, existingReview.getStatus()));
+            return resubmitRejectedReview(existingReview, request, moderation, currentUserId, plate);
         }
 
-        PlateReview review = new PlateReview();
-        review.setPlate(plate);
-        review.setUser(user);
-        applyReviewMutation(
-                review,
-                request.getRating(),
-                moderation,
-                resolveResponsibilityAcceptance(request.getAcceptedResponsibility()),
-                request.getResponsibilityPolicyVersion()
-        );
-        review.setCreatedAt(LocalDateTime.now());
-        PlateReview savedReview = plateReviewDao.save(review);
-        PlateReview persistedReview = savedReview == null ? review : savedReview;
-        moderationEventService.logEvent(
-                persistedReview,
-                null,
-                persistedReview.getStatus(),
-                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
-                currentUserId,
-                "USER_SUBMITTED_REVIEW"
-        );
-        refreshPlateStatistics(plate);
-
-        return new SuccessResult(resolveReviewSuccessMessage(false, review.getStatus()));
+        return submitNewReview(plate, user, request, moderation, currentUserId);
     }
 
     @Override
     @Transactional
     public Result updateReview(Long reviewId, Long currentUserId, UpdatePlateReviewRequest request) {
         PlateReview review = plateReviewDao.findById(reviewId).orElse(null);
-
-        Result result = BusinessRules.run(
-                checkIfReviewExists(review),
-                checkIfReviewOwner(review, currentUserId),
-                checkIfResponsibilityAccepted(request.getAcceptedResponsibility())
-        );
-        if (result != null) return result;
-
-        Result visibilityResult = checkIfPlatePubliclyVisible(review.getPlate());
-        if (!visibilityResult.isSuccess()) return visibilityResult;
-
         String normalizedComment = normalizeComment(request.getComment());
-        Result submissionRulesResult = validateSubmissionRules(review.getUser(), normalizedComment, request.getReportTypeCodes());
-        if (submissionRulesResult != null) return submissionRulesResult;
+
+        Result validationResult = validateUpdateReview(review, currentUserId, request, normalizedComment);
+        if (validationResult != null) return validationResult;
 
         ContentModerationResult moderation = resolveModeration(review.getUser(), normalizedComment);
         if (!moderation.isAllowed()) {
@@ -255,8 +203,8 @@ public class PlateManager implements IPlateService {
         plateReviewDao.save(review);
         moderationEventService.logEvent(
                 review,
-                previousStatus,
-                review.getStatus(),
+                previousStatus == null ? null : previousStatus.getId(),
+                review.getStatusId(),
                 PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
                 currentUserId,
                 "USER_UPDATED_REVIEW"
@@ -264,6 +212,28 @@ public class PlateManager implements IPlateService {
         refreshPlateStatistics(review.getPlate());
 
         return new SuccessResult(resolveReviewSuccessMessage(true, review.getStatus()));
+    }
+
+    private Result validateUpdateReview(
+            PlateReview review,
+            Long currentUserId,
+            UpdatePlateReviewRequest request,
+            String normalizedComment
+    ) {
+        Result result = BusinessRules.run(
+                checkIfReviewExists(review),
+                checkIfReviewOwner(review, currentUserId),
+                checkIfResponsibilityAccepted(request.getAcceptedResponsibility())
+        );
+        if (result != null) return result;
+
+        Result visibilityResult = checkIfPlatePubliclyVisible(review.getPlate());
+        if (!visibilityResult.isSuccess()) return visibilityResult;
+
+        Result submissionRulesResult = validateSubmissionRules(review.getUser(), normalizedComment, request.getReportTypeCodes());
+        if (submissionRulesResult != null) return submissionRulesResult;
+
+        return null;
     }
 
     @Override
@@ -285,8 +255,8 @@ public class PlateManager implements IPlateService {
         plateReviewDao.save(review);
         moderationEventService.logEvent(
                 review,
-                previousStatus,
-                review.getStatus(),
+                previousStatus == null ? null : previousStatus.getId(),
+                review.getStatusId(),
                 PlateReviewModerationActionType.REMOVED_BY_USER,
                 currentUserId,
                 "USER_REMOVED_REVIEW"
@@ -342,9 +312,9 @@ public class PlateManager implements IPlateService {
     private void refreshPlateStatistics(Plate plate) {
         if (plate == null || plate.getId() == null) return;
 
-        long reviewCountLong = plateReviewDao.countByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED);
+        long reviewCountLong = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), approvedStatusId());
         int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
-        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED));
+        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), approvedStatusId()));
 
         plate.setReviewCount(reviewCount);
         plate.setTotalRatingSum(totalRatingSum);
@@ -379,7 +349,7 @@ public class PlateManager implements IPlateService {
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
         List<PlateReviewDto> reviews = plateReviewDao
-                .findByPlatePlateCodeAndStatus(normalizedPlate, PlateReviewStatus.APPROVED, pageable)
+                .findByPlatePlateCodeAndStatusId(normalizedPlate, approvedStatusId(), pageable)
                 .map(plateReviewMapper::entityToDto)
                 .getContent();
         dto.setRecentReviews(reviews);
@@ -408,13 +378,13 @@ public class PlateManager implements IPlateService {
         }
 
         long totalSearchCount = plateSearchEventDao.countByPlateId(plate.getId());
-        long totalReviewCount = plateReviewDao.countByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED);
+        long totalReviewCount = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), approvedStatusId());
         long totalReportCount = plateReportDao.countByPlateIdAndActiveTrue(plate.getId());
         long totalWeightedReportScore = safeLong(plateReportDao.getWeightedScoreByPlateId(plate.getId()));
 
         LocalDateTime lastActivityAt = maxDate(
                 plateSearchEventDao.findLastSearchedAtByPlateId(plate.getId()),
-                plateReviewDao.findLastReviewAtByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED),
+                plateReviewDao.findLastReviewAtByPlateIdAndStatus(plate.getId(), approvedStatusId()),
                 plateReportDao.findLastReportedAtByPlateId(plate.getId()),
                 plate.getUpdatedAt()
         );
@@ -583,6 +553,10 @@ public class PlateManager implements IPlateService {
         return messageService.getMessage(isUpdate ? Messages.REVIEW_UPDATED : Messages.REVIEW_ADDED);
     }
 
+    private Long approvedStatusId() {
+        return PlateReviewStatus.APPROVED.getId();
+    }
+
     private RequestMetadata resolveRequestMetadata() {
         ServletRequestAttributes requestAttributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -593,6 +567,82 @@ public class PlateManager implements IPlateService {
         String clientIp = extractClientIp(request);
         String userAgent = request.getHeader("User-Agent");
         return new RequestMetadata(hashingService.sha256(clientIp), hashingService.sha256(userAgent));
+    }
+
+    private Result validateAddReviewInput(String normalizedPlate, User user, AddPlateReviewRequest request) {
+        return BusinessRules.run(
+                checkIfPlateValid(normalizedPlate),
+                checkIfUserExists(user),
+                checkIfResponsibilityAccepted(request.getAcceptedResponsibility())
+        );
+    }
+
+    private Result checkExistingReviewStatus(PlateReview existingReview) {
+        if (existingReview != null && existingReview.getStatus() != PlateReviewStatus.REJECTED) {
+            return new ErrorResult(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE));
+        }
+        return new SuccessResult();
+    }
+
+    private Result resubmitRejectedReview(
+            PlateReview existingReview,
+            AddPlateReviewRequest request,
+            ContentModerationResult moderation,
+            Long currentUserId,
+            Plate plate
+    ) {
+        PlateReviewStatus previousStatus = existingReview.getStatus();
+        applyReviewMutation(
+                existingReview,
+                request.getRating(),
+                moderation,
+                resolveResponsibilityAcceptance(request.getAcceptedResponsibility()),
+                request.getResponsibilityPolicyVersion()
+        );
+        plateReviewDao.save(existingReview);
+        moderationEventService.logEvent(
+                existingReview,
+                previousStatus == null ? null : previousStatus.getId(),
+                existingReview.getStatusId(),
+                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
+                currentUserId,
+                "USER_RESUBMITTED_REJECTED_REVIEW"
+        );
+        refreshPlateStatistics(plate);
+        return new SuccessResult(resolveReviewSuccessMessage(true, existingReview.getStatus()));
+    }
+
+    private Result submitNewReview(
+            Plate plate,
+            User user,
+            AddPlateReviewRequest request,
+            ContentModerationResult moderation,
+            Long currentUserId
+    ) {
+        PlateReview review = new PlateReview();
+        review.setPlate(plate);
+        review.setUser(user);
+        applyReviewMutation(
+                review,
+                request.getRating(),
+                moderation,
+                resolveResponsibilityAcceptance(request.getAcceptedResponsibility()),
+                request.getResponsibilityPolicyVersion()
+        );
+        review.setCreatedAt(LocalDateTime.now());
+        PlateReview savedReview = plateReviewDao.save(review);
+        PlateReview persistedReview = savedReview == null ? review : savedReview;
+        moderationEventService.logEvent(
+                persistedReview,
+                null,
+                persistedReview.getStatusId(),
+                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
+                currentUserId,
+                "USER_SUBMITTED_REVIEW"
+        );
+        refreshPlateStatistics(plate);
+
+        return new SuccessResult(resolveReviewSuccessMessage(false, review.getStatus()));
     }
 
     private String extractClientIp(HttpServletRequest request) {

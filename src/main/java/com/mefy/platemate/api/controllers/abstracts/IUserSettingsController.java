@@ -3,6 +3,7 @@ package com.mefy.platemate.api.controllers.abstracts;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserSettingsDto;
+import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,11 @@ public interface IUserSettingsController {
 
     @GetMapping("/{userId}")
     ResponseEntity<DataResult<UserSettingsDto>> getByUserId(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId);
+
+    @GetMapping("/{userId}/overview")
+    ResponseEntity<DataResult<UserSettingsOverviewDto>> getOverviewByUserId(
             @PathVariable Long userId,
             @RequestAttribute("userId") Long tokenUserId);
 

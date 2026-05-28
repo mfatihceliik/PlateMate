@@ -11,7 +11,5 @@ public interface IUserProfileController {
     @GetMapping("/{userId}")
     ResponseEntity<DataResult<UserProfileDto>> getByUserId(
             @PathVariable Long userId,
-            @RequestAttribute("userId") Long requesterUserId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size);
+            @RequestAttribute("userId") Long requesterUserId);
 }

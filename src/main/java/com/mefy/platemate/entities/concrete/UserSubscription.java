@@ -3,18 +3,18 @@ package com.mefy.platemate.entities.concrete;
 import com.mefy.platemate.entities.abstracts.IEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -32,9 +32,12 @@ public class UserSubscription implements IEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserSubscriptionStatus status = UserSubscriptionStatus.PENDING;
+    @Column(name = "status_id", nullable = false)
+    private Long statusId = UserSubscriptionStatus.PENDING.getId();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", insertable = false, updatable = false)
+    private UserSubscriptionStatusLookup statusRef;
 
     @Column(nullable = false)
     private Integer purchasedDays;
@@ -50,4 +53,33 @@ public class UserSubscription implements IEntity {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Transient
+    public UserSubscriptionStatus getStatus() {
+        UserSubscriptionStatus fromId = UserSubscriptionStatus.fromId(statusId);
+        if (fromId != null) {
+            return fromId;
+        }
+        return UserSubscriptionStatus.fromCode(resolveStatusCodeFromRef());
+    }
+
+    public void setStatus(UserSubscriptionStatus status) {
+        this.statusId = status == null ? null : status.getId();
+    }
+
+    @Transient
+    public String getStatusCode() {
+        UserSubscriptionStatus status = UserSubscriptionStatus.fromId(statusId);
+        if (status != null) {
+            return status.getCode();
+        }
+        return resolveStatusCodeFromRef();
+    }
+
+    private String resolveStatusCodeFromRef() {
+        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
+            return null;
+        }
+        return statusRef.getCode();
+    }
 }

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Configuration
 @RequiredArgsConstructor
@@ -72,13 +73,9 @@ public class UserRoleSeedConfig {
                             && subscription.getExpiresAt().isAfter(now)
             );
 
-            if (!hasActiveNow && subscriptions.isEmpty()) {
-                hasActiveNow = user.getPremiumUntil() != null && user.getPremiumUntil().isAfter(now);
-            }
-
             UserRole targetRole = hasActiveNow ? premiumRole : normalRole;
 
-            if (user.getRole() == null || user.getRole().getCode() != targetRole.getCode()) {
+            if (user.getRole() == null || !Objects.equals(user.getRole().getCodeId(), targetRole.getCodeId())) {
                 user.setRole(targetRole);
                 userDao.save(user);
             }

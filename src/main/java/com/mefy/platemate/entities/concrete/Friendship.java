@@ -5,13 +5,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "friendships", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"requester_id", "addressee_id"})
-})
+@Table(name = "friendships")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,11 +30,26 @@ public class Friendship implements IEntity {
     @JoinColumn(name = "addressee_id", nullable = false)
     private User addressee;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private FriendshipStatus status = FriendshipStatus.PENDING;
+    @Column(name = "status_id", nullable = false)
+    private Long statusId = FriendshipRequestStatusCodes.REQUESTED_ID;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", insertable = false, updatable = false)
+    private FriendshipRequestStatusLookup statusRef;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime respondedAt; // Kabul/Red tarihi
+
+    @Transient
+    public String getStatusCode() {
+        String codeFromId = FriendshipRequestStatusCodes.codeFromId(statusId);
+        if (codeFromId != null) {
+            return codeFromId;
+        }
+        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
+            return null;
+        }
+        return statusRef.getCode();
+    }
 }

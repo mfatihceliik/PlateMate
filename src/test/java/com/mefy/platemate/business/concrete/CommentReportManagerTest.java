@@ -102,8 +102,8 @@ class CommentReportManagerTest {
         when(userDao.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(new com.mefy.platemate.entities.concrete.User()));
         when(plateReviewDao.findById(12L)).thenReturn(Optional.of(review));
         when(commentReportDao.existsByCommentIdAndReporterUserId(12L, 7L)).thenReturn(false);
-        when(plateReviewDao.countByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED)).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED)).thenReturn(0L);
+        when(plateReviewDao.countByPlateIdAndStatusId(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("comment.report.created")).thenReturn("created");
 
         Result result = manager.addReport(12L, 7L, new AddCommentReportRequest(CommentReportReason.INSULT, "x"));
@@ -115,8 +115,8 @@ class CommentReportManagerTest {
         assertEquals(PlateReviewStatus.PENDING_REVIEW, reviewCaptor.getValue().getStatus());
         verify(moderationEventService).logEvent(
                 eq(review),
-                eq(PlateReviewStatus.APPROVED),
-                eq(PlateReviewStatus.PENDING_REVIEW),
+                eq(PlateReviewStatus.APPROVED.getId()),
+                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
                 eq(PlateReviewModerationActionType.AUTO_PENDING_BY_REPORT_THRESHOLD),
                 eq(7L),
                 eq("AUTO_PENDING_BY_REPORT_THRESHOLD")
@@ -147,8 +147,8 @@ class CommentReportManagerTest {
         report.setUpdatedAt(LocalDateTime.now());
 
         when(commentReportDao.findById(21L)).thenReturn(Optional.of(report));
-        when(plateReviewDao.countByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED)).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED)).thenReturn(0L);
+        when(plateReviewDao.countByPlateIdAndStatusId(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("comment.report.reviewed")).thenReturn("reviewed");
 
         Result result = manager.reviewReport(
@@ -162,8 +162,8 @@ class CommentReportManagerTest {
         assertEquals(PlateReviewStatus.REMOVED_BY_MODERATOR, comment.getStatus());
         verify(moderationEventService).logEvent(
                 eq(comment),
-                eq(PlateReviewStatus.PENDING_REVIEW),
-                eq(PlateReviewStatus.REMOVED_BY_MODERATOR),
+                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
+                eq(PlateReviewStatus.REMOVED_BY_MODERATOR.getId()),
                 eq(PlateReviewModerationActionType.REMOVED_BY_MODERATOR),
                 eq(100L),
                 eq("REMOVED_BY_ACCEPTED_REPORT")
@@ -171,3 +171,7 @@ class CommentReportManagerTest {
         verify(plateDao).save(eq(plate));
     }
 }
+
+
+
+

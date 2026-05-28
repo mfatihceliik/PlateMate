@@ -6,11 +6,15 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.mappers.FriendshipMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
-import com.mefy.platemate.core.utilities.results.*;
+import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
+import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.core.utilities.results.SuccessDataResult;
+import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IFriendshipDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Friendship;
-import com.mefy.platemate.entities.concrete.FriendshipStatus;
+import com.mefy.platemate.entities.concrete.FriendshipRequestStatusCodes;
 import com.mefy.platemate.entities.concrete.NotificationType;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.FriendshipDto;
@@ -43,17 +47,17 @@ public class FriendshipManager implements IFriendshipService {
 
         User requester = userDao.findById(requesterId).orElse(null);
         User addressee = userDao.findById(addresseeId).orElse(null);
-        
+
         Result usersResult = BusinessRules.run(checkIfUsersExist(requester, addressee));
         if (usersResult != null) return usersResult;
 
         Friendship friendship = new Friendship();
         friendship.setRequester(requester);
         friendship.setAddressee(addressee);
-        friendship.setStatus(FriendshipStatus.PENDING);
+        friendship.setStatusId(FriendshipRequestStatusCodes.REQUESTED_ID);
+        friendship.setRespondedAt(null);
         friendshipDao.save(friendship);
 
-        // Bildirim gönder
         String title = messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_TITLE);
         String content = requester.getUsername() + " " + messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_CONTENT);
         notificationService.sendNotification(addresseeId, title, content, NotificationType.FRIEND_REQUEST);
@@ -65,7 +69,7 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result acceptRequest(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        
+
         Result result = BusinessRules.run(
                 checkIfFriendshipExists(friendship),
                 checkIfUserAuthorized(friendship, currentUserId, "friendship.accept.unauthorized"),
@@ -73,7 +77,7 @@ public class FriendshipManager implements IFriendshipService {
         );
         if (result != null) return result;
 
-        friendship.setStatus(FriendshipStatus.ACCEPTED);
+        friendship.setStatusId(FriendshipRequestStatusCodes.ACCEPTED_ID);
         friendship.setRespondedAt(LocalDateTime.now());
         friendshipDao.save(friendship);
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_ACCEPTED));
@@ -83,7 +87,7 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result rejectRequest(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        
+
         Result result = BusinessRules.run(
                 checkIfFriendshipExists(friendship),
                 checkIfUserAuthorized(friendship, currentUserId, "friendship.reject.unauthorized"),
@@ -91,7 +95,7 @@ public class FriendshipManager implements IFriendshipService {
         );
         if (result != null) return result;
 
-        friendship.setStatus(FriendshipStatus.REJECTED);
+        friendship.setStatusId(FriendshipRequestStatusCodes.REJECTED_ID);
         friendship.setRespondedAt(LocalDateTime.now());
         friendshipDao.save(friendship);
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_REJECTED));
@@ -101,20 +105,22 @@ public class FriendshipManager implements IFriendshipService {
     @Transactional
     public Result removeFriend(Long friendshipId, Long currentUserId) {
         Friendship friendship = friendshipDao.findById(friendshipId).orElse(null);
-        
+
         Result result = BusinessRules.run(
                 checkIfFriendshipExists(friendship),
                 checkIfUserIsParticipant(friendship, currentUserId)
         );
         if (result != null) return result;
 
-        friendshipDao.delete(friendship);
+        friendship.setStatusId(FriendshipRequestStatusCodes.REMOVED_ID);
+        friendship.setRespondedAt(LocalDateTime.now());
+        friendshipDao.save(friendship);
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_REMOVED));
     }
 
     @Override
     public DataResult<List<FriendshipDto>> getFriends(Long userId) {
-        List<Friendship> friendships = friendshipDao.findByUserIdAndStatus(userId, FriendshipStatus.ACCEPTED);
+        List<Friendship> friendships = friendshipDao.findByUserIdAndStatusId(userId, FriendshipRequestStatusCodes.ACCEPTED_ID);
         List<FriendshipDto> dtos = friendships.stream()
                 .map(f -> friendshipMapper.entityToDto(f, userId))
                 .collect(Collectors.toList());
@@ -123,14 +129,12 @@ public class FriendshipManager implements IFriendshipService {
 
     @Override
     public DataResult<List<FriendshipDto>> getPendingRequests(Long userId) {
-        List<Friendship> pending = friendshipDao.findByAddresseeIdAndStatus(userId, FriendshipStatus.PENDING);
+        List<Friendship> pending = friendshipDao.findByAddresseeIdAndStatusId(userId, FriendshipRequestStatusCodes.REQUESTED_ID);
         List<FriendshipDto> dtos = pending.stream()
                 .map(f -> friendshipMapper.entityToDto(f, userId))
                 .collect(Collectors.toList());
         return new SuccessDataResult<>(dtos, messageService.getMessage(Messages.PENDING_REQUESTS_LISTED));
     }
-
-    ///  BUSINESS RULES
 
     private Result checkIfSelfRequest(Long requesterId, Long addresseeId) {
         if (requesterId.equals(addresseeId)) {
@@ -140,7 +144,12 @@ public class FriendshipManager implements IFriendshipService {
     }
 
     private Result checkIfAlreadyExists(Long requesterId, Long addresseeId) {
-        if (friendshipDao.findBetweenUsers(requesterId, addresseeId).isPresent()) {
+        long activeCount = friendshipDao.countActiveBetweenUsers(
+                requesterId,
+                addresseeId,
+                FriendshipRequestStatusCodes.ACTIVE_IDS
+        );
+        if (activeCount > 0) {
             return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_ALREADY_EXISTS));
         }
         return new SuccessResult();
@@ -170,7 +179,7 @@ public class FriendshipManager implements IFriendshipService {
 
     private Result checkIfFriendshipIsPending(Friendship friendship) {
         if (friendship == null) return new SuccessResult();
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+        if (!FriendshipRequestStatusCodes.REQUESTED_ID.equals(friendship.getStatusId())) {
             return new ErrorResult(messageService.getMessage("friendship.already.answered"));
         }
         return new SuccessResult();

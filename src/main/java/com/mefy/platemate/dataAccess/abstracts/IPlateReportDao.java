@@ -4,6 +4,7 @@ import com.mefy.platemate.dataAccess.projections.PlateReportAggregateProjection;
 import com.mefy.platemate.dataAccess.projections.PlateWeightedScoreProjection;
 import com.mefy.platemate.dataAccess.projections.RecentReportActivityProjection;
 import com.mefy.platemate.entities.concrete.PlateReport;
+import com.mefy.platemate.entities.concrete.PlateStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,12 +32,15 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             where r.active = true
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.plate.statusId = :plateStatusId
             """)
-    long countActiveByReportedAtWindow(
+    long countActiveByReportedAtWindowAndPlateStatus(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId
     );
+
+
 
     long countByPlateIdAndActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(
             Long plateId,
@@ -114,13 +118,16 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             where r.active = true
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.plate.statusId = :plateStatusId
             group by r.plate.id
             """)
-    List<PlateReportAggregateProjection> getActiveReportAggregates(
+    List<PlateReportAggregateProjection> getActiveReportAggregatesAndPlateStatus(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId
     );
+
+
 
     @Query("""
             select r.plate.id as plateId,
@@ -132,14 +139,17 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
               and r.plate.city.id = :cityId
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.plate.statusId = :plateStatusId
             group by r.plate.id
             """)
-    List<PlateReportAggregateProjection> getCityActiveReportAggregates(
+    List<PlateReportAggregateProjection> getCityActiveReportAggregatesAndPlateStatus(
             @Param("cityId") Integer cityId,
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId
     );
+
+
 
     @Query("""
             select r.plate.id as plateId,
@@ -149,28 +159,17 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
               and r.plate.id in :plateIds
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.plate.statusId = :plateStatusId
             group by r.plate.id
             """)
-    List<PlateWeightedScoreProjection> getWeightedScoresByPlateIds(
+    List<PlateWeightedScoreProjection> getWeightedScoresByPlateIdsAndPlateStatus(
             @Param("plateIds") Collection<Long> plateIds,
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId
     );
 
-    @Query("""
-            select r.id as reportId,
-                   r.user.username as username,
-                   r.plate.plateCode as plateCode,
-                   r.reportType.code as reportTypeCode,
-                   r.reportType.label as reportTypeLabel,
-                   r.lastReportedAt as occurredAt
-            from PlateReport r
-            where r.active = true
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
-            order by r.lastReportedAt desc
-            """)
-    List<RecentReportActivityProjection> getRecentReportActivities(Pageable pageable);
+
 
     @Query("""
             select r.id as reportId,
@@ -181,14 +180,36 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
                    r.lastReportedAt as occurredAt
             from PlateReport r
             where r.active = true
-              and r.plate.status = com.mefy.platemate.entities.concrete.PlateStatus.ACTIVE
+              and r.plate.statusId = :plateStatusId
+            order by r.lastReportedAt desc
+            """)
+    List<RecentReportActivityProjection> getRecentReportActivitiesAndPlateStatus(
+            @Param("plateStatusId") Long plateStatusId,
+            Pageable pageable
+    );
+
+
+
+    @Query("""
+            select r.id as reportId,
+                   r.user.username as username,
+                   r.plate.plateCode as plateCode,
+                   r.reportType.code as reportTypeCode,
+                   r.reportType.label as reportTypeLabel,
+                   r.lastReportedAt as occurredAt
+            from PlateReport r
+            where r.active = true
+              and r.plate.statusId = :plateStatusId
               and r.lastReportedAt >= :start
               and r.lastReportedAt < :end
             order by r.lastReportedAt desc
             """)
-    List<RecentReportActivityProjection> getRecentReportActivitiesByWindow(
+    List<RecentReportActivityProjection> getRecentReportActivitiesByWindowAndPlateStatus(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId,
             Pageable pageable
     );
+
+
 }

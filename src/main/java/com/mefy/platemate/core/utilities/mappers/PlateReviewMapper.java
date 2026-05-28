@@ -14,7 +14,8 @@ public class PlateReviewMapper implements ModelMapperService<PlateReview, PlateR
         dto.setId(entity.getId());
         dto.setRating(entity.getRating());
         dto.setComment(entity.getComment());
-        dto.setReviewStatus(entity.getStatus());
+        dto.setReviewStatusId(entity.getStatusId());
+        dto.setReviewStatusCode(entity.getStatusCode());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
 

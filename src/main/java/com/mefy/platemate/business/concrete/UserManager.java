@@ -13,12 +13,15 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IUserRoleDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
+import com.mefy.platemate.dataAccess.abstracts.IUserSubscriptionDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRole;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
+import com.mefy.platemate.entities.concrete.UserSubscriptionStatus;
 import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ public class UserManager implements IUserService {
 
     private final IUserDao userDao;
     private final IUserRoleDao userRoleDao;
+    private final IUserSubscriptionDao userSubscriptionDao;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IMessageService messageService;
@@ -65,12 +69,21 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<User> register(RegisterRequest request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(request.getPassword());
+        user.setEmail(request.getEmail());
+        return add(user);
+    }
+
+    @Override
     public DataResult<List<UserDto>> getAll() {
         List<User> users = userDao.findAll().stream()
                 .filter(User::isActive)
                 .collect(Collectors.toList());
         List<UserDto> userDtos = users.stream()
-                .map(userMapper::entityToDto)
+                .map(this::toUserDtoWithComputedPremium)
                 .collect(Collectors.toList());
 
         return new SuccessDataResult<>(userDtos, messageService.getMessage(Messages.USERS_LISTED));
@@ -93,7 +106,7 @@ public class UserManager implements IUserService {
             return new ErrorDataResult<>(result.getMessage());
         }
         
-        return new SuccessDataResult<>(userMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
+        return new SuccessDataResult<>(toUserDtoWithComputedPremium(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
@@ -109,23 +122,23 @@ public class UserManager implements IUserService {
     }
 
     @Override
-    public Result update(User user) {
-        User existingUser = userDao.findByIdAndActiveTrue(user.getId()).orElse(null);
+    public Result update(Long id, com.mefy.platemate.entities.dto.request.UpdateUserRequest request) {
+        User existingUser = userDao.findByIdAndActiveTrue(id).orElse(null);
         
         Result result = BusinessRules.run(
                 checkIfUserExists(existingUser),
-                checkEmailUpdate(user.getEmail(), existingUser)
+                checkEmailUpdate(request.getEmail(), existingUser)
         );
         if (result != null) return result;
 
         // Email değişmişse güncelle
-        if (user.getEmail() != null && !user.getEmail().equals(existingUser.getEmail())) {
-            existingUser.setEmail(user.getEmail());
+        if (request.getEmail() != null && !request.getEmail().equals(existingUser.getEmail())) {
+            existingUser.setEmail(request.getEmail());
         }
 
         // Şifre değişmişse hashleyerek güncelle
-        if (user.getPassword() != null && !user.getPassword().isBlank()) {
-            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
         userDao.save(existingUser);
@@ -153,7 +166,7 @@ public class UserManager implements IUserService {
             return new ErrorDataResult<>(result.getMessage());
         }
         
-        return new SuccessDataResult<>(userMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
+        return new SuccessDataResult<>(toUserDtoWithComputedPremium(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
@@ -204,17 +217,20 @@ public class UserManager implements IUserService {
     }
 
     private UserAdminDto toAdminDto(User user) {
+        Long roleId = null;
         String roleCode = null;
-        if (user.getRole() != null && user.getRole().getCode() != null) {
-            roleCode = user.getRole().getCode().name();
+        if (user.getRole() != null) {
+            roleId = user.getRole().getCodeId();
+            roleCode = user.getRole().getCodeValue();
         }
         return new UserAdminDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                roleId,
                 roleCode,
                 user.isPremiumActive(),
-                user.getPremiumUntil(),
+                resolvePremiumUntil(user.getId()),
                 user.isActive(),
                 user.getCreatedAt(),
                 user.getDeletedAt()
@@ -228,5 +244,21 @@ public class UserManager implements IUserService {
             return BusinessRules.run(checkIfEmailExists(newEmail));
         }
         return new SuccessResult();
+    }
+
+    private LocalDateTime resolvePremiumUntil(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        return userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(s -> s.getStatus() != UserSubscriptionStatus.CANCELED)
+                .map(s -> s.getExpiresAt())
+                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+    }
+
+    private UserDto toUserDtoWithComputedPremium(User user) {
+        UserDto dto = userMapper.entityToDto(user);
+        dto.setPremiumUntil(resolvePremiumUntil(user.getId()));
+        return dto;
     }
 }

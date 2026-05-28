@@ -7,7 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface IUserRoleDao extends JpaRepository<UserRole, Long> {
-    Optional<UserRole> findByCode(UserRoleCode code);
+    Optional<UserRole> findByCodeId(Long codeId);
 
-    boolean existsByCode(UserRoleCode code);
+    boolean existsByCodeId(Long codeId);
+
+    default Optional<UserRole> findByCode(UserRoleCode code) {
+        return findByCodeId(code == null ? null : code.getId());
+    }
+
+    default boolean existsByCode(UserRoleCode code) {
+        return existsByCodeId(code == null ? null : code.getId());
+    }
 }

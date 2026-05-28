@@ -31,6 +31,23 @@ Bu dokuman mevcut backend kodundaki endpointleri yansitir.
 
 ---
 
+## Lookup Normalizasyonu (Two-Phase Geçiş Notu)
+
+- Persist edilen enum alanlari lookup tablolara tasindi ve API response'larda `...Id + ...Code` birlikte doner.
+- Yazma request'lerinde gecis doneminde `id` veya `code` kabul edilir; ikisi birden gelirse `id` onceliklidir.
+- Asagidaki domainlerde lookup model aktiftir:
+  - `user_subscriptions.status`
+  - `plates.status`
+  - `comment_reports.reason`, `comment_reports.status`
+  - `plate_removal_requests.reason`, `plate_removal_requests.status`
+  - `plate_report_types.severity`
+  - `social_media_links.platform`
+  - `plate_review_moderation_events.action_type`
+  - `user_roles.code`
+- `users.premium_until` artik source-of-truth degildir; `premiumUntil` API'de `user_subscriptions` uzerinden hesaplanir.
+
+---
+
 ## 1) Authentication (`/api/auth`)
 
 ### Register
@@ -128,48 +145,25 @@ veya
 
 ### Get Profile By User Id
 - **Method**: `GET`
-- **URL**: `/api/profiles/{userId}?page=0&size=20`
-- **Not**: Profile cevabinda `username`, `averageGivenRating`, `reviewCount`, `joinedAt`, `premiumActive`, `premiumUntil`, `userSettings(self-only)`, `socialMediaLinks`, `plateReviews(UserProfileReviewPageDto)` doner.
-- **Gorunurluk Kurali**: `requesterUserId == userId` ise tum review statusleri doner; diger kullanicilar sadece `APPROVED` gorur.
+- **URL**: `/api/profiles/{userId}`
+- **Not**: Profile cevabinda `username`, `totalFriendCounts`, `averageGivenRating`, `reviewCount`, `joinedAt`, `premiumActive`, `userSettings(self-only)`, `socialMediaLinks`, `plateReviews(last 10)`, `friendRequests(last 10, self-only)`, `evaluationTotals` doner.
+- **Review Status Kontrati**: Her review item icinde `reviewStatusId` (1..6) ve `reviewStatusCode` (`PENDING_REVIEW`, `APPROVED`, ...) birlikte doner.
+- **Gorunurluk Kurali**:
+  - `plateReviews`: `requesterUserId == userId` ise tum review statusleri doner; diger kullanicilar sadece `APPROVED` gorur.
+  - `friendRequests`: sadece self profile gorunumunde doner; non-self gorunumde bos liste doner.
 - **Status Counts Kurali**: Top-level `reviewStatusCounts` profile-wide toplamlari doner. Self profile icin tum statuslar doludur; baska profil goruntulemede yalnizca `approved` dolu, diger alanlar `0` doner.
-- **Evaluation Totals Kurali**: `plateReviews.meta.evaluationTotals` profile-wide total metrikleri (`totalApproved`, `totalPendingReview`, `totalRejected`, `totalRemovedByUser`, `totalRemovedByModerator`, `totalRemovedByLegalRequest`) self/non-self fark etmeksizin full doner.
-- **Plate Reviews Alan Ornegi**:
+- **Evaluation Totals Kurali**: `evaluationTotals` profile-wide total metrikleri (`totalApproved`, `totalPendingReview`, `totalRejected`, `totalRemovedByUser`, `totalRemovedByModerator`, `totalRemovedByLegalRequest`) self/non-self fark etmeksizin full doner.
+- **Response Ornegi**:
 ```json
 {
-  "items": [
-    {
-      "id": 12,
-      "plateCode": "34ABC123",
-      "rating": 5,
-      "comment": "Temiz kullanim.",
-      "reviewStatus": "APPROVED",
-      "userId": 7,
-      "username": "fatih",
-      "createdAt": "2026-05-12T11:20:00",
-      "updatedAt": "2026-05-12T11:20:00"
-    }
-  ],
-  "meta": {
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1,
-    "hasNext": false,
-    "hasPrevious": false,
-    "evaluationTotals": {
-      "totalApproved": 8,
-      "totalPendingReview": 1,
-      "totalRejected": 1,
-      "totalRemovedByUser": 1,
-      "totalRemovedByModerator": 1,
-      "totalRemovedByLegalRequest": 0
-    }
-  }
-}
-```
-- **Top-level Status Counts Ornegi**:
-```json
-{
+  "id": 7,
+  "username": "fatih",
+  "totalFriendCounts": 24,
+  "averageGivenRating": 4.5,
+  "reviewCount": 12,
+  "joinedAt": "2026-01-10T10:00:00",
+  "premiumActive": true,
+  "userSettings": null,
   "reviewStatusCounts": {
     "approved": 8,
     "pendingReview": 1,
@@ -177,7 +171,17 @@ veya
     "removedByUser": 1,
     "removedByModerator": 1,
     "removedByLegalRequest": 0
-  }
+  },
+  "evaluationTotals": {
+    "totalApproved": 8,
+    "totalPendingReview": 1,
+    "totalRejected": 1,
+    "totalRemovedByUser": 1,
+    "totalRemovedByModerator": 1,
+    "totalRemovedByLegalRequest": 0
+  },
+  "plateReviews": [],
+  "friendRequests": []
 }
 ```
 - **User Settings Notu**: `userSettings` sadece kullanici kendi profiline baktiginda dolu doner, diger profillerde `null` doner.
@@ -191,6 +195,15 @@ veya
 - **URL**: `/api/settings/{userId}`
 - **Not**: `userId`, token icindeki user ile ayni olmalidir.
 
+### Get My Settings Overview
+- **Method**: `GET`
+- **URL**: `/api/settings/{userId}/overview`
+- **Not**:
+  - `userId`, token icindeki user ile ayni olmalidir.
+  - Response non-paginated olarak `email`, `premiumActive`, `premiumUntil`, `userSettings`, `socialMediaLinks` doner.
+  - `socialMediaLinks` elemanlari `id`, `platform`, `url` alanlarini icerir.
+  - Password alani response'a eklenmez; sifre guncelleme `PUT /api/users/{userId}` ile yapilir.
+
 ### Update My Settings
 - **Method**: `PUT`
 - **URL**: `/api/settings/{userId}`
@@ -198,7 +211,6 @@ veya
 ```json
 {
   "messagingEnabled": true,
-  "locationSharingEnabled": true,
   "messageNotificationsEnabled": true,
   "friendNotificationsEnabled": true
 }
@@ -234,7 +246,8 @@ veya
       "plateCode": "34ABC123",
       "rating": 4,
       "comment": "Yol kurallarina dikkat ediyor.",
-      "reviewStatus": "APPROVED",
+      "reviewStatusId": 2,
+      "reviewStatusCode": "APPROVED",
       "userId": 15,
       "username": "ali",
       "createdAt": "2026-05-12T09:30:00",
@@ -252,7 +265,7 @@ veya
 }
 ```
 
-### Add Or Update My Review For Plate
+### Add My Review For Plate
 - **Method**: `POST`
 - **URL**: `/api/plates/{plateCode}/reviews`
 - **Body**:
@@ -273,7 +286,8 @@ veya
   - `reportTypeCodes` opsiyoneldir.
   - `reportTypeCodes` `null` ise ihbar alanina dokunulmaz.
   - `reportTypeCodes` gonderilirse user+plate ihbar seti sync edilir (bos liste = tum aktif ihbarlari geri ceker).
-  - Ayni kullanici ayni plaka icin tekrar `POST` atarsa yeni kayit yerine mevcut yorumunu gunceller.
+  - Ayni kullanicinin mevcut yorumu `REJECTED` ise ikinci `POST` ayni kaydi yeniden `PENDING_REVIEW`e tasir.
+  - Mevcut durum `PENDING_REVIEW`, `APPROVED` veya `REMOVED_*` ise ikinci `POST` hata doner (`review.already.exists.for.plate`).
 
 ### Update Review By Review Id
 - **Method**: `PUT`
@@ -445,6 +459,15 @@ veya
 
 ## 11) Friendships (`/api/friendships`)
 
+- **Status Lookup (hard-cut)**:
+  - `1=REQUESTED`
+  - `2=ACCEPTED`
+  - `3=REJECTED`
+  - `4=REMOVED`
+- **DTO Notu**: `FriendshipDto` artik `status` enum yerine `statusId` + `statusCode` doner.
+- **History Notu**: Arkadaslik kayitlari soft-remove edilir (`statusId=REMOVED`) ve gecmis korunur.
+- **Aktif Pair Kurali**: Ayni iki kullanici icin ayni anda yalnizca bir aktif kayit (`REQUESTED`/`ACCEPTED`) bulunabilir.
+
 ### Send Friendship Request
 - **Method**: `POST`
 - **URL**: `/api/friendships/request/{addresseeId}`
@@ -464,11 +487,12 @@ veya
 ### Get Friends
 - **Method**: `GET`
 - **URL**: `/api/friendships`
-- **Not**: Sadece `ACCEPTED` kayitlar doner.
+- **Not**: Sadece `ACCEPTED` (`statusId=2`) kayitlar doner.
 
 ### Get Pending Incoming Requests
 - **Method**: `GET`
 - **URL**: `/api/friendships/pending`
+- **Not**: Sadece `REQUESTED` (`statusId=1`) gelen istekler doner.
 
 ---
 
@@ -503,31 +527,7 @@ veya
 
 ---
 
-## 13) User Locations (`/api/locations`)
-
-### Get User Location
-- **Method**: `GET`
-- **URL**: `/api/locations/user/{userId}`
-
-### Get Visible Locations For Me
-- **Method**: `GET`
-- **URL**: `/api/locations/visible`
-
-### Block User From My Location
-- **Method**: `POST`
-- **URL**: `/api/locations/block/{targetUserId}`
-
-### Unblock User From My Location
-- **Method**: `DELETE`
-- **URL**: `/api/locations/block/{targetUserId}`
-
-### Get My Blocked User Id List
-- **Method**: `GET`
-- **URL**: `/api/locations/blocked`
-
----
-
-## 14) Cities (`/api/cities`) - Public
+## 13) Cities (`/api/cities`) - Public
 
 ### Get All Cities
 - **Method**: `GET`
@@ -539,7 +539,7 @@ veya
 
 ---
 
-## 15) FCM Tokens (`/api/fcm-tokens`)
+## 14) FCM Tokens (`/api/fcm-tokens`)
 
 ### Register FCM Token
 - **Method**: `POST`
@@ -558,7 +558,7 @@ veya
 
 ---
 
-## 16) WebSocket (Socket.io)
+## 15) WebSocket (Socket.io)
 
 - **URL**: `ws://localhost:9092`
 - **Query**: `token=<JWT>`

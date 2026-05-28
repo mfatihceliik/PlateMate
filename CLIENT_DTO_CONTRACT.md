@@ -1,8 +1,14 @@
 # PlateMate Client DTO Contract (Current)
 
-Last updated: 2026-05-18
+Last updated: 2026-05-27
 
 Bu dokuman, client tarafta model/DTO olustururken birebir backend kontratina bagli kalmaniz icin hazirlandi.
+
+## Lookup Geçiş Kuralı
+
+- Persist edilen enum alanlar artik lookup tabanli doner: `...Id` + `...Code`.
+- Gecis doneminde write payload'larda `id` veya `code` gonderebilirsiniz; ikisi birlikte gelirse backend `id` degerini kullanir.
+- `premiumUntil` alani API response'ta korunur ancak kaynak `users` kolonu degil `user_subscriptions` hesaplamasidir.
 
 ## 1) Ortak response zarfi
 
@@ -102,6 +108,7 @@ export interface UserDto {
 export type SocialPlatform = "INSTAGRAM" | "X" | "SNAPCHAT" | "LINKEDIN" | "FACEBOOK"
 
 export interface SocialMediaLinkDto {
+  id: number
   platform: SocialPlatform
   url: string
 }
@@ -109,30 +116,30 @@ export interface SocialMediaLinkDto {
 export interface UserProfileDto {
   id: number
   username: string
+  totalFriendCounts: number
   averageGivenRating: number
   reviewCount: number
   joinedAt: IsoDateTime | null
   premiumActive: boolean
-  premiumUntil: IsoDateTime | null
   userSettings: UserSettingsDto | null
   reviewStatusCounts: UserReviewStatusCountsDto
-  socialMediaLinks: SocialMediaLinkDto[]
-  plateReviews: UserProfileReviewPageDto
-}
-
-export interface UserProfileReviewPageDto {
-  items: PlateReviewDto[]
-  meta: UserProfileReviewPageMetaDto
-}
-
-export interface UserProfileReviewPageMetaDto {
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-  hasNext: boolean
-  hasPrevious: boolean
   evaluationTotals: UserReviewEvaluationTotalsDto
+  socialMediaLinks: SocialMediaLinkDto[]
+  plateReviews: PlateReviewDto[]
+  friendRequests: UserProfileFriendRequestDto[]
+}
+
+export interface UserProfileFriendRequestDto {
+  id: number
+  requesterUserId: number
+  requesterUsername: string
+  addresseeUserId: number
+  addresseeUsername: string
+  statusId: number
+  statusCode: "REQUESTED" | "ACCEPTED" | "REJECTED" | "REMOVED"
+  createdAt: IsoDateTime
+  respondedAt: IsoDateTime | null
+  lastActionAt: IsoDateTime
 }
 
 export interface UserReviewStatusCountsDto {
@@ -179,20 +186,13 @@ export interface PlateReviewDto {
   plateCode: string
   rating: number
   comment: string
-  reviewStatus: PlateReviewStatus
+  reviewStatusId: number
+  reviewStatusCode: string
   userId: number
   username: string
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
 }
-
-export type PlateReviewStatus =
-  | "PENDING_REVIEW"
-  | "APPROVED"
-  | "REJECTED"
-  | "REMOVED_BY_USER"
-  | "REMOVED_BY_MODERATOR"
-  | "REMOVED_BY_LEGAL_REQUEST"
 
 export type PlateReportSeverity = "RED" | "YELLOW"
 
@@ -285,9 +285,16 @@ Not: `GET /api/plates/search` artik `PlateDetailDto` doner. `recentReviews` yaln
 ```ts
 export interface UserSettingsDto {
   messagingEnabled: boolean
-  locationSharingEnabled: boolean
   messageNotificationsEnabled: boolean
   friendNotificationsEnabled: boolean
+}
+
+export interface UserSettingsOverviewDto {
+  email: string | null
+  premiumActive: boolean
+  premiumUntil: IsoDateTime | null
+  userSettings: UserSettingsDto
+  socialMediaLinks: SocialMediaLinkDto[]
 }
 
 export interface UserSubscriptionDto {
@@ -301,16 +308,17 @@ export interface UserSubscriptionDto {
 }
 ```
 
+Not: Password response'ta donmez. Sifre guncelleme icin `PUT /api/users/{userId}` kullanilir.
+
 ### Friendship
 
 ```ts
-export type FriendshipStatus = "PENDING" | "ACCEPTED" | "REJECTED"
-
 export interface FriendshipDto {
   id: number
   friendUserId: number
   friendUsername: string
-  status: FriendshipStatus
+  statusId: number
+  statusCode: "REQUESTED" | "ACCEPTED" | "REJECTED" | "REMOVED"
   createdAt: IsoDateTime
 }
 ```
@@ -338,18 +346,9 @@ export interface ChatMessageDto {
 }
 ```
 
-### Location / City
+### City
 
 ```ts
-export interface UserLocationDto {
-  id: number
-  userId: number
-  username: string
-  latitude: number
-  longitude: number
-  lastUpdatedAt: IsoDateTime
-}
-
 export interface CityDto {
   id: number
   name: string
@@ -382,7 +381,6 @@ export interface UpdateUserRequest {
 
 export interface UpdateSettingsRequest {
   messagingEnabled?: boolean
-  locationSharingEnabled?: boolean
   messageNotificationsEnabled?: boolean
   friendNotificationsEnabled?: boolean
 }
@@ -440,11 +438,6 @@ export interface SendMessageRequest {
   content: string
 }
 
-export interface LocationUpdateRequest {
-  latitude: number
-  longitude: number
-}
-
 export interface RegisterFcmTokenRequest {
   token: string
   deviceId: string
@@ -464,6 +457,7 @@ export interface RegisterFcmTokenRequest {
 - `DELETE /api/users/{id}` -> `ResultResponse`
 - `GET /api/profiles/{userId}` -> `DataResultResponse<UserProfileDto>`
 - `GET /api/settings/{userId}` -> `DataResultResponse<UserSettingsDto>`
+- `GET /api/settings/{userId}/overview` -> `DataResultResponse<UserSettingsOverviewDto>`
 - `PUT /api/settings/{userId}` -> `ResultResponse`
 - `GET /api/plates/search` -> `DataResultResponse<PlateDetailDto>`
 - `GET /api/plates/{plateCode}/reviews` -> `DataResultResponse<PagedData<PlateReviewDto>>`
@@ -496,11 +490,6 @@ export interface RegisterFcmTokenRequest {
 - `GET /api/chat/rooms/{roomId}/messages` -> `DataResultResponse<ChatMessageDto[]>`
 - `POST /api/chat/rooms/messages` -> `DataResultResponse<ChatMessageDto>` (basarili durumda)
 - `PUT /api/chat/rooms/{roomId}/read` -> `ResultResponse`
-- `GET /api/locations/user/{userId}` -> `DataResultResponse<UserLocationDto>`
-- `GET /api/locations/visible` -> `DataResultResponse<UserLocationDto[]>`
-- `POST /api/locations/block/{targetUserId}` -> `ResultResponse`
-- `DELETE /api/locations/block/{targetUserId}` -> `ResultResponse`
-- `GET /api/locations/blocked` -> `DataResultResponse<number[]>`
 - `GET /api/cities` -> `DataResultResponse<CityDto[]>`
 - `GET /api/cities/{id}` -> `DataResultResponse<CityDto>`
 - `POST /api/fcm-tokens/register` -> `ResultResponse`
@@ -533,7 +522,8 @@ export interface RegisterFcmTokenRequest {
         "plateCode": "34ABC123",
         "rating": 4,
         "comment": "Yol kurallarina dikkat ediyor.",
-        "reviewStatus": "APPROVED",
+        "reviewStatusId": 2,
+        "reviewStatusCode": "APPROVED",
         "userId": 15,
         "username": "ali",
         "createdAt": "2026-05-12T09:30:00",
@@ -552,7 +542,7 @@ export interface RegisterFcmTokenRequest {
 }
 ```
 
-### Profil (`GET /api/profiles/{userId}?page=0&size=20`)
+### Profil (`GET /api/profiles/{userId}`)
 
 ```json
 {
@@ -561,11 +551,11 @@ export interface RegisterFcmTokenRequest {
   "data": {
     "id": 7,
     "username": "fatih",
+    "totalFriendCounts": 24,
     "averageGivenRating": 4.5,
     "reviewCount": 12,
     "joinedAt": "2026-01-10T10:00:00",
     "premiumActive": true,
-    "premiumUntil": "2026-12-31T23:59:00",
     "userSettings": null,
     "reviewStatusCounts": {
       "approved": 8,
@@ -575,31 +565,23 @@ export interface RegisterFcmTokenRequest {
       "removedByModerator": 1,
       "removedByLegalRequest": 0
     },
+    "evaluationTotals": {
+      "totalApproved": 8,
+      "totalPendingReview": 1,
+      "totalRejected": 1,
+      "totalRemovedByUser": 1,
+      "totalRemovedByModerator": 1,
+      "totalRemovedByLegalRequest": 0
+    },
     "socialMediaLinks": [
       {
+        "id": 12,
         "platform": "INSTAGRAM",
         "url": "https://instagram.com/fatih"
       }
     ],
-    "plateReviews": {
-      "items": [],
-      "meta": {
-        "page": 0,
-        "size": 20,
-        "totalElements": 0,
-        "totalPages": 0,
-        "hasNext": false,
-        "hasPrevious": false,
-        "evaluationTotals": {
-          "totalApproved": 8,
-          "totalPendingReview": 1,
-          "totalRejected": 1,
-          "totalRemovedByUser": 1,
-          "totalRemovedByModerator": 1,
-          "totalRemovedByLegalRequest": 0
-        }
-      }
-    }
+    "plateReviews": [],
+    "friendRequests": []
   }
 }
 ```

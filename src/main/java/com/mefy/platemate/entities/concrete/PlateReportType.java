@@ -3,16 +3,19 @@ package com.mefy.platemate.entities.concrete;
 import com.mefy.platemate.entities.abstracts.IEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -40,9 +43,12 @@ public class PlateReportType implements IEntity {
     @Column(name = "icon_key", nullable = false, length = 64)
     private String iconKey;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
-    private PlateReportSeverity severity;
+    @Column(name = "severity_id", nullable = false)
+    private Long severityId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "severity_id", insertable = false, updatable = false)
+    private PlateReportSeverityLookup severityRef;
 
     @Column(name = "color_hex", nullable = false, length = 16)
     private String colorHex;
@@ -61,4 +67,33 @@ public class PlateReportType implements IEntity {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Transient
+    public PlateReportSeverity getSeverity() {
+        PlateReportSeverity fromId = PlateReportSeverity.fromId(severityId);
+        if (fromId != null) {
+            return fromId;
+        }
+        return PlateReportSeverity.fromCode(resolveSeverityCodeFromRef());
+    }
+
+    public void setSeverity(PlateReportSeverity severity) {
+        this.severityId = severity == null ? null : severity.getId();
+    }
+
+    @Transient
+    public String getSeverityCode() {
+        PlateReportSeverity severity = PlateReportSeverity.fromId(severityId);
+        if (severity != null) {
+            return severity.getCode();
+        }
+        return resolveSeverityCodeFromRef();
+    }
+
+    private String resolveSeverityCodeFromRef() {
+        if (severityRef == null || !Hibernate.isInitialized(severityRef)) {
+            return null;
+        }
+        return severityRef.getCode();
+    }
 }

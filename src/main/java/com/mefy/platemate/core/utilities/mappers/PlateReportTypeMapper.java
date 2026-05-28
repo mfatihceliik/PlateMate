@@ -21,7 +21,8 @@ public class PlateReportTypeMapper implements ModelMapperService<PlateReportType
         dto.setLabel(plateReportTypePolicyService.neutralLabel(entity.getCode(), entity.getLabel()));
         dto.setDescription(plateReportTypePolicyService.neutralDescription(entity.getCode(), entity.getDescription()));
         dto.setIconKey(entity.getIconKey());
-        dto.setSeverity(entity.getSeverity());
+        dto.setSeverityId(entity.getSeverityId());
+        dto.setSeverityCode(entity.getSeverityCode());
         dto.setColorHex(entity.getColorHex());
         dto.setWeight(entity.getWeight());
         dto.setSortOrder(entity.getSortOrder());

@@ -4,9 +4,11 @@ import com.mefy.platemate.api.controllers.abstracts.IUserSettingsController;
 import com.mefy.platemate.business.abstracts.IUserSettingsService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserSettingsDto;
+import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,10 +29,27 @@ public class UserSettingsController implements IUserSettingsController {
 
         if (!userId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new com.mefy.platemate.core.utilities.results.ErrorDataResult<>(messageService.getMessage("auth.unauthorized")));
+                    .body(new ErrorDataResult<>(messageService.getMessage("auth.unauthorized")));
         }
 
         return ResponseEntity.ok(userSettingsService.getByUserId(userId));
+    }
+
+    @Override
+    public ResponseEntity<DataResult<UserSettingsOverviewDto>> getOverviewByUserId(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId) {
+
+        if (!userId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorDataResult<>(messageService.getMessage("auth.unauthorized")));
+        }
+
+        DataResult<UserSettingsOverviewDto> result = userSettingsService.getOverviewByUserId(userId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @Override

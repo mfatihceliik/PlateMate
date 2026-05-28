@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface IPlateRemovalRequestDao extends JpaRepository<PlateRemovalRequest, Long> {
-    Page<PlateRemovalRequest> findByStatusOrderByCreatedAtAsc(PlateRemovalRequestStatus status, Pageable pageable);
+    Page<PlateRemovalRequest> findByStatusIdOrderByCreatedAtAsc(Long statusId, Pageable pageable);
 
     Page<PlateRemovalRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
@@ -21,10 +21,19 @@ public interface IPlateRemovalRequestDao extends JpaRepository<PlateRemovalReque
     @Query("""
             delete from PlateRemovalRequest pr
             where pr.createdAt < :cutoff
-              and pr.status in :resolvedStatuses
+              and pr.statusId in :resolvedStatusIds
             """)
-    int deleteResolvedByCreatedAtBefore(
+    int deleteResolvedByCreatedAtBeforeAndStatusIdIn(
             @Param("cutoff") LocalDateTime cutoff,
-            @Param("resolvedStatuses") List<PlateRemovalRequestStatus> resolvedStatuses
+            @Param("resolvedStatusIds") List<Long> resolvedStatusIds
     );
+
+    default Page<PlateRemovalRequest> findByStatusOrderByCreatedAtAsc(PlateRemovalRequestStatus status, Pageable pageable) {
+        return findByStatusIdOrderByCreatedAtAsc(status == null ? null : status.getId(), pageable);
+    }
+
+    default int deleteResolvedByCreatedAtBefore(LocalDateTime cutoff, List<PlateRemovalRequestStatus> resolvedStatuses) {
+        List<Long> ids = resolvedStatuses == null ? List.of() : resolvedStatuses.stream().map(PlateRemovalRequestStatus::getId).toList();
+        return deleteResolvedByCreatedAtBeforeAndStatusIdIn(cutoff, ids);
+    }
 }

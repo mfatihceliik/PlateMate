@@ -9,9 +9,6 @@ import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.dataAccess.abstracts.IParticipantDao;
-import com.mefy.platemate.entities.concrete.ChatMessage;
-import com.mefy.platemate.entities.concrete.ChatRoom;
-import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import lombok.RequiredArgsConstructor;
@@ -52,20 +49,9 @@ public class ChatSocketHandler implements IChatSocketHandler {
             return;
         }
 
-        User sender = new User();
-        sender.setId(senderId);
-
-        ChatRoom room = new ChatRoom();
-        room.setId(data.getChatRoomId());
-
-        ChatMessage message = new ChatMessage();
-        message.setSender(sender);
-        message.setChatRoom(room);
-        message.setContent(data.getContent());
-
         DataResult<ChatMessageDto> result = null;
         try {
-            result = chatMessageService.sendMessage(message);
+            result = chatMessageService.sendMessage(data, senderId);
 
             if (result.isSuccess()) {
                 client.getNamespace()

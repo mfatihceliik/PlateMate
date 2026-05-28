@@ -34,7 +34,7 @@ public class DiscoveryAggregationService {
         return new DiscoveryDailyStatsDto(
                 plateSearchEventDao.countBySearchedAtGreaterThanEqualAndSearchedAtLessThan(window.getStart(), window.getEnd()),
                 plateReviewDao.countApprovedByCreatedAtWindow(window.getStart(), window.getEnd()),
-                plateReportDao.countActiveByReportedAtWindow(window.getStart(), window.getEnd())
+                plateReportDao.countActiveByReportedAtWindowAndPlateStatus(window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId())
         );
     }
 
@@ -53,7 +53,7 @@ public class DiscoveryAggregationService {
             metrics.mergeLastActivityAt(projection.getLastReviewAt());
         });
 
-        plateReportDao.getActiveReportAggregates(window.getStart(), window.getEnd()).forEach(projection -> {
+        plateReportDao.getActiveReportAggregatesAndPlateStatus(window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId()).forEach(projection -> {
             PlateDailyMetrics metrics = metricsByPlateId.computeIfAbsent(projection.getPlateId(), key -> new PlateDailyMetrics());
             metrics.addTodayReportCount(safeLong(projection.getReportCount()));
             metrics.addTodayWeightedReportScore(safeLong(projection.getWeightedScore()));
@@ -72,7 +72,7 @@ public class DiscoveryAggregationService {
             metrics.mergeLastActivityAt(projection.getLastReviewAt());
         });
 
-        plateReportDao.getCityActiveReportAggregates(cityId, window.getStart(), window.getEnd()).forEach(projection -> {
+        plateReportDao.getCityActiveReportAggregatesAndPlateStatus(cityId, window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId()).forEach(projection -> {
             PlateDailyMetrics metrics = metricsByPlateId.computeIfAbsent(projection.getPlateId(), key -> new PlateDailyMetrics());
             metrics.addTodayReportCount(safeLong(projection.getReportCount()));
             metrics.addTodayWeightedReportScore(safeLong(projection.getWeightedScore()));
