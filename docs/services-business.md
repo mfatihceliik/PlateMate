@@ -26,7 +26,8 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | `UserManager` | `IUserService` | User CRUD and auth lookups | `IUserDao`, `IUserRoleDao`, `IUserSubscriptionDao` |
 | `UserProfileManager` | `IUserProfileService` | Profile aggregation (self/non-self visibility) | `IUserProfileDao`, `IFriendshipDao`, `IPlateReviewDao`, `IUserSettingsService` |
 | `UserSettingsManager` | `IUserSettingsService` | Settings defaults, updates, overview | `IUserSettingsDao`, `IUserDao`, `IUserProfileDao`, `IUserSubscriptionDao` |
-| `PlateManager` | `IPlateService` | Plate search, review lifecycle, reports, aggregates | `IPlateDao`, `IPlateReviewDao`, `IPlateSearchEventDao`, `IPlateReportService`, validators (15 deps total) |
+| `PlateSearchManager` | `IPlateSearchService` | Plate search, plate creation, aggregate dto | `IPlateDao`, `IPlateReviewDao`, `IPlateReportDao`, `IPlateSearchEventDao`, `ICityDao` |
+| `PlateReviewManager` | `IPlateReviewService` | Plate review lifecycle (add/update/delete) and moderation | `IPlateDao`, `IPlateReviewDao`, `IPlateReportService`, `ContentModerationService` |
 | `PlateReportManager` | `IPlateReportService` | Sync report tags per user/plate | `IPlateReportDao`, `IPlateReportTypeDao` |
 | `PlateReportTypeManager` | `IPlateReportTypeService` | Report type listing and admin changes | `IPlateReportTypeDao`, policy service |
 | `FriendshipManager` | `IFriendshipService` | Request/accept/reject/remove/list | `IFriendshipDao`, `IUserDao`, `INotificationService` |
@@ -126,22 +127,20 @@ Extract when: reused by multiple managers, complex enough for separate testing, 
 
 ## PlateManager Refactor Plan
 
-Currently, `PlateManager` has an excessive dependency count (15 dependencies) and handles multiple distinct responsibilities. To adhere to SOLID principles and prevent the class from becoming unmaintainable, a long-term refactor plan is established.
+Previously, `PlateManager` had an excessive dependency count (15 dependencies) and handled multiple distinct responsibilities. To adhere to SOLID principles and prevent the class from becoming unmaintainable, a long-term refactor plan was established.
+
+**Status Update:** `PlateManager` has been completely deleted as of Phase 2! Its core responsibilities were split. However, further modularization is still planned for Phase 3 and 4 to remove moderation and discovery concerns from the review and search managers.
 
 **IMPORTANT RULES FOR NEW FEATURES:**
-* This is a **long-term refactor plan**. Do not attempt to execute this entire refactor in a single small feature task.
-* Do **NOT** add new dependencies or new responsibilities to `PlateManager` during new feature tasks.
-* When adding new plate-related behavior, always check this plan first and consider creating the new target manager instead of appending to `PlateManager`.
+* Do **NOT** add new dependencies or new distinct domain responsibilities to `PlateSearchManager` or `PlateReviewManager`.
+* When adding new plate-related behavior, always consider creating a specific manager instead of inflating existing ones.
 
-### Proposed Target Managers
+### Target Managers
 
-1. **`PlateSearchManager`**: Responsible for plate searching (`searchByPlateCode`), plate creation on first search, and basic plate detail aggregation.
-2. **`PlateReviewManager`**: Responsible for the core review lifecycle (adding, updating, deleting reviews), validating submission rules, and user responsibility acceptance.
-3. **`PlateModerationManager`**: Responsible for content moderation (integration with `ContentModerationService`), logging moderation events, and resolving review statuses.
-4. **`PlateDiscoveryManager`**: Responsible for discovery/trending operations, logging search events (`IPlateSearchEventDao`), computing plate scores, and integrating with city resolution (`TrPlateCityResolver` / `ICityDao`).
-
-### Integration Strategy
-The existing `PlateManager` (or a new facade) can temporarily act as an orchestrator orchestrating these smaller managers until all controllers are updated to use the specialized services directly.
+1. **`PlateSearchManager` (COMPLETED - Phase 1)**: Responsible for plate searching (`searchByPlateCode`), plate creation on first search, and basic plate detail aggregation.
+2. **`PlateReviewManager` (COMPLETED - Phase 2)**: Responsible for the core review lifecycle (adding, updating, deleting reviews), validating submission rules.
+3. **`PlateModerationManager` (PENDING - Phase 3)**: Will be responsible for content moderation (integration with `ContentModerationService`), logging moderation events, and resolving review statuses. Currently intertwined in `PlateReviewManager`.
+4. **`PlateDiscoveryManager` (PENDING - Phase 4)**: Will be responsible for discovery/trending operations, logging search events (`IPlateSearchEventDao`), computing plate scores, and integrating with city resolution (`TrPlateCityResolver` / `ICityDao`). Currently intertwined in `PlateSearchManager`.
 
 ## Open Questions
 
