@@ -1,6 +1,7 @@
 package com.mefy.platemate.api.controllers;
 
 import com.mefy.platemate.api.controllers.concrete.PlateController;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.abstracts.IPlateService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.exceptions.GlobalExceptionHandler;
@@ -22,7 +23,8 @@ class PaginationValidationUnitTest {
     @Test
     void plateControllerThrowsForNegativePage() {
         IPlateService plateService = mock(IPlateService.class);
-        PlateController controller = new PlateController(plateService);
+        IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
+        PlateController controller = new PlateController(plateService, plateSearchService);
 
         assertThrows(
                 InvalidPaginationException.class,

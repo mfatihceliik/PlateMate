@@ -1,6 +1,7 @@
 package com.mefy.platemate.api.controllers;
 
 import com.mefy.platemate.api.controllers.concrete.PlateController;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.abstracts.IPlateService;
 import com.mefy.platemate.config.jwt.JwtAuthenticationInterceptor;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
@@ -27,7 +28,8 @@ class PlateSearchAuthControllerTest {
         IPlateService plateService = mock(IPlateService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
-        PlateController controller = new PlateController(plateService);
+        IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
+        PlateController controller = new PlateController(plateService, plateSearchService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
@@ -44,7 +46,8 @@ class PlateSearchAuthControllerTest {
         IPlateService plateService = mock(IPlateService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
-        PlateController controller = new PlateController(plateService);
+        IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
+        PlateController controller = new PlateController(plateService, plateSearchService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
@@ -63,7 +66,7 @@ class PlateSearchAuthControllerTest {
         dto.setTotalRatingSum(0L);
         dto.setRecentReviews(List.of());
         dto.setRecentReportTypes(List.of());
-        when(plateService.searchByPlateCode("34ABC123", 77L))
+        when(plateSearchService.searchByPlateCode("34ABC123", 77L))
                 .thenReturn(new SuccessDataResult<>(dto, "ok"));
 
         mockMvc.perform(get("/api/plates/search")
@@ -72,7 +75,7 @@ class PlateSearchAuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.plateCode").value("34ABC123"));
 
-        verify(plateService).searchByPlateCode("34ABC123", 77L);
+        verify(plateSearchService).searchByPlateCode("34ABC123", 77L);
     }
 
     @Test
@@ -80,7 +83,8 @@ class PlateSearchAuthControllerTest {
         IPlateService plateService = mock(IPlateService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
-        PlateController controller = new PlateController(plateService);
+        IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
+        PlateController controller = new PlateController(plateService, plateSearchService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)

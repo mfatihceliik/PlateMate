@@ -6,8 +6,7 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
-import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
-import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.business.utilities.security.HashingService;
 import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
@@ -22,21 +21,17 @@ import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
-import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
-import com.mefy.platemate.entities.concrete.PlateSearchEvent;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.concrete.User;
-import com.mefy.platemate.entities.dto.PlateDetailDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
@@ -64,53 +59,33 @@ public class PlateManager implements IPlateService {
 
     private final IPlateDao plateDao;
     private final IPlateReviewDao plateReviewDao;
-    private final IPlateSearchEventDao plateSearchEventDao;
     private final IUserDao userDao;
-    private final ICityDao cityDao;
     private final IPlateReportService plateReportService;
     private final IPlateReportDao plateReportDao;
     private final PlateReportTypeMapper plateReportTypeMapper;
     private final PlateReviewMapper plateReviewMapper;
     private final ContentModerationService contentModerationService;
     private final HashingService hashingService;
-    private final IPlateValidator plateValidator;
-    private final TrPlateCityResolver plateCityResolver;
     private final PlateReviewModerationEventService moderationEventService;
     private final IMessageService messageService;
+    private final IPlateSearchService plateSearchService;
 
     @Value("${moderation.accepted-responsibility-legacy-fallback:true}")
     private boolean acceptedResponsibilityLegacyFallback = true;
 
-    @Override
-    @Transactional
-    public DataResult<PlateDetailDto> searchByPlateCode(String plateCode, Long currentUserId) {
-        String normalizedPlate = normalizePlate(plateCode);
-        Result result = BusinessRules.run(checkIfPlateValid(normalizedPlate));
-        if (result != null) return new ErrorDataResult<>(result.getMessage());
-
-        Plate plate = getOrCreatePlate(normalizedPlate);
-        Result visibilityResult = checkIfPlatePubliclyVisible(plate);
-        if (!visibilityResult.isSuccess()) {
-            return new ErrorDataResult<>(visibilityResult.getMessage());
-        }
-
-        recordSearchEvent(plate, currentUserId);
-        PlateDetailDto dto = buildPlateDetailDto(plate, normalizedPlate);
-
-        return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PLATE_FOUND));
-    }
+    // searchByPlateCode removed
 
     @Override
     public DataResult<PagedData<PlateReviewDto>> getReviewsByPlateCode(
             String plateCode,
             PaginationRequest paginationRequest
     ) {
-        String normalizedPlate = normalizePlate(plateCode);
-        Result result = BusinessRules.run(checkIfPlateValid(normalizedPlate));
+        String normalizedPlate = plateSearchService.normalizePlate(plateCode);
+        Result result = BusinessRules.run(plateSearchService.checkIfPlateValid(normalizedPlate));
         if (result != null) return new ErrorDataResult<>(result.getMessage());
 
         Plate plate = plateDao.findByPlateCode(normalizedPlate).orElse(null);
-        Result visibilityResult = checkIfPlatePubliclyVisible(plate);
+        Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(plate);
         if (!visibilityResult.isSuccess()) {
             return new ErrorDataResult<>(visibilityResult.getMessage());
         }
@@ -134,7 +109,7 @@ public class PlateManager implements IPlateService {
     @Override
     @Transactional
     public Result addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request) {
-        String normalizedPlate = normalizePlate(plateCode);
+        String normalizedPlate = plateSearchService.normalizePlate(plateCode);
         User user = userDao.findByIdAndActiveTrue(currentUserId).orElse(null);
 
         Result validationResult = validateAddReviewInput(normalizedPlate, user, request);
@@ -149,8 +124,8 @@ public class PlateManager implements IPlateService {
             return new ErrorResult(messageService.getMessage(Messages.REVIEW_CONTENT_NOT_ALLOWED));
         }
 
-        Plate plate = getOrCreatePlate(normalizedPlate);
-        Result visibilityResult = checkIfPlatePubliclyVisible(plate);
+        Plate plate = plateSearchService.getOrCreatePlate(normalizedPlate);
+        Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(plate);
         if (!visibilityResult.isSuccess()) return visibilityResult;
 
         PlateReview existingReview = plateReviewDao.findByPlateIdAndUserId(plate.getId(), currentUserId).orElse(null);
@@ -227,7 +202,7 @@ public class PlateManager implements IPlateService {
         );
         if (result != null) return result;
 
-        Result visibilityResult = checkIfPlatePubliclyVisible(review.getPlate());
+        Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(review.getPlate());
         if (!visibilityResult.isSuccess()) return visibilityResult;
 
         Result submissionRulesResult = validateSubmissionRules(review.getUser(), normalizedComment, request.getReportTypeCodes());
@@ -269,52 +244,30 @@ public class PlateManager implements IPlateService {
     @Override
     @Transactional
     public Result syncReports(String plateCode, Long currentUserId, SyncPlateReportsRequest request) {
-        String normalizedPlate = normalizePlate(plateCode);
+        String normalizedPlate = plateSearchService.normalizePlate(plateCode);
         User user = userDao.findByIdAndActiveTrue(currentUserId).orElse(null);
 
         Result result = BusinessRules.run(
-                checkIfPlateValid(normalizedPlate),
+                plateSearchService.checkIfPlateValid(normalizedPlate),
                 checkIfUserExists(user)
         );
         if (result != null) return result;
 
-        Plate plate = getOrCreatePlate(normalizedPlate);
-        Result visibilityResult = checkIfPlatePubliclyVisible(plate);
+        Plate plate = plateSearchService.getOrCreatePlate(normalizedPlate);
+        Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(plate);
         if (!visibilityResult.isSuccess()) return visibilityResult;
         return plateReportService.syncReportsForUserAndPlate(plate.getId(), currentUserId, request.getReportTypeCodes());
     }
 
-    private Plate getOrCreatePlate(String normalizedPlate) {
-        return plateDao.findByPlateCode(normalizedPlate).orElseGet(() -> createPlateSafely(normalizedPlate));
-    }
-
-    private Plate createPlateSafely(String normalizedPlate) {
-        try {
-            return plateDao.save(createPlate(normalizedPlate));
-        } catch (DataIntegrityViolationException ex) {
-            return plateDao.findByPlateCode(normalizedPlate).orElseThrow(() -> ex);
-        }
-    }
-
-    private Plate createPlate(String normalizedPlate) {
-        Plate plate = new Plate();
-        plate.setPlateCode(normalizedPlate);
-        plate.setStatus(PlateStatus.ACTIVE);
-        plate.setRatingAverage(0.0);
-        plate.setReviewCount(0);
-        plate.setTotalRatingSum(0L);
-        plate.setCreatedAt(LocalDateTime.now());
-        plate.setUpdatedAt(LocalDateTime.now());
-        plateCityResolver.resolveCityId(normalizedPlate).flatMap(cityDao::findById).ifPresent(plate::setCity);
-        return plate;
-    }
+    // getOrCreatePlate removed
 
     private void refreshPlateStatistics(Plate plate) {
         if (plate == null || plate.getId() == null) return;
 
         long reviewCountLong = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), approvedStatusId());
         int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
-        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), approvedStatusId()));
+        Long ratingSum = plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), approvedStatusId());
+        long totalRatingSum = ratingSum == null ? 0L : ratingSum;
 
         plate.setReviewCount(reviewCount);
         plate.setTotalRatingSum(totalRatingSum);
@@ -323,112 +276,8 @@ public class PlateManager implements IPlateService {
         plateDao.save(plate);
     }
 
-    private void recordSearchEvent(Plate plate, Long userId) {
-        if (plate == null || plate.getId() == null) return;
-        LocalDateTime now = LocalDateTime.now();
-        PlateSearchEvent event = new PlateSearchEvent();
-        event.setPlate(plate);
-        event.setUserId(userId);
-        event.setSearchedAt(now);
-        event.setCreatedAt(now);
-        plateSearchEventDao.save(event);
-    }
 
-    private PlateDetailDto buildPlateDetailDto(Plate plate, String normalizedPlate) {
-        PlateDetailDto dto = new PlateDetailDto();
-        dto.setId(plate.getId());
-        dto.setPlateCode(plate.getPlateCode());
-        dto.setCityName(
-                plate.getCity() != null
-                        ? plate.getCity().getName()
-                        : plateCityResolver.resolveCityName(normalizedPlate).orElse(null)
-        );
-        dto.setRatingAverage(plate.getRatingAverage() == null ? 0.0 : plate.getRatingAverage());
-        dto.setReviewCount(plate.getReviewCount() == null ? 0 : plate.getReviewCount());
-        dto.setTotalRatingSum(plate.getTotalRatingSum() == null ? 0L : plate.getTotalRatingSum());
 
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
-        List<PlateReviewDto> reviews = plateReviewDao
-                .findByPlatePlateCodeAndStatusId(normalizedPlate, approvedStatusId(), pageable)
-                .map(plateReviewMapper::entityToDto)
-                .getContent();
-        dto.setRecentReviews(reviews);
-
-        List<PlateReport> reports = plateReportDao
-                .findByPlateIdInAndActiveTrue(java.util.List.of(plate.getId()));
-        List<PlateReportTypeDto> reportTypes = reports.stream()
-                .map(r -> plateReportTypeMapper.entityToDto(r.getReportType()))
-                .distinct()
-                .toList();
-        dto.setRecentReportTypes(reportTypes);
-
-        populateTotalMetrics(plate, dto);
-        return dto;
-    }
-
-    private void populateTotalMetrics(Plate plate, PlateDetailDto dto) {
-        if (plate == null || plate.getId() == null) {
-            dto.setTotalSearchCount(0L);
-            dto.setTotalReviewCount(0L);
-            dto.setTotalReportCount(0L);
-            dto.setTotalWeightedReportScore(0L);
-            dto.setScore(0.0);
-            dto.setLastActivityAt(null);
-            return;
-        }
-
-        long totalSearchCount = plateSearchEventDao.countByPlateId(plate.getId());
-        long totalReviewCount = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), approvedStatusId());
-        long totalReportCount = plateReportDao.countByPlateIdAndActiveTrue(plate.getId());
-        long totalWeightedReportScore = safeLong(plateReportDao.getWeightedScoreByPlateId(plate.getId()));
-
-        LocalDateTime lastActivityAt = maxDate(
-                plateSearchEventDao.findLastSearchedAtByPlateId(plate.getId()),
-                plateReviewDao.findLastReviewAtByPlateIdAndStatus(plate.getId(), approvedStatusId()),
-                plateReportDao.findLastReportedAtByPlateId(plate.getId()),
-                plate.getUpdatedAt()
-        );
-
-        double score = totalSearchCount
-                + (totalReviewCount * 2.0)
-                + (totalWeightedReportScore * 3.0);
-
-        dto.setTotalSearchCount(totalSearchCount);
-        dto.setTotalReviewCount(totalReviewCount);
-        dto.setTotalReportCount(totalReportCount);
-        dto.setTotalWeightedReportScore(totalWeightedReportScore);
-        dto.setScore(score);
-        dto.setLastActivityAt(lastActivityAt);
-    }
-
-    private long safeLong(Long value) {
-        return value == null ? 0L : value;
-    }
-
-    private LocalDateTime maxDate(LocalDateTime... values) {
-        LocalDateTime max = null;
-        for (LocalDateTime value : values) {
-            if (value == null) {
-                continue;
-            }
-            if (max == null || value.isAfter(max)) {
-                max = value;
-            }
-        }
-        return max;
-    }
-
-    private String normalizePlate(String plateCode) {
-        if (plateCode == null) return "";
-        return plateCode.replace(" ", "").toUpperCase(Locale.ROOT);
-    }
-
-    private Result checkIfPlateValid(String plateCode) {
-        if (!plateValidator.isValid(plateCode)) {
-            return new ErrorResult(messageService.getMessage(Messages.PLATE_INVALID));
-        }
-        return new SuccessResult();
-    }
 
     private Result checkIfUserExists(User user) {
         if (user == null) {
@@ -462,12 +311,7 @@ public class PlateManager implements IPlateService {
         return new SuccessResult();
     }
 
-    private Result checkIfPlatePubliclyVisible(Plate plate) {
-        if (plate == null || plate.getStatus() != PlateStatus.ACTIVE) {
-            return new ErrorResult(messageService.getMessage(Messages.PLATE_NOT_AVAILABLE));
-        }
-        return new SuccessResult();
-    }
+
 
     private boolean resolveResponsibilityAcceptance(Boolean acceptedResponsibility) {
         if (acceptedResponsibility != null) {
@@ -571,7 +415,7 @@ public class PlateManager implements IPlateService {
 
     private Result validateAddReviewInput(String normalizedPlate, User user, AddPlateReviewRequest request) {
         return BusinessRules.run(
-                checkIfPlateValid(normalizedPlate),
+                plateSearchService.checkIfPlateValid(normalizedPlate),
                 checkIfUserExists(user),
                 checkIfResponsibilityAccepted(request.getAcceptedResponsibility())
         );

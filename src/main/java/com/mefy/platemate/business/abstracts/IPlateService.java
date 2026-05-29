@@ -11,7 +11,7 @@ import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 
 public interface IPlateService {
-    DataResult<PlateDetailDto> searchByPlateCode(String plateCode, Long currentUserId);
+
 
     DataResult<PagedData<PlateReviewDto>> getReviewsByPlateCode(String plateCode, PaginationRequest paginationRequest);
 

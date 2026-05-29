@@ -1,6 +1,7 @@
 package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IPlateController;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.abstracts.IPlateService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
@@ -22,13 +23,14 @@ import org.springframework.web.bind.annotation.*;
 public class PlateController implements IPlateController {
 
     private final IPlateService plateService;
+    private final IPlateSearchService plateSearchService;
 
     @Override
     public ResponseEntity<DataResult<PlateDetailDto>> search(
             @RequestParam String plate,
             @RequestAttribute("userId") Long currentUserId
     ) {
-        DataResult<PlateDetailDto> result = plateService.searchByPlateCode(plate, currentUserId);
+        DataResult<PlateDetailDto> result = plateSearchService.searchByPlateCode(plate, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

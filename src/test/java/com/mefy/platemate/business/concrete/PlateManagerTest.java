@@ -4,9 +4,7 @@ import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
-import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
-import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
-import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.security.HashingService;
 import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
@@ -16,9 +14,7 @@ import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
-import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
@@ -70,17 +66,13 @@ class PlateManagerTest {
     @Mock
     private IPlateReviewDao plateReviewDao;
     @Mock
-    private IPlateSearchEventDao plateSearchEventDao;
-    @Mock
     private IPlateReportDao plateReportDao;
     @Mock
     private IUserDao userDao;
     @Mock
-    private ICityDao cityDao;
-    @Mock
     private IPlateReportService plateReportService;
     @Mock
-    private IPlateValidator plateValidator;
+    private IPlateSearchService plateSearchService;
     @Mock
     private PlateReviewModerationEventService moderationEventService;
     @Mock
@@ -93,68 +85,21 @@ class PlateManagerTest {
         plateManager = new PlateManager(
                 plateDao,
                 plateReviewDao,
-                plateSearchEventDao,
                 userDao,
-                cityDao,
                 plateReportService,
                 plateReportDao,
-                new PlateReportTypeMapper(new PlateReportTypePolicyService()),
+                new PlateReportTypeMapper(new com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService()),
                 new PlateReviewMapper(),
                 new ContentModerationService(),
                 new HashingService(),
-                plateValidator,
-                new TrPlateCityResolver(),
                 moderationEventService,
-                messageService
+                messageService,
+                plateSearchService
         );
         ReflectionTestUtils.setField(plateManager, "acceptedResponsibilityLegacyFallback", true);
     }
 
-    @Test
-    void searchByPlateCodeCreatesPlateWhenNotFound() {
-        Plate saved = new Plate();
-        saved.setId(1L);
-        saved.setPlateCode("34ABC123");
-        saved.setStatus(PlateStatus.ACTIVE);
-        saved.setRatingAverage(0.0);
-        saved.setReviewCount(0);
-        saved.setTotalRatingSum(0L);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.empty());
-        when(plateDao.save(any(Plate.class))).thenReturn(saved);
-        when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
-        when(plateReportDao.findByPlateIdInAndActiveTrue(List.of(1L))).thenReturn(List.of());
-        when(messageService.getMessage(Messages.PLATE_FOUND)).thenReturn("plate-found");
-
-        DataResult<PlateDetailDto> result = plateManager.searchByPlateCode("34 ABC 123", 42L);
-
-        assertTrue(result.isSuccess());
-        assertEquals("plate-found", result.getMessage());
-        assertEquals("34ABC123", result.getData().getPlateCode());
-        assertEquals(0.0, result.getData().getRatingAverage());
-        assertEquals(0, result.getData().getReviewCount());
-        assertEquals(0L, result.getData().getTotalRatingSum());
-        assertEquals("Istanbul", result.getData().getCityName());
-        assertTrue(result.getData().getRecentReviews().isEmpty());
-        assertTrue(result.getData().getRecentReportTypes().isEmpty());
-
-        ArgumentCaptor<PlateSearchEvent> eventCaptor = ArgumentCaptor.forClass(PlateSearchEvent.class);
-        verify(plateSearchEventDao).save(eventCaptor.capture());
-        assertEquals(42L, eventCaptor.getValue().getUserId());
-    }
-
-    @Test
-    void searchByPlateCodeReturnsErrorForInvalidPlate() {
-        when(plateValidator.isValid("XX")).thenReturn(false);
-        when(messageService.getMessage(Messages.PLATE_INVALID)).thenReturn("invalid-plate");
-
-        DataResult<PlateDetailDto> result = plateManager.searchByPlateCode("XX", 42L);
-
-        assertTrue(!result.isSuccess());
-        assertEquals("invalid-plate", result.getMessage());
-    }
 
     @Test
     void addReviewUpdatesAggregateValuesFromPlateReviews() {
@@ -165,9 +110,11 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
@@ -193,9 +140,11 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
@@ -222,9 +171,11 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(77L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(88L, 77L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(88L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(88L, PlateReviewStatus.APPROVED.getId())).thenReturn(4L);
@@ -255,9 +206,11 @@ class PlateManagerTest {
         existingReview.setComment("mevcut");
         existingReview.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
@@ -292,9 +245,11 @@ class PlateManagerTest {
         existingReview.setComment("eski");
         existingReview.setStatus(PlateReviewStatus.REJECTED);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
@@ -338,9 +293,11 @@ class PlateManagerTest {
         existingReview.setUser(user);
         existingReview.setStatus(PlateReviewStatus.APPROVED);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
@@ -372,9 +329,11 @@ class PlateManagerTest {
         existingReview.setUser(user);
         existingReview.setStatus(PlateReviewStatus.REMOVED_BY_USER);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
@@ -412,8 +371,10 @@ class PlateManagerTest {
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 20), 1));
         when(messageService.getMessage(Messages.REVIEWS_LISTED)).thenReturn("reviews-listed");
@@ -441,8 +402,10 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(1, 20), 21));
         when(messageService.getMessage(Messages.REVIEWS_LISTED)).thenReturn("reviews-listed");
@@ -461,73 +424,15 @@ class PlateManagerTest {
         assertTrue(pageable.getSort().getOrderFor("createdAt").isDescending());
     }
 
-    @Test
-    void searchByPlateCodePopulatesDetailAndTotalMetricsFromRepositories() {
-        Plate plate = new Plate();
-        plate.setId(55L);
-        plate.setPlateCode("34ABC123");
-        plate.setStatus(PlateStatus.ACTIVE);
-        plate.setRatingAverage(4.5);
-        plate.setReviewCount(10);
-        plate.setTotalRatingSum(45L);
-        plate.setUpdatedAt(LocalDateTime.now().minusHours(4));
 
-        PlateReportType reportType = new PlateReportType();
-        reportType.setId(1L);
-        reportType.setCode("RED_LIGHT_VIOLATION");
-        reportType.setLabel("Kirmizi Isik");
-        reportType.setDescription("desc");
-        reportType.setIconKey("icon");
-        reportType.setSeverity(PlateReportSeverity.RED);
-        reportType.setColorHex("#E53935");
-        reportType.setWeight(5);
-        reportType.setSortOrder(1);
-        reportType.setActive(true);
-
-        PlateReport report = new PlateReport();
-        report.setId(10L);
-        report.setPlate(plate);
-        report.setReportType(reportType);
-        report.setActive(true);
-
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
-        when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
-        when(plateReportDao.findByPlateIdInAndActiveTrue(List.of(55L))).thenReturn(List.of(report));
-
-        when(plateSearchEventDao.countByPlateId(55L)).thenReturn(6L);
-        when(plateReviewDao.countByPlateIdAndStatusId(55L, PlateReviewStatus.APPROVED.getId())).thenReturn(2L);
-        when(plateReportDao.countByPlateIdAndActiveTrue(55L)).thenReturn(1L);
-        when(plateReportDao.getWeightedScoreByPlateId(55L)).thenReturn(5L);
-
-        LocalDateTime lastSearch = LocalDateTime.now().minusHours(3);
-        LocalDateTime lastReview = LocalDateTime.now().minusHours(2);
-        LocalDateTime lastReport = LocalDateTime.now().minusHours(1);
-        when(plateSearchEventDao.findLastSearchedAtByPlateId(55L)).thenReturn(lastSearch);
-        when(plateReviewDao.findLastReviewAtByPlateIdAndStatus(55L, PlateReviewStatus.APPROVED.getId())).thenReturn(lastReview);
-        when(plateReportDao.findLastReportedAtByPlateId(55L)).thenReturn(lastReport);
-
-        when(messageService.getMessage(Messages.PLATE_FOUND)).thenReturn("plate-found");
-
-        DataResult<PlateDetailDto> result = plateManager.searchByPlateCode("34ABC123", 123L);
-
-        assertTrue(result.isSuccess());
-        assertEquals(6L, result.getData().getTotalSearchCount());
-        assertEquals(2L, result.getData().getTotalReviewCount());
-        assertEquals(1L, result.getData().getTotalReportCount());
-        assertEquals(5L, result.getData().getTotalWeightedReportScore());
-        assertEquals(25.0, result.getData().getScore());
-        assertEquals(lastReport, result.getData().getLastActivityAt());
-        verify(plateSearchEventDao).save(any(PlateSearchEvent.class));
-    }
 
     @Test
     void addReviewReturnsErrorWhenResponsibilityIsNotAccepted() {
         User user = new User();
         user.setId(99L);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
         when(messageService.getMessage(Messages.REVIEW_RESPONSIBILITY_REQUIRED))
                 .thenReturn("responsibility-required");
@@ -548,9 +453,11 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
@@ -589,6 +496,7 @@ class PlateManagerTest {
         review.setUpdatedAt(LocalDateTime.now());
 
         when(plateReviewDao.findById(55L)).thenReturn(Optional.of(review));
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
@@ -617,7 +525,8 @@ class PlateManagerTest {
         User user = new User();
         user.setId(90L);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(90L)).thenReturn(Optional.of(user));
         when(messageService.getMessage(Messages.REVIEW_COMMENT_PREMIUM_REQUIRED)).thenReturn("premium-required");
 
@@ -636,7 +545,8 @@ class PlateManagerTest {
         User user = new User();
         user.setId(91L);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(91L)).thenReturn(Optional.of(user));
         when(messageService.getMessage(Messages.REVIEW_REPORT_TYPE_REQUIRED_FOR_NON_PREMIUM)).thenReturn("tag-required");
 
@@ -660,9 +570,11 @@ class PlateManagerTest {
         plate.setPlateCode("34ABC123");
         plate.setStatus(PlateStatus.ACTIVE);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(userDao.findByIdAndActiveTrue(92L)).thenReturn(Optional.of(user));
-        when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
+        when(plateSearchService.getOrCreatePlate("34ABC123")).thenReturn(plate);
+        when(plateSearchService.checkIfPlatePubliclyVisible(plate)).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateReviewDao.findByPlateIdAndUserId(10L, 92L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
@@ -691,9 +603,10 @@ class PlateManagerTest {
         hiddenPlate.setPlateCode("34ABC123");
         hiddenPlate.setStatus(PlateStatus.HIDDEN_BY_REQUEST);
 
-        when(plateValidator.isValid("34ABC123")).thenReturn(true);
+        when(plateSearchService.normalizePlate(any())).thenAnswer(i -> i.getArgument(0).toString().replace(" ", ""));
+        when(plateSearchService.checkIfPlateValid("34ABC123")).thenReturn(new com.mefy.platemate.core.utilities.results.SuccessResult());
         when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(hiddenPlate));
-        when(messageService.getMessage(Messages.PLATE_NOT_AVAILABLE)).thenReturn("plate-not-available");
+        when(plateSearchService.checkIfPlatePubliclyVisible(hiddenPlate)).thenReturn(new com.mefy.platemate.core.utilities.results.ErrorResult("plate-not-available"));
 
         DataResult<PagedData<PlateReviewDto>> result =
                 plateManager.getReviewsByPlateCode("34ABC123", PaginationRequest.of(0, 20));
