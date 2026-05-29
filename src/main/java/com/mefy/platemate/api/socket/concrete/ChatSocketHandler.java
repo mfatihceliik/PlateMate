@@ -4,11 +4,11 @@ import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.mefy.platemate.api.socket.abstracts.IChatSocketHandler;
-import com.mefy.platemate.api.socket.utilities.constants.SocketEvents;
+import com.mefy.platemate.business.utilities.constants.SocketEvents;
 import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
-import com.mefy.platemate.dataAccess.abstracts.IParticipantDao;
+import com.mefy.platemate.business.abstracts.IParticipantService;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class ChatSocketHandler implements IChatSocketHandler {
 
     private final IChatMessageService chatMessageService;
-    private final IParticipantDao participantDao;
+    private final IParticipantService participantService;
 
     @Override
     public void registerEvents(SocketIOServer server) {
@@ -34,7 +34,7 @@ public class ChatSocketHandler implements IChatSocketHandler {
         Long userId = client.get("userId");
         if (userId == null) return;
 
-        if (participantDao.existsByUserIdAndChatRoomId(userId, roomId)) {
+        if (participantService.isRoomMember(userId, roomId)) {
             client.joinRoom(roomId.toString());
             log.info("User {} joined room {}", userId, roomId);
         }
@@ -45,7 +45,7 @@ public class ChatSocketHandler implements IChatSocketHandler {
         Long senderId = client.get("userId");
         if (senderId == null) return;
 
-        if (!participantDao.existsByUserIdAndChatRoomId(senderId, data.getChatRoomId())) {
+        if (!participantService.isRoomMember(senderId, data.getChatRoomId())) {
             return;
         }
 
@@ -58,12 +58,12 @@ public class ChatSocketHandler implements IChatSocketHandler {
                         .getRoomOperations(data.getChatRoomId().toString())
                         .sendEvent(SocketEvents.NEW_MESSAGE, result);
             } else {
-                // İş kuralı hatası (Örn: Mesajlaşma kapalı)
+                // Business rule error (e.g., messaging disabled)
                 client.sendEvent(SocketEvents.ERROR, result);
             }
         } catch (Exception e) {
             log.error("Socket error in handleSendMessage: {}", e.getMessage());
-            // Beklenmedik sistem hatası
+            // Unexpected system error
             client.sendEvent(SocketEvents.ERROR, result != null ? result : new ErrorResult(e.getMessage()));
         }
     }

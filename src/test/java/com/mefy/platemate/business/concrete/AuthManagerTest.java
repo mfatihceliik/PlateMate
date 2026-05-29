@@ -2,6 +2,7 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IRefreshTokenService;
 import com.mefy.platemate.business.abstracts.IUserService;
+import com.mefy.platemate.business.exceptions.RefreshTokenServiceException;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import com.mefy.platemate.core.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
@@ -150,7 +151,7 @@ class AuthManagerTest {
     void refreshFailureException() {
         RefreshTokenRequest request = new RefreshTokenRequest("expired-refresh");
         when(refreshTokenService.refreshTokens("expired-refresh"))
-                .thenThrow(new IRefreshTokenService.RefreshTokenServiceException(
+                .thenThrow(new RefreshTokenServiceException(
                         JwtTokenProvider.RefreshTokenErrorCode.REFRESH_EXPIRED
                 ));
         when(messageService.getMessage("auth.refresh.expired")).thenReturn("expired");

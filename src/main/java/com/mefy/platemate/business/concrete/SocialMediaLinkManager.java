@@ -15,6 +15,7 @@ import com.mefy.platemate.entities.dto.request.AddSocialLinkRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     private final IMessageService messageService;
 
     @Override
+    @Transactional
     public Result add(AddSocialLinkRequest request, Long currentUserId) {
         SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
 
@@ -60,6 +62,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     }
 
     @Override
+    @Transactional
     public Result update(UpdateSocialLinkRequest request, Long currentUserId) {
         SocialMediaLink existingLink = socialMediaLinkDao.findById(request.getId()).orElse(null);
         SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
@@ -80,6 +83,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     }
 
     @Override
+    @Transactional
     public Result delete(Long id, Long currentUserId) {
         SocialMediaLink link = socialMediaLinkDao.findById(id).orElse(null);
         

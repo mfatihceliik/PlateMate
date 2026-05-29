@@ -12,6 +12,14 @@ public final class Messages {
     public static final String USER_FOUND = "user.found";
     public static final String USERS_LISTED = "users.listed";
     public static final String USER_ROLE_NOT_FOUND = "user.role.not.found";
+    // Auth Messages
+    public static final String AUTH_INVALID_CREDENTIALS = "auth.invalid.credentials";
+    public static final String AUTH_LOGIN_SUCCESS = "auth.login.success";
+    public static final String AUTH_REFRESH_SUCCESS = "auth.refresh.success";
+    public static final String AUTH_LOGOUT_SUCCESS = "auth.logout.success";
+    public static final String AUTH_REFRESH_EXPIRED = "auth.refresh.expired";
+    public static final String AUTH_REFRESH_REVOKED = "auth.refresh.revoked";
+    public static final String AUTH_REFRESH_INVALID = "auth.refresh.invalid";
     // Profile Messages
     public static final String PROFILE_NOT_FOUND = "profile.not.found";
     public static final String PROFILE_LISTED = "profile.listed";
@@ -19,6 +27,7 @@ public final class Messages {
     // Plate Messages
     public static final String PLATE_INVALID = "plate.invalid";
     public static final String PLATE_FOUND = "plate.found";
+    public static final String PLATE_NOT_FOUND = "plate.not.found";
     public static final String PLATE_NOT_AVAILABLE = "plate.not.available";
     public static final String SUBSCRIPTION_ACTIVATED = "subscription.activated";
     public static final String SUBSCRIPTION_STATUS_FOUND = "subscription.status.found";
@@ -49,6 +58,32 @@ public final class Messages {
     public static final String PLATE_REPORT_TYPE_ADDED = "plate.report.type.added";
     public static final String PLATE_REPORT_TYPE_UPDATED = "plate.report.type.updated";
     public static final String PLATE_REPORT_TYPE_STATUS_UPDATED = "plate.report.type.status.updated";
+    
+    // Plate Removal Request Messages
+    public static final String PLATE_REMOVAL_REQUEST_CREATED = "plate.removal.request.created";
+    public static final String PLATE_REMOVAL_PLATE_NOT_FOUND = "plate.removal.plate.not.found";
+    public static final String PLATE_REMOVAL_REQUESTS_LISTED = "plate.removal.requests.listed";
+    public static final String PLATE_REMOVAL_REQUEST_NOT_FOUND = "plate.removal.request.not.found";
+    public static final String PLATE_REMOVAL_REQUEST_REVIEWED = "plate.removal.request.reviewed";
+    public static final String VALIDATION_PLATE_REMOVAL_REASON_NOTNULL = "validation.plate.removal.reason.notnull";
+    public static final String VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL = "validation.plate.removal.status.notnull";
+
+    // Comment Report Messages
+    public static final String COMMENT_REPORT_CREATED = "comment.report.created";
+    public static final String COMMENT_REPORTS_LISTED = "comment.reports.listed";
+    public static final String COMMENT_REPORT_REVIEWED = "comment.report.reviewed";
+    public static final String COMMENT_REPORT_DUPLICATE = "comment.report.duplicate";
+    public static final String COMMENT_REPORT_NOT_FOUND = "comment.report.not.found";
+    public static final String COMMENT_REPORT_REVIEW_INVALID_STATUS = "comment.report.review.invalid.status";
+
+    // Moderation Admin Messages
+    public static final String ADMIN_COMMENTS_PENDING_LISTED = "admin.comments.pending.listed";
+    public static final String ADMIN_COMMENT_APPROVED = "admin.comment.approved";
+    public static final String ADMIN_COMMENT_REJECTED = "admin.comment.rejected";
+    public static final String ADMIN_COMMENT_REMOVED = "admin.comment.removed";
+    public static final String ADMIN_PLATES_HIDDEN_LISTED = "admin.plates.hidden.listed";
+    public static final String ADMIN_PLATE_HIDDEN = "admin.plate.hidden";
+    public static final String ADMIN_PLATE_RESTORED = "admin.plate.restored";
     // Discovery Messages
     public static final String DISCOVERY_HOME_FOUND = "discovery.home.found";
     public static final String DISCOVERY_TAB_LISTED = "discovery.tab.listed";
@@ -90,6 +125,11 @@ public final class Messages {
     public static final String NOTIFICATION_FRIEND_REQUEST_TITLE = "notification.friend_request.title";
     public static final String NOTIFICATION_FRIEND_REQUEST_CONTENT = "notification.friend_request.content";
 
+    // Global Exception Messages
+    public static final String VALIDATION_ERROR = "validation.error";
+    public static final String INVALID_REQUEST_PARAM = "invalid.request.param";
+    public static final String UNEXPECTED_ERROR = "unexpected.error";
+
     private Messages() {
-    } // Instance oluşturulmasını engelle (Utility class)
+    } // Prevent instantiation (Utility class)
 }

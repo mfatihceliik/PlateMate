@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IRefreshTokenService;
+import com.mefy.platemate.business.exceptions.RefreshTokenServiceException;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import com.mefy.platemate.dataAccess.abstracts.IUserRefreshTokenDao;
 import com.mefy.platemate.entities.concrete.User;
@@ -69,8 +70,8 @@ class RefreshTokenManagerTest {
                 ));
         when(userRefreshTokenDao.findByTokenHash(anyString())).thenReturn(Optional.of(tokenRecord));
 
-        IRefreshTokenService.RefreshTokenServiceException ex = assertThrows(
-                IRefreshTokenService.RefreshTokenServiceException.class,
+        RefreshTokenServiceException ex = assertThrows(
+                RefreshTokenServiceException.class,
                 () -> manager.refreshTokens("old-refresh")
         );
 
@@ -113,8 +114,8 @@ class RefreshTokenManagerTest {
         when(userRefreshTokenDao.findByTokenHash(anyString())).thenReturn(Optional.of(tokenRecord));
         when(userRefreshTokenDao.save(any(UserRefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        IRefreshTokenService.RefreshTokenServiceException ex = assertThrows(
-                IRefreshTokenService.RefreshTokenServiceException.class,
+        RefreshTokenServiceException ex = assertThrows(
+                RefreshTokenServiceException.class,
                 () -> manager.refreshTokens("expired-refresh")
         );
 

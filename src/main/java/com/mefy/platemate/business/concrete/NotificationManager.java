@@ -1,7 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
-import com.corundumstudio.socketio.SocketIOServer;
-import com.mefy.platemate.api.socket.utilities.constants.SocketEvents;
+import com.mefy.platemate.business.abstracts.ISocketPushService;
+import com.mefy.platemate.business.utilities.constants.SocketEvents;
 import com.mefy.platemate.business.abstracts.IFcmService;
 import com.mefy.platemate.business.abstracts.INotificationService;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -26,11 +26,11 @@ public class NotificationManager implements INotificationService {
     private final IUserSettingsDao userSettingsDao;
     private final IFcmTokenDao fcmTokenDao;
     private final IFcmService fcmService;
-    private final SocketIOServer socketServer;
+    private final ISocketPushService socketPushService;
 
     @Override
     public Result sendNotification(Long userId, String title, String content, NotificationType type) {
-        // 1. Kullanıcı tercihlerini kontrol et
+        // 1. Check user preferences
         UserSettings settings = userSettingsDao.findByUserId(userId).orElse(null);
         if (settings != null) {
             if (type == NotificationType.MESSAGE && !settings.isMessageNotificationsEnabled()) {
@@ -41,7 +41,7 @@ public class NotificationManager implements INotificationService {
             }
         }
 
-        // 2. Anlık Sinyal Hazırla (DTO)
+        // 2. Prepare instant signal (DTO)
         NotificationSignalDto signal = NotificationSignalDto.builder()
                 .title(title)
                 .content(content)
@@ -49,11 +49,10 @@ public class NotificationManager implements INotificationService {
                 .timestamp(System.currentTimeMillis())
                 .build();
 
-        // 3. SOCKET PUSH (Uygulama açıksa)
-        socketServer.getRoomOperations(SocketEvents.USER_ROOM_PREFIX + userId)
-                .sendEvent(SocketEvents.NOTIFICATION_RECEIVED, new SuccessDataResult<>(signal));
+        // 3. SOCKET PUSH (If app is open)
+        socketPushService.sendToUser(userId, SocketEvents.NOTIFICATION_RECEIVED, new SuccessDataResult<>(signal));
 
-        // 4. FCM PUSH (Uygulama kapalıysa/arka plandaysa)
+        // 4. FCM PUSH (If app is closed/in background)
         sendFcmNotification(userId, signal);
 
         return new SuccessResult();

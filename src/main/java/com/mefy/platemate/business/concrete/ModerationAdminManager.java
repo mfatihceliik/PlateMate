@@ -53,7 +53,7 @@ public class ModerationAdminManager implements IModerationAdminService {
                 .map(this::toAdminDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
-                messageService.getMessage("admin.comments.pending.listed")
+                messageService.getMessage(Messages.ADMIN_COMMENTS_PENDING_LISTED)
         );
     }
 
@@ -68,7 +68,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         applyApproveMutation(review);
         logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.APPROVED_BY_ADMIN, adminUserId, "APPROVED_BY_ADMIN");
 
-        return new SuccessResult(messageService.getMessage("admin.comment.approved"));
+        return new SuccessResult(messageService.getMessage(Messages.ADMIN_COMMENT_APPROVED));
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         applyRejectMutation(review, reason);
         logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.REJECTED_BY_ADMIN, adminUserId, reason);
 
-        return new SuccessResult(messageService.getMessage("admin.comment.rejected"));
+        return new SuccessResult(messageService.getMessage(Messages.ADMIN_COMMENT_REJECTED));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         applyRemoveMutation(review, reason);
         logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.REMOVED_BY_MODERATOR, adminUserId, reason);
 
-        return new SuccessResult(messageService.getMessage("admin.comment.removed"));
+        return new SuccessResult(messageService.getMessage(Messages.ADMIN_COMMENT_REMOVED));
     }
 
     private Result checkCommentExists(PlateReview review) {
@@ -162,7 +162,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         var page = plateDao.findByStatusIn(statuses, pageable).map(this::toPlateAdminDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
-                messageService.getMessage("admin.plates.hidden.listed")
+                messageService.getMessage(Messages.ADMIN_PLATES_HIDDEN_LISTED)
         );
     }
 
@@ -171,14 +171,14 @@ public class ModerationAdminManager implements IModerationAdminService {
     public Result hidePlate(Long plateId, Long adminUserId, String reason) {
         Plate plate = plateDao.findById(plateId).orElse(null);
         if (plate == null) {
-            return new ErrorResult(messageService.getMessage("plate.not.found"));
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_NOT_FOUND));
         }
 
         plate.setStatus(PlateStatus.HIDDEN_BY_REQUEST);
         plate.setHiddenReason(reason);
         plate.setUpdatedAt(LocalDateTime.now());
         plateDao.save(plate);
-        return new SuccessResult(messageService.getMessage("admin.plate.hidden"));
+        return new SuccessResult(messageService.getMessage(Messages.ADMIN_PLATE_HIDDEN));
     }
 
     @Override
@@ -186,7 +186,7 @@ public class ModerationAdminManager implements IModerationAdminService {
     public Result restorePlate(Long plateId, Long adminUserId) {
         Plate plate = plateDao.findById(plateId).orElse(null);
         if (plate == null) {
-            return new ErrorResult(messageService.getMessage("plate.not.found"));
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_NOT_FOUND));
         }
 
         plate.setStatus(PlateStatus.ACTIVE);
@@ -194,7 +194,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         plate.setDeletedAt(null);
         plate.setUpdatedAt(LocalDateTime.now());
         plateDao.save(plate);
-        return new SuccessResult(messageService.getMessage("admin.plate.restored"));
+        return new SuccessResult(messageService.getMessage(Messages.ADMIN_PLATE_RESTORED));
     }
 
     private PlateReviewAdminDto toAdminDto(PlateReview review) {

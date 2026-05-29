@@ -11,12 +11,14 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class GlobalExceptionHandler {
 
     private final IMessageService messageService;
@@ -33,7 +35,7 @@ public class GlobalExceptionHandler {
         });
 
         return new ResponseEntity<>(
-                new ErrorDataResult<>(errors, "Dogrulama hatalari"),
+                new ErrorDataResult<>(errors, messageService.getMessage(Messages.VALIDATION_ERROR)),
                 HttpStatus.BAD_REQUEST
         );
     }
@@ -51,16 +53,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorDataResult<String>> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+        log.error("Type mismatch exception", ex);
         return new ResponseEntity<>(
-                new ErrorDataResult<>(ex.getMessage(), "Gecersiz istek parametresi."),
+                new ErrorDataResult<>(messageService.getMessage(Messages.INVALID_REQUEST_PARAM)),
                 HttpStatus.BAD_REQUEST
         );
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDataResult<String>> handleGeneralExceptions(Exception ex) {
+        log.error("Unhandled exception", ex);
         return new ResponseEntity<>(
-                new ErrorDataResult<>(ex.getMessage(), "Beklenmeyen bir hata olustu."),
+                new ErrorDataResult<>(messageService.getMessage(Messages.UNEXPECTED_ERROR)),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

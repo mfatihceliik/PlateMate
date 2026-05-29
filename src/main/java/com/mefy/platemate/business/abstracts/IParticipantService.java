@@ -14,4 +14,5 @@ public interface IParticipantService {
     Result delete(Long id);
     DataResult<List<Participant>> getByUserId(Long userId);
     DataResult<Optional<ChatRoom>> findPrivateChatBetweenUsers(Long u1, Long u2);
+    boolean isRoomMember(Long userId, Long roomId);
 }

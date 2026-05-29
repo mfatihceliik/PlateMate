@@ -34,7 +34,7 @@ public class ChatRoomManager implements IChatRoomService {
     @Override
     @Transactional
     public DataResult<ChatRoomDto> getOrCreateChatRoom(Long userOneId, Long userTwoId) {
-        // Hedef kullanıcının mesajlaşma ayarını kontrol et
+        // Check target user's messaging setting
         var targetSettings = userSettingsDao.findByUserId(userTwoId).orElse(null);
         if (targetSettings != null && !targetSettings.isMessagingEnabled()) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.MESSAGING_DISABLED));

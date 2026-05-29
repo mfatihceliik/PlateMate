@@ -1,4 +1,4 @@
-package com.mefy.platemate.api.socket.utilities.constants;
+package com.mefy.platemate.business.utilities.constants;
 
 public final class SocketEvents {
     // Chat Events

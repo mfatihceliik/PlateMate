@@ -24,6 +24,7 @@ import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,12 +42,14 @@ public class UserSettingsManager implements IUserSettingsService {
     private final IMessageService messageService;
 
     @Override
+    @Transactional
     public DataResult<UserSettingsDto> getByUserId(Long userId) {
         UserSettings settings = userSettingsDao.findByUserId(userId).orElseGet(() -> createDefaultSettings(userId));
         return new SuccessDataResult<>(userSettingsMapper.entityToDto(settings), messageService.getMessage(Messages.SETTINGS_FOUND));
     }
 
     @Override
+    @Transactional
     public DataResult<UserSettingsOverviewDto> getOverviewByUserId(Long userId) {
         User user = userDao.findById(userId).orElse(null);
         if (user == null) {
@@ -70,6 +73,7 @@ public class UserSettingsManager implements IUserSettingsService {
     }
 
     @Override
+    @Transactional
     public Result updateSettings(Long userId, UpdateSettingsRequest request) {
         UserSettings settings = userSettingsDao.findByUserId(userId).orElseGet(() -> createDefaultSettings(userId));
 

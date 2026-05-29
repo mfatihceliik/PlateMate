@@ -64,7 +64,7 @@ public class CommentReportManager implements ICommentReportService {
         createAndSaveReport(comment, reporterUserId, reason, request.getDescription());
         handleReportThresholdAndSave(comment, reporterUserId);
 
-        return new SuccessResult(messageService.getMessage("comment.report.created"));
+        return new SuccessResult(messageService.getMessage(Messages.COMMENT_REPORT_CREATED));
     }
 
     private Result checkCommentExists(PlateReview comment) {
@@ -84,7 +84,7 @@ public class CommentReportManager implements ICommentReportService {
         var page = commentReportDao.findAll(pageable).map(this::toDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
-                messageService.getMessage("comment.reports.listed")
+                messageService.getMessage(Messages.COMMENT_REPORTS_LISTED)
         );
     }
 
@@ -103,7 +103,7 @@ public class CommentReportManager implements ICommentReportService {
             removeReportedComment(report.getComment(), reviewerUserId);
         }
 
-        return new SuccessResult(messageService.getMessage("comment.report.reviewed"));
+        return new SuccessResult(messageService.getMessage(Messages.COMMENT_REPORT_REVIEWED));
     }
 
     private Result validateAddReportInput(Long commentId, Long reporterUserId, AddCommentReportRequest request, CommentReportReason reason) {
@@ -118,7 +118,7 @@ public class CommentReportManager implements ICommentReportService {
 
     private Result checkDuplicateReport(Long commentId, Long reporterUserId) {
         if (commentReportDao.existsByCommentIdAndReporterUserId(commentId, reporterUserId)) {
-            return new ErrorResult(messageService.getMessage("comment.report.duplicate"));
+            return new ErrorResult(messageService.getMessage(Messages.COMMENT_REPORT_DUPLICATE));
         }
         return new SuccessResult();
     }
@@ -161,10 +161,10 @@ public class CommentReportManager implements ICommentReportService {
 
     private Result validateReviewReportRequest(CommentReport report, CommentReportStatus nextStatus) {
         if (report == null) {
-            return new ErrorResult(messageService.getMessage("comment.report.not.found"));
+            return new ErrorResult(messageService.getMessage(Messages.COMMENT_REPORT_NOT_FOUND));
         }
         if (nextStatus == null || nextStatus == CommentReportStatus.OPEN) {
-            return new ErrorResult(messageService.getMessage("comment.report.review.invalid.status"));
+            return new ErrorResult(messageService.getMessage(Messages.COMMENT_REPORT_REVIEW_INVALID_STATUS));
         }
         return null;
     }

@@ -87,19 +87,19 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             plateDao.save(plate);
         }
 
-        return new SuccessDataResult<>(toDto(saved), messageService.getMessage("plate.removal.request.created"));
+        return new SuccessDataResult<>(toDto(saved), messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_CREATED));
     }
 
     private Result checkIfReasonExists(PlateRemovalRequestReason reason) {
         if (reason == null) {
-            return new ErrorResult(messageService.getMessage("validation.plate.removal.reason.notnull"));
+            return new ErrorResult(messageService.getMessage(Messages.VALIDATION_PLATE_REMOVAL_REASON_NOTNULL));
         }
         return new SuccessResult();
     }
 
     private Result checkIfPlateExists(Plate plate) {
         if (plate == null) {
-            return new ErrorResult(messageService.getMessage("plate.removal.plate.not.found"));
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_REMOVAL_PLATE_NOT_FOUND));
         }
         return new SuccessResult();
     }
@@ -121,7 +121,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         var page = plateRemovalRequestDao.findAll(pageable).map(this::toDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
-                messageService.getMessage("plate.removal.requests.listed")
+                messageService.getMessage(Messages.PLATE_REMOVAL_REQUESTS_LISTED)
         );
     }
 
@@ -130,13 +130,13 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
     public Result reviewRequest(Long requestId, Long reviewerUserId, ReviewPlateRemovalRequestRequest request) {
         PlateRemovalRequest removalRequest = plateRemovalRequestDao.findById(requestId).orElse(null);
         if (removalRequest == null) {
-            return new ErrorResult(messageService.getMessage("plate.removal.request.not.found"));
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_NOT_FOUND));
         }
         PlateRemovalRequestStatus nextStatus = request == null
                 ? null
                 : PlateRemovalRequestStatus.resolve(request.getStatusId(), request.getStatusCode());
         if (nextStatus == null) {
-            return new ErrorResult(messageService.getMessage("validation.plate.removal.status.notnull"));
+            return new ErrorResult(messageService.getMessage(Messages.VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL));
         }
 
         Plate plate = removalRequest.getPlate();
@@ -169,7 +169,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             }
         }
 
-        return new SuccessResult(messageService.getMessage("plate.removal.request.reviewed"));
+        return new SuccessResult(messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_REVIEWED));
     }
 
     private PlateRemovalRequestDto toDto(PlateRemovalRequest request) {

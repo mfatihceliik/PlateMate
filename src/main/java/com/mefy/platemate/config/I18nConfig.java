@@ -24,11 +24,11 @@ public class I18nConfig {
     @Bean
     public LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.of("tr")); // Varsayılan dil Türkçe
+        localeResolver.setDefaultLocale(Locale.of("tr")); // Default language is Turkish
         return localeResolver;
     }
 
-    // DTO Validation mesajlarının da aynı messages.properties'den okunmasını sağlar
+    // Enables reading DTO Validation messages from the same messages.properties
     @Bean
     public LocalValidatorFactoryBean getValidator() {
         LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();

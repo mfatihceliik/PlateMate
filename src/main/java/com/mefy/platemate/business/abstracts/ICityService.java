@@ -1,11 +1,11 @@
 package com.mefy.platemate.business.abstracts;
 
 import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.entities.concrete.City;
+import com.mefy.platemate.entities.dto.CityDto;
 
 import java.util.List;
 
 public interface ICityService {
-    DataResult<List<City>> getAll();
-    DataResult<City> getById(Integer id);
+    DataResult<List<CityDto>> getAll();
+    DataResult<CityDto> getById(Integer id);
 }

@@ -15,6 +15,7 @@ import com.mefy.platemate.entities.concrete.Participant;
 import com.mefy.platemate.entities.concrete.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,12 +30,14 @@ public class ParticipantManager implements IParticipantService {
     private final IMessageService messageService;
 
     @Override
+    @Transactional
     public Result add(Participant participant) {
         participantDao.save(participant);
         return new SuccessResult();
     }
 
     @Override
+    @Transactional
     public Result addParticipantToRoom(ChatRoom room, Long userId) {
         User user = userDao.findById(userId).orElse(null);
         if (user == null) {
@@ -49,6 +52,7 @@ public class ParticipantManager implements IParticipantService {
     }
 
     @Override
+    @Transactional
     public Result delete(Long id) {
         participantDao.deleteById(id);
         return new SuccessResult();
@@ -62,5 +66,10 @@ public class ParticipantManager implements IParticipantService {
     @Override
     public DataResult<Optional<ChatRoom>> findPrivateChatBetweenUsers(Long u1, Long u2) {
         return new SuccessDataResult<>(participantDao.findPrivateChatBetweenUsers(u1, u2));
+    }
+
+    @Override
+    public boolean isRoomMember(Long userId, Long roomId) {
+        return participantDao.existsByUserIdAndChatRoomId(userId, roomId);
     }
 }

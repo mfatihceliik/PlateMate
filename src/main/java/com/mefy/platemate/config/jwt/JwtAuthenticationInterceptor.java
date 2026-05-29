@@ -8,12 +8,12 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * JWT Authentication Interceptor.
- * Spring MVC HandlerInterceptor olarak çalışır — Security filter chain'e dokunmaz.
- * Her istek geldiğinde token kontrolü yapar ve userId'yi request attribute olarak ekler.
+ * Works as Spring MVC HandlerInterceptor — does not touch Security filter chain.
+ * Checks token on every request and adds userId as request attribute.
  * <p>
- * Controller'lar userId'ye şu şekilde erişir:
+ * Controllers access userId like this:
  * Long userId = (Long) request.getAttribute("userId");
- * veya @RequestAttribute("userId") Long userId
+ * or @RequestAttribute("userId") Long userId
  */
 @Component
 @RequiredArgsConstructor
@@ -29,17 +29,17 @@ public class JwtAuthenticationInterceptor implements HandlerInterceptor {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json; charset=UTF-8");
             response.getWriter().write("{\"success\":false,\"message\":\"Geçersiz veya eksik token.\"}");
-            return false; // İsteği durdur
+            return false; // Stop request
         }
 
-        // Token geçerli — kullanıcı bilgilerini request'e ekle
+        // Token valid — add user info to request
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         String username = jwtTokenProvider.getUsernameFromToken(token);
 
         request.setAttribute("userId", userId);
         request.setAttribute("username", username);
 
-        return true; // İsteğe devam et
+        return true; // Continue request
     }
 
     private String extractTokenFromHeader(HttpServletRequest request) {

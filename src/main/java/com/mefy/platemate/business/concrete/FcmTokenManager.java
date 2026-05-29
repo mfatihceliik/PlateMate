@@ -36,7 +36,7 @@ public class FcmTokenManager implements IFcmTokenService {
 
         if (existingToken.isPresent()) {
             UserFcmToken fcmToken = existingToken.get();
-            // Eğer token başka bir kullanıcıya geçtiyse güncelle
+            // Update if token has been transferred to another user
             if (!fcmToken.getUser().getId().equals(userId)) {
                 fcmToken.setUser(user);
             }

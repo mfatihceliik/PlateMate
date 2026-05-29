@@ -37,16 +37,6 @@ public class ChatMessageManager implements IChatMessageService {
     private final ChatMessageMapper chatMessageMapper;
     private final IMessageService messageService;
 
-    @Override
-    @Transactional
-    public DataResult<ChatMessageDto> sendMessage(ChatMessage message, Long currentUserId) {
-        ChatRoom room = findRoom(resolveRoomId(message));
-        Result senderResult = ensureMessageSenderMatchesCurrentUser(message, currentUserId);
-        if (!senderResult.isSuccess()) {
-            return new ErrorDataResult<>(senderResult.getMessage());
-        }
-        return processSendMessage(message, room, currentUserId);
-    }
 
     @Override
     @Transactional
@@ -161,12 +151,6 @@ public class ChatMessageManager implements IChatMessageService {
         return new SuccessResult(messageService.getMessage("messages.read"));
     }
 
-    private Long resolveRoomId(ChatMessage message) {
-        if (message == null || message.getChatRoom() == null) {
-            return null;
-        }
-        return message.getChatRoom().getId();
-    }
 
     private ChatRoom findRoom(Long roomId) {
         if (roomId == null) {
@@ -186,15 +170,6 @@ public class ChatMessageManager implements IChatMessageService {
         return participantDao.existsByUserIdAndChatRoomId(userId, roomId);
     }
 
-    private Result ensureMessageSenderMatchesCurrentUser(ChatMessage message, Long currentUserId) {
-        if (message == null
-                || message.getSender() == null
-                || message.getSender().getId() == null
-                || !message.getSender().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("auth.unauthorized"));
-        }
-        return new SuccessResult();
-    }
 
     private Result ensureRecipientMessagingEnabled(ChatRoom room, Long senderId) {
         return room.getParticipants().stream()

@@ -12,16 +12,5 @@ public interface IRefreshTokenService {
 
     void revoke(String refreshToken);
 
-    class RefreshTokenServiceException extends RuntimeException {
-        private final JwtTokenProvider.RefreshTokenErrorCode code;
 
-        public RefreshTokenServiceException(JwtTokenProvider.RefreshTokenErrorCode code) {
-            super(code.name());
-            this.code = code;
-        }
-
-        public JwtTokenProvider.RefreshTokenErrorCode getCode() {
-            return code;
-        }
-    }
 }

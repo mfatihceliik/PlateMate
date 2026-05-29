@@ -3,6 +3,7 @@ package com.mefy.platemate.business.concrete;
 import com.mefy.platemate.business.abstracts.IAuthService;
 import com.mefy.platemate.business.abstracts.IRefreshTokenService;
 import com.mefy.platemate.business.abstracts.IUserService;
+import com.mefy.platemate.business.exceptions.RefreshTokenServiceException;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import com.mefy.platemate.core.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
@@ -11,6 +12,7 @@ import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
+import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.AuthTokensDto;
 import com.mefy.platemate.entities.dto.UserDto;
@@ -52,24 +54,24 @@ public class AuthManager implements IAuthService {
     public DataResult<UserDto> login(LoginRequest request) {
         String identifier = request.getIdentifier();
         if (identifier == null || identifier.trim().isEmpty()) {
-            return new ErrorDataResult<>(messageService.getMessage("auth.invalid.credentials"));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.AUTH_INVALID_CREDENTIALS));
         }
 
         DataResult<User> result = userService.getByUsernameOrEmailForAuth(identifier);
         if (!result.isSuccess()) {
-            return new ErrorDataResult<>(messageService.getMessage("auth.invalid.credentials"));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.AUTH_INVALID_CREDENTIALS));
         }
 
         User user = result.getData();
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return new ErrorDataResult<>(messageService.getMessage("auth.invalid.credentials"));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.AUTH_INVALID_CREDENTIALS));
         }
 
         AuthTokensDto authTokens = refreshTokenService.issueTokens(user);
         UserDto userDto = userMapper.entityToDto(user);
         attachTokens(userDto, authTokens);
 
-        return new SuccessDataResult<>(userDto, messageService.getMessage("auth.login.success"));
+        return new SuccessDataResult<>(userDto, messageService.getMessage(Messages.AUTH_LOGIN_SUCCESS));
     }
 
     @Override
@@ -86,8 +88,8 @@ public class AuthManager implements IAuthService {
             UserDto userDto = userResult.getData();
             attachTokens(userDto, authTokens);
 
-            return new SuccessDataResult<>(userDto, messageService.getMessage("auth.refresh.success"));
-        } catch (IRefreshTokenService.RefreshTokenServiceException e) {
+            return new SuccessDataResult<>(userDto, messageService.getMessage(Messages.AUTH_REFRESH_SUCCESS));
+        } catch (RefreshTokenServiceException e) {
             return buildRefreshError(e.getCode());
         }
     }
@@ -95,7 +97,7 @@ public class AuthManager implements IAuthService {
     @Override
     public Result logout(RefreshTokenRequest request) {
         refreshTokenService.revoke(request.getRefreshToken());
-        return new SuccessResult(messageService.getMessage("auth.logout.success"));
+        return new SuccessResult(messageService.getMessage(Messages.AUTH_LOGOUT_SUCCESS));
     }
 
     private void attachTokens(UserDto userDto, AuthTokensDto authTokens) {
@@ -106,9 +108,9 @@ public class AuthManager implements IAuthService {
     @SuppressWarnings("unchecked")
     private DataResult<UserDto> buildRefreshError(JwtTokenProvider.RefreshTokenErrorCode code) {
         String messageKey = switch (code) {
-            case REFRESH_EXPIRED -> "auth.refresh.expired";
-            case REFRESH_REVOKED -> "auth.refresh.revoked";
-            case REFRESH_INVALID -> "auth.refresh.invalid";
+            case REFRESH_EXPIRED -> Messages.AUTH_REFRESH_EXPIRED;
+            case REFRESH_REVOKED -> Messages.AUTH_REFRESH_REVOKED;
+            case REFRESH_INVALID -> Messages.AUTH_REFRESH_INVALID;
         };
 
         return (DataResult<UserDto>) (DataResult<?>) new ErrorDataResult<>(

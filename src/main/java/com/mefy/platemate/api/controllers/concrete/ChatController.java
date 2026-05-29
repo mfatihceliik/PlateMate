@@ -1,14 +1,10 @@
 package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IChatController;
-
 import com.mefy.platemate.business.abstracts.IChatMessageService;
 import com.mefy.platemate.business.abstracts.IChatRoomService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
-import com.mefy.platemate.entities.concrete.ChatMessage;
-import com.mefy.platemate.entities.concrete.ChatRoom;
-import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
 import com.mefy.platemate.entities.dto.ChatRoomDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;

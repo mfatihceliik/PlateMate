@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface IChatRoomService {
     DataResult<ChatRoomDto> getOrCreateChatRoom(Long userOneId, Long userTwoId);
-    DataResult<List<ChatRoomDto>> getUserRooms(Long userId); // Kullanıcının tüm sohbet odaları
+    DataResult<List<ChatRoomDto>> getUserRooms(Long userId); // All chat rooms of the user
 }

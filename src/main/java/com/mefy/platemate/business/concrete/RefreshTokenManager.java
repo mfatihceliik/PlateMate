@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IRefreshTokenService;
+import com.mefy.platemate.business.exceptions.RefreshTokenServiceException;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import com.mefy.platemate.dataAccess.abstracts.IUserRefreshTokenDao;
 import com.mefy.platemate.entities.concrete.User;

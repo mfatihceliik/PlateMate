@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RegisterTokenRequest implements IDto {
 
-    @NotBlank
+    @NotBlank(message = "{validation.fcm.token.notblank}")
     private String token;
 
-    @NotBlank
+    @NotBlank(message = "{validation.fcm.deviceId.notblank}")
     private String deviceId;
 }

@@ -25,6 +25,7 @@ import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,6 +43,7 @@ public class UserManager implements IUserService {
     private final IMessageService messageService;
 
     @Override
+    @Transactional
     public DataResult<User> add(User user) {
         Result result = BusinessRules.run(
                 checkIfUsernameExists(user.getUsername()),
@@ -69,6 +71,7 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    @Transactional
     public DataResult<User> register(RegisterRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
@@ -122,6 +125,7 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    @Transactional
     public Result update(Long id, com.mefy.platemate.entities.dto.request.UpdateUserRequest request) {
         User existingUser = userDao.findByIdAndActiveTrue(id).orElse(null);
         
@@ -131,12 +135,12 @@ public class UserManager implements IUserService {
         );
         if (result != null) return result;
 
-        // Email değişmişse güncelle
+        // Update if email changed
         if (request.getEmail() != null && !request.getEmail().equals(existingUser.getEmail())) {
             existingUser.setEmail(request.getEmail());
         }
 
-        // Şifre değişmişse hashleyerek güncelle
+        // Update password with hash if changed
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -146,6 +150,7 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    @Transactional
     public Result delete(Long id) {
         User user = userDao.findByIdAndActiveTrue(id).orElse(null);
         Result result = BusinessRules.run(checkIfUserExists(user));
@@ -193,7 +198,7 @@ public class UserManager implements IUserService {
         return new SuccessDataResult<>(user, messageService.getMessage(Messages.USER_FOUND));
     }
 
-    ///  BUSINESS RULES
+    // BUSINESS RULES
 
     private Result checkIfUsernameExists(String username) {
         if (userDao.existsByUsername(username)) {
