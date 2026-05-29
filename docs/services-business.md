@@ -131,7 +131,7 @@ Extract when: reused by multiple managers, complex enough for separate testing, 
 
 Previously, `PlateManager` had an excessive dependency count (15 dependencies) and handled multiple distinct responsibilities. To adhere to SOLID principles and prevent the class from becoming unmaintainable, a long-term refactor plan was established.
 
-**Status Update:** `PlateManager` has been completely deleted as of Phase 2! Its core responsibilities were split. However, further modularization is still planned for Phase 3 and 4 to remove moderation and discovery concerns from the review and search managers.
+**Status Update:** `PlateManager` has been completely deleted. Its responsibilities were fully split across `PlateSearchManager`, `PlateReviewManager`, and `PlateModerationManager`. The existing `DiscoveryManager` already handles discovery/trending, so no additional manager was needed. **V13 is now RESOLVED.**
 
 **IMPORTANT RULES FOR NEW FEATURES:**
 * Do **NOT** add new dependencies or new distinct domain responsibilities to `PlateSearchManager` or `PlateReviewManager`.
@@ -142,7 +142,7 @@ Previously, `PlateManager` had an excessive dependency count (15 dependencies) a
 1. **`PlateSearchManager` (COMPLETED - Phase 1)**: Responsible for plate searching (`searchByPlateCode`), plate creation on first search, and basic plate detail aggregation.
 2. **`PlateReviewManager` (COMPLETED - Phase 2)**: Responsible for the core review lifecycle (adding, updating, deleting reviews), validating submission rules.
 3. **`PlateModerationManager` (COMPLETED - Phase 3)**: Responsible for content moderation (integration with `ContentModerationService`), IP/UserAgent hashing (`HashingService`), and logging moderation events (`PlateReviewModerationEventService`). Extracted from `PlateReviewManager`.
-4. **`PlateDiscoveryManager` (PENDING - Phase 4)**: Will be responsible for discovery/trending operations, logging search events (`IPlateSearchEventDao`), computing plate scores, and integrating with city resolution (`TrPlateCityResolver` / `ICityDao`). Currently intertwined in `PlateSearchManager`.
+4. **`DiscoveryManager` (Already existed)**: Handles discovery/trending operations via `DiscoveryAggregationService`, `DiscoveryTabService`, `DiscoveryActivityService`. No extraction needed.
 
 ## Open Questions
 

@@ -14,6 +14,7 @@ Do NOT read detailed history unless explicitly required by a large refactor. Old
 
 ## Recent Changes Summary
 
+* **Architecture Refactor – V13 Closed (2026-05-30):** Marked V13 (Excessive dependency count) as **Resolved**. Phase 4 (PlateDiscoveryManager) was determined unnecessary since `DiscoveryManager` already handles discovery/trending operations. The original monolithic `PlateManager` (15 deps) has been fully decomposed into `PlateSearchManager`, `PlateReviewManager`, and `PlateModerationManager`.
 * **Architecture Refactor – V13 Phase 3 (2026-05-30):** Extracted moderation responsibilities from `PlateReviewManager` into a dedicated `PlateModerationManager` (`IPlateModerationService`). Moved `ContentModerationService`, `HashingService`, and `PlateReviewModerationEventService` dependencies out of `PlateReviewManager`, reducing its dependency count by 2. Created `IPlateModerationService` interface with `resolveModeration`, `applyModerationMetadata`, `logReviewSubmitted`, and `logReviewRemovedByUser`. Updated `PlateReviewManagerTest` to mock the new interface. All 97 tests pass.
 * **Documentation (2026-05-30):** Performed a final consistency pass across all documentation files. Verified Task Matrix links, known-violations statuses, dependency direction rules, and endpoint checklists.
   - **Architectural Cleanup**: Resolved multiple known violations (`V05`, `V09`, `V11`, `V14`).
