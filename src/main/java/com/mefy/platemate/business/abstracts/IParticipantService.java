@@ -9,10 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IParticipantService {
-    Result add(Participant participant);
-    Result addParticipantToRoom(ChatRoom room, Long userId);
+    Result addParticipantToRoom(Long roomId, Long userId);
     Result delete(Long id);
-    DataResult<List<Participant>> getByUserId(Long userId);
-    DataResult<Optional<ChatRoom>> findPrivateChatBetweenUsers(Long u1, Long u2);
+    DataResult<List<Long>> getByUserId(Long userId);
+    DataResult<Long> findPrivateChatBetweenUsers(Long u1, Long u2);
     boolean isRoomMember(Long userId, Long roomId);
 }

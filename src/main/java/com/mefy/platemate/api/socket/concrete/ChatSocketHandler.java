@@ -15,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import com.mefy.platemate.core.utilities.messages.IMessageService;
+import com.mefy.platemate.business.utilities.constants.Messages;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class ChatSocketHandler implements IChatSocketHandler {
 
     private final IChatMessageService chatMessageService;
     private final IParticipantService participantService;
+    private final IMessageService messageService;
 
     @Override
     public void registerEvents(SocketIOServer server) {
@@ -63,8 +67,8 @@ public class ChatSocketHandler implements IChatSocketHandler {
             }
         } catch (Exception e) {
             log.error("Socket error in handleSendMessage: {}", e.getMessage());
-            // Unexpected system error
-            client.sendEvent(SocketEvents.ERROR, result != null ? result : new ErrorResult(e.getMessage()));
+            // Hide raw exception message from client, log server-side
+            client.sendEvent(SocketEvents.ERROR, result != null ? result : new ErrorResult(messageService.getMessage(Messages.UNEXPECTED_ERROR)));
         }
     }
 }

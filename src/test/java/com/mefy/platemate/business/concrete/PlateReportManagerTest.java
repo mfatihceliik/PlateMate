@@ -66,7 +66,7 @@ class PlateReportManagerTest {
         when(plateReportDao.findByPlateIdAndUserIdAndReportTypeId(10L, 7L, 1L)).thenReturn(Optional.empty());
         when(messageService.getMessage(Messages.PLATE_REPORTS_SYNCED)).thenReturn("synced");
 
-        Result result = plateReportManager.syncReportsForUserAndPlate(plate, 7L, List.of("red_light_violation"));
+        Result result = plateReportManager.syncReportsForUserAndPlate(plate.getId(), 7L, List.of("red_light_violation"));
 
         assertTrue(result.isSuccess());
         assertEquals("synced", result.getMessage());
@@ -97,7 +97,7 @@ class PlateReportManagerTest {
         when(plateReportDao.findByPlateIdAndUserIdAndReportTypeId(10L, 8L, 1L)).thenReturn(Optional.of(existingInactive));
         when(messageService.getMessage(Messages.PLATE_REPORTS_SYNCED)).thenReturn("synced");
 
-        Result result = plateReportManager.syncReportsForUserAndPlate(plate, 8L, List.of("wrong_way"));
+        Result result = plateReportManager.syncReportsForUserAndPlate(plate.getId(), 8L, List.of("wrong_way"));
 
         assertTrue(result.isSuccess());
         verify(plateReportDao).saveAll(any());
@@ -113,7 +113,7 @@ class PlateReportManagerTest {
         when(plateReportTypeDao.findByCodeInAndActiveTrue(any())).thenReturn(List.of());
         when(messageService.getMessage(Messages.REPORT_TYPE_INVALID)).thenReturn("invalid");
 
-        Result result = plateReportManager.syncReportsForUserAndPlate(plate, 9L, List.of("NOT_EXISTS"));
+        Result result = plateReportManager.syncReportsForUserAndPlate(plate.getId(), 9L, List.of("NOT_EXISTS"));
 
         assertFalse(result.isSuccess());
         assertEquals("invalid", result.getMessage());

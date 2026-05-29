@@ -29,7 +29,14 @@ public class NotificationManager implements INotificationService {
     private final ISocketPushService socketPushService;
 
     @Override
-    public Result sendNotification(Long userId, String title, String content, NotificationType type) {
+    public Result sendNotification(Long userId, String title, String content, String typeName) {
+        NotificationType type;
+        try {
+            type = NotificationType.valueOf(typeName);
+        } catch (IllegalArgumentException e) {
+            type = NotificationType.SYSTEM; // Fallback
+        }
+
         // 1. Check user preferences
         UserSettings settings = userSettingsDao.findByUserId(userId).orElse(null);
         if (settings != null) {

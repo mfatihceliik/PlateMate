@@ -26,7 +26,7 @@ public class AdminAccessManager implements IAdminAccessService {
             return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
         }
         if (!user.hasRole(UserRoleCode.ADMIN)) {
-            return new ErrorResult(messageService.getMessage("auth.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED));
         }
         return new SuccessResult();
     }

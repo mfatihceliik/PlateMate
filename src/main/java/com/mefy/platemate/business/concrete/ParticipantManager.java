@@ -29,20 +29,20 @@ public class ParticipantManager implements IParticipantService {
     private final IUserDao userDao;
     private final IMessageService messageService;
 
-    @Override
-    @Transactional
-    public Result add(Participant participant) {
-        participantDao.save(participant);
-        return new SuccessResult();
-    }
+
 
     @Override
     @Transactional
-    public Result addParticipantToRoom(ChatRoom room, Long userId) {
+    public Result addParticipantToRoom(Long roomId, Long userId) {
         User user = userDao.findById(userId).orElse(null);
         if (user == null) {
             return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
         }
+        
+        // Let's create an entity reference to ChatRoom to save it
+        ChatRoom room = new ChatRoom();
+        room.setId(roomId);
+        
         Participant participant = new Participant();
         participant.setChatRoom(room);
         participant.setUser(user);
@@ -59,13 +59,18 @@ public class ParticipantManager implements IParticipantService {
     }
 
     @Override
-    public DataResult<List<Participant>> getByUserId(Long userId) {
-        return new SuccessDataResult<>(participantDao.findByUserId(userId));
+    public DataResult<List<Long>> getByUserId(Long userId) {
+        List<Long> roomIds = participantDao.findByUserId(userId).stream()
+                .map(p -> p.getChatRoom().getId())
+                .collect(java.util.stream.Collectors.toList());
+        return new SuccessDataResult<>(roomIds);
     }
 
     @Override
-    public DataResult<Optional<ChatRoom>> findPrivateChatBetweenUsers(Long u1, Long u2) {
-        return new SuccessDataResult<>(participantDao.findPrivateChatBetweenUsers(u1, u2));
+    public DataResult<Long> findPrivateChatBetweenUsers(Long u1, Long u2) {
+        return new SuccessDataResult<>(participantDao.findPrivateChatBetweenUsers(u1, u2)
+                .map(ChatRoom::getId)
+                .orElse(null));
     }
 
     @Override

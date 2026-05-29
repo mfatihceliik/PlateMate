@@ -3,6 +3,7 @@ package com.mefy.platemate.api.controllers.concrete;
 import com.mefy.platemate.api.controllers.abstracts.IUserController;
 import com.mefy.platemate.business.abstracts.IAdminAccessService;
 import com.mefy.platemate.business.abstracts.IUserService;
+import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -75,7 +76,7 @@ public class UserController implements IUserController {
     ) {
         if (!userId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorResult(messageService.getMessage("auth.unauthorized")));
+                    .body(new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED)));
         }
 
         Result result = userService.update(userId, request);

@@ -56,7 +56,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     public DataResult<PlateReportTypeAdminDto> addReportType(AddPlateReportTypeRequest request) {
         PlateReportSeverity severity = PlateReportSeverity.resolve(request.getSeverityId(), request.getSeverityCode());
         if (severity == null) {
-            return new ErrorDataResult<>(messageService.getMessage("validation.report.type.severity.notnull"));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL));
         }
         String normalizedCode = normalizeCode(request.getCode());
         if (plateReportTypeDao.existsByCode(normalizedCode)) {
@@ -80,7 +80,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     public DataResult<PlateReportTypeAdminDto> updateReportType(Long id, UpdatePlateReportTypeRequest request) {
         PlateReportSeverity severity = PlateReportSeverity.resolve(request.getSeverityId(), request.getSeverityCode());
         if (severity == null) {
-            return new ErrorDataResult<>(messageService.getMessage("validation.report.type.severity.notnull"));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL));
         }
         PlateReportType existing = plateReportTypeDao.findById(id).orElse(null);
         if (existing == null) {

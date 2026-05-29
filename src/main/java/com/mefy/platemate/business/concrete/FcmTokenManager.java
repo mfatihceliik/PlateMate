@@ -58,7 +58,7 @@ public class FcmTokenManager implements IFcmTokenService {
     @Transactional
     public Result unregisterToken(Long currentUserId, String token) {
         if (!isTokenOwnedByUser(token, currentUserId)) {
-            return new ErrorResult(messageService.getMessage("auth.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED));
         }
         fcmTokenDao.deleteByToken(token);
         return new SuccessResult();

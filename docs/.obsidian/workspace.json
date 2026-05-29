@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "0fa81682c9be497a",
+        "id": "f52a7ef13a483efd",
         "type": "tabs",
         "children": [
           {
-            "id": "b0a65e4355633e55",
+            "id": "271113f9b9167319",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "known-violations.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "known-violations"
             }
           }
         ]
@@ -176,8 +180,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "b0a65e4355633e55",
+  "active": "271113f9b9167319",
   "lastOpenFiles": [
+    "Untitled.canvas",
+    "testing.md",
     "agent-workflow.md",
     "index.md",
     "security.md",
@@ -187,11 +193,9 @@
     "known-violations.md",
     "entities.md",
     "changelog-archive.md",
-    "Untitled.canvas",
     "architecture.md",
     "core-utilities.md",
     "socket-chat.md",
-    "testing.md",
     "api-contracts.md",
     "changelog.md",
     "services-business.md",

@@ -2,6 +2,7 @@ package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IUserSettingsController;
 import com.mefy.platemate.business.abstracts.IUserSettingsService;
+import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -29,7 +30,7 @@ public class UserSettingsController implements IUserSettingsController {
 
         if (!userId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDataResult<>(messageService.getMessage("auth.unauthorized")));
+                    .body(new ErrorDataResult<>(messageService.getMessage(Messages.AUTH_UNAUTHORIZED)));
         }
 
         return ResponseEntity.ok(userSettingsService.getByUserId(userId));
@@ -42,7 +43,7 @@ public class UserSettingsController implements IUserSettingsController {
 
         if (!userId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDataResult<>(messageService.getMessage("auth.unauthorized")));
+                    .body(new ErrorDataResult<>(messageService.getMessage(Messages.AUTH_UNAUTHORIZED)));
         }
 
         DataResult<UserSettingsOverviewDto> result = userSettingsService.getOverviewByUserId(userId);
@@ -60,7 +61,7 @@ public class UserSettingsController implements IUserSettingsController {
 
         if (!userId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorResult(messageService.getMessage("auth.unauthorized")));
+                    .body(new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED)));
         }
 
         Result result = userSettingsService.updateSettings(userId, request);

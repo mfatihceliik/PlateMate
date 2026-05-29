@@ -60,7 +60,7 @@ public class FriendshipManager implements IFriendshipService {
 
         String title = messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_TITLE);
         String content = requester.getUsername() + " " + messageService.getMessage(Messages.NOTIFICATION_FRIEND_REQUEST_CONTENT);
-        notificationService.sendNotification(addresseeId, title, content, NotificationType.FRIEND_REQUEST);
+        notificationService.sendNotification(addresseeId, title, content, NotificationType.FRIEND_REQUEST.name());
 
         return new SuccessResult(messageService.getMessage(Messages.FRIENDSHIP_REQUEST_SENT));
     }
@@ -180,7 +180,7 @@ public class FriendshipManager implements IFriendshipService {
     private Result checkIfFriendshipIsPending(Friendship friendship) {
         if (friendship == null) return new SuccessResult();
         if (!FriendshipRequestStatusCodes.REQUESTED_ID.equals(friendship.getStatusId())) {
-            return new ErrorResult(messageService.getMessage("friendship.already.answered"));
+            return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_ALREADY_ANSWERED));
         }
         return new SuccessResult();
     }
@@ -190,7 +190,7 @@ public class FriendshipManager implements IFriendshipService {
         boolean isParticipant = friendship.getRequester().getId().equals(currentUserId)
                 || friendship.getAddressee().getId().equals(currentUserId);
         if (!isParticipant) {
-            return new ErrorResult(messageService.getMessage("friendship.remove.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_REMOVE_UNAUTHORIZED));
         }
         return new SuccessResult();
     }

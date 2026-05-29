@@ -6,5 +6,5 @@ import com.mefy.platemate.entities.concrete.Plate;
 import java.util.List;
 
 public interface IPlateReportService {
-    Result syncReportsForUserAndPlate(Plate plate, Long userId, List<String> reportTypeCodes);
+    Result syncReportsForUserAndPlate(Long plateId, Long userId, List<String> reportTypeCodes);
 }

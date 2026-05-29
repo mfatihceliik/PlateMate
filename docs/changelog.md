@@ -14,7 +14,12 @@ Do NOT read detailed history unless explicitly required by a large refactor. Old
 
 ## Recent Changes Summary
 
-* **Documentation (2026-05-30):** Performed a final consistency pass across all documentation files. Verified Task Matrix links, known-violations statuses, dependency direction rules, and endpoint checklists. Deduplicated the `Cross-Manager Dependencies` graph by removing the redundant copy from `architecture.md` and centralizing it purely in `services-business.md`. The documentation architecture is now fully consistent and optimized for agent ingestion.
+* **Documentation (2026-05-30):** Performed a final consistency pass across all documentation files. Verified Task Matrix links, known-violations statuses, dependency direction rules, and endpoint checklists.
+  - **Architectural Cleanup**: Resolved multiple known violations (`V05`, `V09`, `V11`, `V14`).
+  - Fixed exception message leaking in `ChatSocketHandler` by mapping to `Messages.UNEXPECTED_ERROR` and logging internally.
+  - Removed Entity exposure from `INotificationService`, `IParticipantService`, and `IPlateReportService` by passing primitive types (IDs/names) and resolving entities in managers.
+  - Normalized all remaining literal message strings to constants in `Messages.java` across controllers and managers.
+  - Implemented missing `ICityController` and `CityController` to map to existing `ICityService` implementation, satisfying the `WebMvcConfig` exclusion rule.
 * **Documentation (2026-05-30):** Documented a long-term refactor plan for `PlateManager` in `services-business.md` to address its excessive dependency count (V13). Proposed splitting responsibilities into `PlateSearchManager`, `PlateReviewManager`, `PlateModerationManager`, and `PlateDiscoveryManager`. Updated `known-violations.md` (V13) to point to this new plan.
 * **Documentation (2026-05-30):** Updated `New Endpoint Checklist` in `conventions.md` to include comprehensive architectural verification steps (e.g., interface isolation, transaction boundaries, strict DTO usage, proper message key handling). Added a routing rule to `index.md` enforcing this checklist for all new endpoint and service tasks.
 * **Documentation (2026-05-30):** Optimized `AGENTS.md` for token efficiency by extracting detailed workflows, context budget policies, source inspection strategies, and completion checklists into a new `docs/agent-workflow.md` file. Deduplicated source inspection matrices between `index.md` and `AGENTS.md`. `AGENTS.md` now acts strictly as a lightweight entry point with critical routing and non-negotiable architectural rules.

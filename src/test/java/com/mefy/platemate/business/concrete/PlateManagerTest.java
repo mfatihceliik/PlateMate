@@ -199,7 +199,7 @@ class PlateManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
-        when(plateReportService.syncReportsForUserAndPlate(eq(plate), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
+        when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
@@ -210,7 +210,7 @@ class PlateManagerTest {
         );
 
         assertTrue(result.isSuccess());
-        verify(plateReportService).syncReportsForUserAndPlate(eq(plate), eq(99L), eq(List.of("RED_LIGHT_VIOLATION")));
+        verify(plateReportService).syncReportsForUserAndPlate(eq(plate.getId()), eq(99L), eq(List.of("RED_LIGHT_VIOLATION")));
     }
 
     @Test
@@ -228,14 +228,14 @@ class PlateManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(88L, 77L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(88L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(88L, PlateReviewStatus.APPROVED.getId())).thenReturn(4L);
-        when(plateReportService.syncReportsForUserAndPlate(eq(plate), eq(77L), eq(List.of())))
+        when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(77L), eq(List.of())))
                 .thenReturn(new SuccessResult("synced"));
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
         Result result = plateManager.addReview("34ABC123", 77L, new AddPlateReviewRequest(4, "iyi", List.of(), true));
 
         assertTrue(result.isSuccess());
-        verify(plateReportService).syncReportsForUserAndPlate(eq(plate), eq(77L), eq(List.of()));
+        verify(plateReportService).syncReportsForUserAndPlate(eq(plate.getId()), eq(77L), eq(List.of()));
     }
 
     @Test
@@ -296,7 +296,7 @@ class PlateManagerTest {
         when(userDao.findByIdAndActiveTrue(99L)).thenReturn(Optional.of(user));
         when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
-        when(plateReportService.syncReportsForUserAndPlate(eq(plate), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
+        when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
@@ -666,7 +666,7 @@ class PlateManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 92L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
-        when(plateReportService.syncReportsForUserAndPlate(eq(plate), eq(92L), eq(List.of("RED_LIGHT_VIOLATION"))))
+        when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(92L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 

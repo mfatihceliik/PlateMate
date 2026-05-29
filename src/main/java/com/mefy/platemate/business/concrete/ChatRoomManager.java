@@ -59,19 +59,25 @@ public class ChatRoomManager implements IChatRoomService {
 
     @Override
     public DataResult<List<ChatRoomDto>> getUserRooms(Long userId) {
-        List<Participant> participations = participantService.getByUserId(userId).getData();
-        List<ChatRoomDto> dtos = participations.stream()
-                .map(p -> chatRoomMapper.entityToDto(p.getChatRoom()))
+        List<Long> roomIds = participantService.getByUserId(userId).getData();
+        List<ChatRoom> chatRooms = chatRoomDao.findAllById(roomIds);
+        
+        List<ChatRoomDto> dtos = chatRooms.stream()
+                .map(chatRoomMapper::entityToDto)
                 .collect(Collectors.toList());
 
         return new SuccessDataResult<>(dtos, messageService.getMessage(Messages.USER_ROOMS_LISTED));
     }
 
     private void addParticipantToRoom(ChatRoom room, Long userId) {
-        participantService.addParticipantToRoom(room, userId);
+        participantService.addParticipantToRoom(room.getId(), userId);
     }
 
     private ChatRoom findPrivateChatBetweenUsers(Long id1, Long id2) {
-        return participantService.findPrivateChatBetweenUsers(id1, id2).getData().orElse(null);
+        Long roomId = participantService.findPrivateChatBetweenUsers(id1, id2).getData();
+        if (roomId == null) {
+            return null;
+        }
+        return chatRoomDao.findById(roomId).orElse(null);
     }
 }

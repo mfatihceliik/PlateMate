@@ -59,8 +59,8 @@ public class SocketModule {
                 // Kullanıcının üye olduğu tüm odalara otomatik katıl (Auto-Join)
                 var participationResult = participantService.getByUserId(userId);
                 if (participationResult.isSuccess()) {
-                    participationResult.getData().forEach(p -> {
-                        client.joinRoom(p.getChatRoom().getId().toString());
+                    participationResult.getData().forEach(roomId -> {
+                        client.joinRoom(roomId.toString());
                     });
                 }
 

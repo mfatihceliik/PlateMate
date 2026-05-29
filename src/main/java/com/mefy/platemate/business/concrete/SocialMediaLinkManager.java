@@ -56,7 +56,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
 
     private Result checkIfPlatformProvided(SocialPlatform platform) {
         if (platform == null) {
-            return new ErrorResult(messageService.getMessage("validation.social.platform.notnull"));
+            return new ErrorResult(messageService.getMessage(Messages.VALIDATION_SOCIAL_PLATFORM_NOTNULL));
         }
         return new SuccessResult();
     }
@@ -107,7 +107,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         if (link == null) return new SuccessResult();
         
         if (!link.getUserProfile().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("social.link.delete.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.SOCIAL_LINK_DELETE_UNAUTHORIZED));
         }
         return new SuccessResult();
     }

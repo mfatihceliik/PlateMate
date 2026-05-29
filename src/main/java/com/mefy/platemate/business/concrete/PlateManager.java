@@ -158,7 +158,7 @@ public class PlateManager implements IPlateService {
         if (!existingReviewCheck.isSuccess()) return existingReviewCheck;
 
         if (request.getReportTypeCodes() != null) {
-            Result syncResult = plateReportService.syncReportsForUserAndPlate(plate, currentUserId, request.getReportTypeCodes());
+            Result syncResult = plateReportService.syncReportsForUserAndPlate(plate.getId(), currentUserId, request.getReportTypeCodes());
             if (!syncResult.isSuccess()) return syncResult;
         }
 
@@ -185,7 +185,7 @@ public class PlateManager implements IPlateService {
 
         if (request.getReportTypeCodes() != null) {
             Result syncResult = plateReportService.syncReportsForUserAndPlate(
-                    review.getPlate(),
+                    review.getPlate().getId(),
                     currentUserId,
                     request.getReportTypeCodes()
             );
@@ -281,7 +281,7 @@ public class PlateManager implements IPlateService {
         Plate plate = getOrCreatePlate(normalizedPlate);
         Result visibilityResult = checkIfPlatePubliclyVisible(plate);
         if (!visibilityResult.isSuccess()) return visibilityResult;
-        return plateReportService.syncReportsForUserAndPlate(plate, currentUserId, request.getReportTypeCodes());
+        return plateReportService.syncReportsForUserAndPlate(plate.getId(), currentUserId, request.getReportTypeCodes());
     }
 
     private Plate getOrCreatePlate(String normalizedPlate) {
@@ -457,7 +457,7 @@ public class PlateManager implements IPlateService {
     private Result checkIfReviewOwner(PlateReview review, Long currentUserId) {
         if (review == null) return new SuccessResult();
         if (!review.getUser().getId().equals(currentUserId)) {
-            return new ErrorResult(messageService.getMessage("review.delete.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.REVIEW_DELETE_UNAUTHORIZED));
         }
         return new SuccessResult();
     }

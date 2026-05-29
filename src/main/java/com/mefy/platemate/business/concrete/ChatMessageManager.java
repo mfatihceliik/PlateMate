@@ -91,7 +91,7 @@ public class ChatMessageManager implements IChatMessageService {
             String title = messageService.getMessage(Messages.NOTIFICATION_NEW_MESSAGE_TITLE);
             String senderUsername = findSenderUsername(room, message, currentUserId);
             String content = buildMessageNotificationContent(senderUsername);
-            notificationService.sendNotification(recipient.getUser().getId(), title, content, NotificationType.MESSAGE);
+            notificationService.sendNotification(recipient.getUser().getId(), title, content, NotificationType.MESSAGE.name());
         });
     }
 
@@ -148,7 +148,7 @@ public class ChatMessageManager implements IChatMessageService {
                 .forEach(m -> m.setRead(true));
 
         chatMessageDao.saveAll(unreadMessages);
-        return new SuccessResult(messageService.getMessage("messages.read"));
+        return new SuccessResult(messageService.getMessage(Messages.MESSAGES_READ));
     }
 
 
@@ -161,7 +161,7 @@ public class ChatMessageManager implements IChatMessageService {
 
     private Result ensureUserIsRoomParticipant(ChatRoom room, Long currentUserId) {
         if (room == null || room.getId() == null || currentUserId == null || !isUserParticipantOfRoom(currentUserId, room.getId())) {
-            return new ErrorResult(messageService.getMessage("auth.unauthorized"));
+            return new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED));
         }
         return new SuccessResult();
     }

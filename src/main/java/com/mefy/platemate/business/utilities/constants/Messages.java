@@ -20,6 +20,7 @@ public final class Messages {
     public static final String AUTH_REFRESH_EXPIRED = "auth.refresh.expired";
     public static final String AUTH_REFRESH_REVOKED = "auth.refresh.revoked";
     public static final String AUTH_REFRESH_INVALID = "auth.refresh.invalid";
+    public static final String AUTH_UNAUTHORIZED = "auth.unauthorized";
     // Profile Messages
     public static final String PROFILE_NOT_FOUND = "profile.not.found";
     public static final String PROFILE_LISTED = "profile.listed";
@@ -38,6 +39,7 @@ public final class Messages {
     public static final String PAGINATION_SIZE_MIN_INVALID = "pagination.size.min.invalid";
     public static final String PAGINATION_SIZE_MAX_INVALID = "pagination.size.max.invalid";
     // Review Messages
+    public static final String REVIEW_DELETE_UNAUTHORIZED = "review.delete.unauthorized";
     public static final String REVIEW_ADDED = "review.added";
     public static final String REVIEW_UPDATED = "review.updated";
     public static final String REVIEWS_LISTED = "reviews.listed";
@@ -67,6 +69,8 @@ public final class Messages {
     public static final String PLATE_REMOVAL_REQUEST_REVIEWED = "plate.removal.request.reviewed";
     public static final String VALIDATION_PLATE_REMOVAL_REASON_NOTNULL = "validation.plate.removal.reason.notnull";
     public static final String VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL = "validation.plate.removal.status.notnull";
+    public static final String VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL = "validation.report.type.severity.notnull";
+    public static final String VALIDATION_SOCIAL_PLATFORM_NOTNULL = "validation.social.platform.notnull";
 
     // Comment Report Messages
     public static final String COMMENT_REPORT_CREATED = "comment.report.created";
@@ -93,6 +97,7 @@ public final class Messages {
     public static final String CHAT_ROOM_CREATED = "chat.room.created";
     public static final String MESSAGE_SENT = "message.sent";
     public static final String MESSAGES_LISTED = "messages.listed";
+    public static final String MESSAGES_READ = "messages.read";
     public static final String USER_ROOMS_LISTED = "user.rooms.listed";
     // City Messages
     public static final String CITIES_LISTED = "cities.listed";
@@ -102,6 +107,7 @@ public final class Messages {
     public static final String SOCIAL_LINK_ADDED = "social.link.added";
     public static final String SOCIAL_LINK_UPDATED = "social.link.updated";
     public static final String SOCIAL_LINK_DELETED = "social.link.deleted";
+    public static final String SOCIAL_LINK_DELETE_UNAUTHORIZED = "social.link.delete.unauthorized";
     public static final String SOCIAL_LINK_NOT_FOUND = "social.link.not.found";
     public static final String SOCIAL_PLATFORM_ALREADY_EXISTS = "social.platform.already.exists";
     // Friendship Messages
@@ -109,7 +115,9 @@ public final class Messages {
     public static final String FRIENDSHIP_ACCEPTED = "friendship.accepted";
     public static final String FRIENDSHIP_REJECTED = "friendship.rejected";
     public static final String FRIENDSHIP_REMOVED = "friendship.removed";
+    public static final String FRIENDSHIP_REMOVE_UNAUTHORIZED = "friendship.remove.unauthorized";
     public static final String FRIENDSHIP_ALREADY_EXISTS = "friendship.already.exists";
+    public static final String FRIENDSHIP_ALREADY_ANSWERED = "friendship.already.answered";
     public static final String FRIENDSHIP_NOT_FOUND = "friendship.not.found";
     public static final String FRIENDSHIP_SELF_REQUEST = "friendship.self.request";
     public static final String FRIENDS_LISTED = "friends.listed";

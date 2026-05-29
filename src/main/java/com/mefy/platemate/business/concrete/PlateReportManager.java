@@ -38,10 +38,13 @@ public class PlateReportManager implements IPlateReportService {
 
     @Override
     @Transactional
-    public Result syncReportsForUserAndPlate(Plate plate, Long userId, List<String> reportTypeCodes) {
-        if (plate == null || plate.getId() == null || userId == null || reportTypeCodes == null) {
+    public Result syncReportsForUserAndPlate(Long plateId, Long userId, List<String> reportTypeCodes) {
+        if (plateId == null || userId == null || reportTypeCodes == null) {
             return new ErrorResult(messageService.getMessage(Messages.REPORT_TYPE_INVALID));
         }
+        
+        Plate plate = new Plate();
+        plate.setId(plateId);
 
         Set<String> normalizedCodes = normalizeCodes(reportTypeCodes);
         if (normalizedCodes == null) {
