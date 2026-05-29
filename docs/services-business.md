@@ -40,7 +40,7 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | `ChatRoomManager` | `IChatRoomService` | Room creation/listing | `IChatRoomDao`, `IParticipantService` |
 | `ChatMessageManager` | `IChatMessageService` | Message send/list/read + notifications | `IChatMessageDao`, `IUserSettingsDao`, `INotificationService` |
 | `ParticipantManager` | `IParticipantService` | Chat participants | `IParticipantDao` |
-| `NotificationManager` | `INotificationService` | Settings gate + socket + FCM push | `IFcmTokenDao`, `SocketIOServer` |
+| `NotificationManager` | `INotificationService` | Settings gate + socket + FCM push | `IFcmTokenDao`, `ISocketPushService` |
 | `FcmTokenManager` | `IFcmTokenService` | Device token register/unregister | `IFcmTokenDao` |
 | `FcmManager` | `IFcmService` | Firebase push send | Firebase Admin SDK |
 | `DiscoveryManager` | `IDiscoveryService` | Discovery home and city activity | city DAO, discovery utilities |
@@ -146,4 +146,4 @@ Previously, `PlateManager` had an excessive dependency count (15 dependencies) a
 
 ## Open Questions
 
-* Several service interfaces import `entities.concrete`: `INotificationService`, `IParticipantService`, `IPlateReportService`. See [[known-violations]].
+* `IParticipantService` and `IPlateReportService` still import `entities.concrete`. See [[known-violations]] (V09 partially resolved).

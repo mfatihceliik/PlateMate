@@ -34,11 +34,11 @@ Base package: `com.mefy.platemate`
 
 | Package | File Count | Notes |
 | --- | --- | --- |
-| `api/controllers/concrete` | 19 | 18 business endpoints + 1 `SwaggerRedirectController`. Interface pattern fully implemented (V15 resolved). |
-| `api/controllers/abstracts` | 18 | Interfaces for all business controllers. |
+| `api/controllers/concrete` | 20 | 19 business endpoints + 1 `SwaggerRedirectController`. Interface pattern fully implemented (V15 resolved). |
+| `api/controllers/abstracts` | 19 | Interfaces for all business controllers. |
 | `api/socket` | 6 | Includes `SocketModule`, abstracts, and concrete socket handlers. |
-| `business/concrete` | 23 | Manager implementations. `PlateManager` is the heaviest with exactly 15 dependencies. |
-| `business/abstracts` | 24 | Service interfaces. |
+| `business/concrete` | 25 | Manager implementations. Formerly monolithic `PlateManager` (15 deps) was decomposed into `PlateSearchManager`, `PlateReviewManager`, and `PlateModerationManager` (V13 resolved). |
+| `business/abstracts` | 26 | Service interfaces. |
 | `business/utilities` | 11 | Validators, moderation, rules, time, constants. |
 | `dataAccess/abstracts` | 21 | Spring Data JPA Repositories. |
 | `entities/concrete` | 46 | JPA entities and lookup enum constants. |
@@ -93,5 +93,4 @@ For the complete cross-manager dependency graph and specific notes on inter-mana
 ## Open Questions
 
 * `SecurityConfig` permits all while interceptor enforces JWT — intentional current behavior.
-* `/api/cities/**` excluded in MVC config but no city controller exists. `CityManager` + `ICityService` exist; controller may need to be added.
 * No explicit CORS configuration visible.

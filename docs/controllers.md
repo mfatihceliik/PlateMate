@@ -31,13 +31,14 @@ Documents REST controller architecture, conventions, and access rules. For endpo
 | `UserProfileController` | `/api/profiles` | `IUserProfileService` | Requester id for visibility. |
 | `UserSettingsController` | `/api/settings` | `IUserSettingsService` | Self-only. |
 | `FriendshipController` | `/api/friendships` | `IFriendshipService` | Request lifecycle. |
-| `PlateController` | `/api/plates` | `IPlateService` | Search, reviews, reports. |
+| `PlateController` | `/api/plates` | `IPlateSearchService`, `IPlateReviewService`, `IPlateReportService` | Search, reviews, reports. |
 | `PlateRemovalRequestController` | `/api/plates` | `IPlateRemovalRequestService` | Removal requests. |
 | `PlateReportTypeController` | `/api/plate-report-types` | `IPlateReportTypeService` | Public report types. |
 | `SocialMediaLinkController` | `/api/social-links` | `ISocialMediaLinkService` | Social links CRUD. |
 | `ChatController` | `/api/chat` | `IChatRoomService`, `IChatMessageService` | Rooms and messages. |
 | `SubscriptionController` | `/api/subscriptions` | `ISubscriptionService` | Premium activation/history. |
 | `DiscoveryController` | `/api/discovery` | `IDiscoveryService` | Home and city activity. |
+| `CityController` | `/api/cities` | `ICityService` | City listing/lookup. |
 | `CommentReportController` | `/api/comments` | `ICommentReportService` | User comment reports. |
 | `FcmTokensController` | `/api/fcm-tokens` | `IFcmTokenService` | |
 | `AdminModerationController` | `/api/admin` | `IAdminAccessService`, `IModerationAdminService` | Admin moderation. |
