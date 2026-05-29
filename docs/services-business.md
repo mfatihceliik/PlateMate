@@ -27,7 +27,8 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | `UserProfileManager` | `IUserProfileService` | Profile aggregation (self/non-self visibility) | `IUserProfileDao`, `IFriendshipDao`, `IPlateReviewDao`, `IUserSettingsService` |
 | `UserSettingsManager` | `IUserSettingsService` | Settings defaults, updates, overview | `IUserSettingsDao`, `IUserDao`, `IUserProfileDao`, `IUserSubscriptionDao` |
 | `PlateSearchManager` | `IPlateSearchService` | Plate search, plate creation, aggregate dto | `IPlateDao`, `IPlateReviewDao`, `IPlateReportDao`, `IPlateSearchEventDao`, `ICityDao` |
-| `PlateReviewManager` | `IPlateReviewService` | Plate review lifecycle (add/update/delete) and moderation | `IPlateDao`, `IPlateReviewDao`, `IPlateReportService`, `ContentModerationService` |
+| `PlateReviewManager` | `IPlateReviewService` | Plate review lifecycle (add/update/delete) | `IPlateDao`, `IPlateReviewDao`, `IPlateReportService`, `IPlateModerationService` |
+| `PlateModerationManager` | `IPlateModerationService` | Content moderation, request hashing, moderation event logging | `ContentModerationService`, `HashingService`, `PlateReviewModerationEventService` |
 | `PlateReportManager` | `IPlateReportService` | Sync report tags per user/plate | `IPlateReportDao`, `IPlateReportTypeDao` |
 | `PlateReportTypeManager` | `IPlateReportTypeService` | Report type listing and admin changes | `IPlateReportTypeDao`, policy service |
 | `FriendshipManager` | `IFriendshipService` | Request/accept/reject/remove/list | `IFriendshipDao`, `IUserDao`, `INotificationService` |
@@ -51,7 +52,8 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | --- | --- | --- | --- |
 | `AuthManager` | `UserManager` | `IUserService` | Register flow and login user lookup |
 | `AuthManager` | `RefreshTokenManager` | `IRefreshTokenService` | Token generation, refresh flow, and revoking |
-| `PlateManager` | `PlateReportManager` | `IPlateReportService` | Syncing user reports for a plate during review creation/update |
+| `PlateReviewManager` | `PlateReportManager` | `IPlateReportService` | Syncing user reports for a plate during review creation/update |
+| `PlateReviewManager` | `PlateModerationManager` | `IPlateModerationService` | Delegating moderation, hashing, and event logging |
 | `FriendshipManager` | `NotificationManager` | `INotificationService` | Triggering notifications for new friend requests |
 | `ChatRoomManager` | `ParticipantManager` | `IParticipantService` | Validating and managing room membership |
 | `ChatMessageManager` | `NotificationManager` | `INotificationService` | Triggering real-time and push notifications for new messages |
@@ -139,7 +141,7 @@ Previously, `PlateManager` had an excessive dependency count (15 dependencies) a
 
 1. **`PlateSearchManager` (COMPLETED - Phase 1)**: Responsible for plate searching (`searchByPlateCode`), plate creation on first search, and basic plate detail aggregation.
 2. **`PlateReviewManager` (COMPLETED - Phase 2)**: Responsible for the core review lifecycle (adding, updating, deleting reviews), validating submission rules.
-3. **`PlateModerationManager` (PENDING - Phase 3)**: Will be responsible for content moderation (integration with `ContentModerationService`), logging moderation events, and resolving review statuses. Currently intertwined in `PlateReviewManager`.
+3. **`PlateModerationManager` (COMPLETED - Phase 3)**: Responsible for content moderation (integration with `ContentModerationService`), IP/UserAgent hashing (`HashingService`), and logging moderation events (`PlateReviewModerationEventService`). Extracted from `PlateReviewManager`.
 4. **`PlateDiscoveryManager` (PENDING - Phase 4)**: Will be responsible for discovery/trending operations, logging search events (`IPlateSearchEventDao`), computing plate scores, and integrating with city resolution (`TrPlateCityResolver` / `ICityDao`). Currently intertwined in `PlateSearchManager`.
 
 ## Open Questions

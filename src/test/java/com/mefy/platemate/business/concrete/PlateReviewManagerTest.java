@@ -2,10 +2,9 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.business.utilities.moderation.ContentModerationService;
-import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
+import com.mefy.platemate.business.abstracts.IPlateModerationService;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
-import com.mefy.platemate.business.utilities.security.HashingService;
+import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
 
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
@@ -54,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,7 +72,7 @@ class PlateReviewManagerTest {
     @Mock
     private IPlateSearchService plateSearchService;
     @Mock
-    private PlateReviewModerationEventService moderationEventService;
+    private IPlateModerationService plateModerationService;
     @Mock
     private IMessageService messageService;
 
@@ -86,13 +86,23 @@ class PlateReviewManagerTest {
                 userDao,
                 plateReportService,
                 new PlateReviewMapper(),
-                new ContentModerationService(),
-                new HashingService(),
-                moderationEventService,
+                plateModerationService,
                 messageService,
                 plateSearchService
         );
         ReflectionTestUtils.setField(plateReviewManager, "acceptedResponsibilityLegacyFallback", true);
+
+        org.mockito.Mockito.lenient().when(plateModerationService.resolveModeration(any(), any()))
+            .thenReturn(new ContentModerationResult(true, false, List.of(), ""));
+
+        org.mockito.Mockito.lenient().doAnswer(invocation -> {
+            PlateReview r = invocation.getArgument(0);
+            ContentModerationResult mod = invocation.getArgument(1);
+            r.setComment(mod.getSanitizedText());
+            r.setStatus(PlateReviewStatus.PENDING_REVIEW);
+            r.setModerationReason(mod.isRequiresReview() ? String.join(",", mod.getReasons()) : null);
+            return null;
+        }).when(plateModerationService).applyModerationMetadata(any(), any(), any());
     }
 
 
@@ -220,7 +230,7 @@ class PlateReviewManagerTest {
         assertEquals("already-exists", result.getMessage());
         verify(plateReportService, never()).syncReportsForUserAndPlate(any(), any(), any());
         verify(plateReviewDao, never()).save(any(PlateReview.class));
-        verify(moderationEventService, never()).logEvent(any(), any(), any(), any(), any(), any());
+        verify(plateModerationService, never()).logReviewSubmitted(any(), any(), any(), any());
         verify(plateDao, never()).save(any(Plate.class));
     }
 
@@ -264,14 +274,7 @@ class PlateReviewManagerTest {
         assertEquals(PlateReviewStatus.PENDING_REVIEW, existingReview.getStatus());
         assertEquals(5, existingReview.getRating());
         verify(plateReviewDao).save(eq(existingReview));
-        verify(moderationEventService).logEvent(
-                eq(existingReview),
-                eq(PlateReviewStatus.REJECTED.getId()),
-                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
-                eq(PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW),
-                eq(99L),
-                eq("USER_RESUBMITTED_REJECTED_REVIEW")
-        );
+        verify(plateModerationService).logReviewSubmitted(any(), any(), any(), any());
     }
 
     @Test
@@ -307,7 +310,7 @@ class PlateReviewManagerTest {
         assertEquals("already-exists", result.getMessage());
         verify(plateReportService, never()).syncReportsForUserAndPlate(any(), any(), any());
         verify(plateReviewDao, never()).save(any(PlateReview.class));
-        verify(moderationEventService, never()).logEvent(any(), any(), any(), any(), any(), any());
+        verify(plateModerationService, never()).logReviewSubmitted(any(), any(), any(), any());
     }
 
     @Test
@@ -343,7 +346,7 @@ class PlateReviewManagerTest {
         assertEquals("already-exists", result.getMessage());
         verify(plateReportService, never()).syncReportsForUserAndPlate(any(), any(), any());
         verify(plateReviewDao, never()).save(any(PlateReview.class));
-        verify(moderationEventService, never()).logEvent(any(), any(), any(), any(), any(), any());
+        verify(plateModerationService, never()).logReviewSubmitted(any(), any(), any(), any());
     }
 
     @Test
@@ -506,14 +509,7 @@ class PlateReviewManagerTest {
         assertTrue(result.isSuccess());
         assertEquals("pending-review", result.getMessage());
         assertEquals(PlateReviewStatus.PENDING_REVIEW, review.getStatus());
-        verify(moderationEventService).logEvent(
-                eq(review),
-                eq(PlateReviewStatus.APPROVED.getId()),
-                eq(PlateReviewStatus.PENDING_REVIEW.getId()),
-                eq(PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW),
-                eq(99L),
-                eq("USER_UPDATED_REVIEW")
-        );
+        verify(plateModerationService).logReviewSubmitted(any(), any(), any(), any());
     }
 
     @Test

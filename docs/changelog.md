@@ -14,6 +14,7 @@ Do NOT read detailed history unless explicitly required by a large refactor. Old
 
 ## Recent Changes Summary
 
+* **Architecture Refactor – V13 Phase 3 (2026-05-30):** Extracted moderation responsibilities from `PlateReviewManager` into a dedicated `PlateModerationManager` (`IPlateModerationService`). Moved `ContentModerationService`, `HashingService`, and `PlateReviewModerationEventService` dependencies out of `PlateReviewManager`, reducing its dependency count by 2. Created `IPlateModerationService` interface with `resolveModeration`, `applyModerationMetadata`, `logReviewSubmitted`, and `logReviewRemovedByUser`. Updated `PlateReviewManagerTest` to mock the new interface. All 97 tests pass.
 * **Documentation (2026-05-30):** Performed a final consistency pass across all documentation files. Verified Task Matrix links, known-violations statuses, dependency direction rules, and endpoint checklists.
   - **Architectural Cleanup**: Resolved multiple known violations (`V05`, `V09`, `V11`, `V14`).
   - Fixed exception message leaking in `ChatSocketHandler` by mapping to `Messages.UNEXPECTED_ERROR` and logging internally.

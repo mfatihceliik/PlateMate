@@ -4,11 +4,9 @@ import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.business.abstracts.IPlateReviewService;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.abstracts.IPlateModerationService;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
-import com.mefy.platemate.business.utilities.moderation.ContentModerationService;
-import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.business.utilities.security.HashingService;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
@@ -25,13 +23,11 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReview;
-import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,8 +35,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,9 +48,7 @@ public class PlateReviewManager implements IPlateReviewService {
     private final IUserDao userDao;
     private final IPlateReportService plateReportService;
     private final PlateReviewMapper plateReviewMapper;
-    private final ContentModerationService contentModerationService;
-    private final HashingService hashingService;
-    private final PlateReviewModerationEventService moderationEventService;
+    private final IPlateModerationService plateModerationService;
     private final IMessageService messageService;
     private final IPlateSearchService plateSearchService;
 
@@ -107,7 +99,7 @@ public class PlateReviewManager implements IPlateReviewService {
         Result submissionRulesResult = validateSubmissionRules(user, normalizedComment, request.getReportTypeCodes());
         if (submissionRulesResult != null) return submissionRulesResult;
 
-        ContentModerationResult moderation = resolveModeration(user, normalizedComment);
+        ContentModerationResult moderation = plateModerationService.resolveModeration(user, normalizedComment);
         if (!moderation.isAllowed()) {
             return new ErrorResult(messageService.getMessage(Messages.REVIEW_CONTENT_NOT_ALLOWED));
         }
@@ -141,7 +133,7 @@ public class PlateReviewManager implements IPlateReviewService {
         Result validationResult = validateUpdateReview(review, currentUserId, request, normalizedComment);
         if (validationResult != null) return validationResult;
 
-        ContentModerationResult moderation = resolveModeration(review.getUser(), normalizedComment);
+        ContentModerationResult moderation = plateModerationService.resolveModeration(review.getUser(), normalizedComment);
         if (!moderation.isAllowed()) {
             return new ErrorResult(messageService.getMessage(Messages.REVIEW_CONTENT_NOT_ALLOWED));
         }
@@ -164,11 +156,9 @@ public class PlateReviewManager implements IPlateReviewService {
                 request.getResponsibilityPolicyVersion()
         );
         plateReviewDao.save(review);
-        moderationEventService.logEvent(
+        plateModerationService.logReviewSubmitted(
                 review,
                 previousStatus == null ? null : previousStatus.getId(),
-                review.getStatusId(),
-                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
                 currentUserId,
                 "USER_UPDATED_REVIEW"
         );
@@ -216,13 +206,10 @@ public class PlateReviewManager implements IPlateReviewService {
         review.setDeletedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
         plateReviewDao.save(review);
-        moderationEventService.logEvent(
+        plateModerationService.logReviewRemovedByUser(
                 review,
                 previousStatus == null ? null : previousStatus.getId(),
-                review.getStatusId(),
-                PlateReviewModerationActionType.REMOVED_BY_USER,
-                currentUserId,
-                "USER_REMOVED_REVIEW"
+                currentUserId
         );
         refreshPlateStatistics(plate);
 
@@ -313,18 +300,6 @@ public class PlateReviewManager implements IPlateReviewService {
         return null;
     }
 
-    private ContentModerationResult resolveModeration(User user, String normalizedComment) {
-        if (normalizedComment == null || normalizedComment.isBlank()) {
-            return new ContentModerationResult(true, false, List.of(), "");
-        }
-
-        if (user != null && user.isPremiumActive()) {
-            return contentModerationService.moderate(normalizedComment);
-        }
-
-        return new ContentModerationResult(false, false, List.of("NON_PREMIUM_TEXT_COMMENT_NOT_ALLOWED"), normalizedComment);
-    }
-
     private void applyReviewMutation(
             PlateReview review,
             Integer rating,
@@ -334,23 +309,12 @@ public class PlateReviewManager implements IPlateReviewService {
     ) {
         LocalDateTime now = LocalDateTime.now();
         review.setRating(rating);
-        review.setComment(moderation.getSanitizedText());
-        review.setStatus(resolveModerationStatus(moderation));
-        review.setModerationReason(moderation.isRequiresReview()
-                ? String.join(",", moderation.getReasons())
-                : null);
         review.setDeletedAt(null);
         review.setUserAcceptedResponsibility(acceptedResponsibility);
         review.setUserAcceptedResponsibilityAt(acceptedResponsibility ? now : null);
-        review.setResponsibilityPolicyVersion(resolveResponsibilityPolicyVersion(responsibilityPolicyVersion));
-        RequestMetadata requestMetadata = resolveRequestMetadata();
-        review.setIpHash(requestMetadata.ipHash());
-        review.setUserAgentHash(requestMetadata.userAgentHash());
         review.setUpdatedAt(now);
-    }
-
-    private PlateReviewStatus resolveModerationStatus(ContentModerationResult moderation) {
-        return PlateReviewStatus.PENDING_REVIEW;
+        
+        plateModerationService.applyModerationMetadata(review, moderation, responsibilityPolicyVersion);
     }
 
     private String resolveReviewSuccessMessage(boolean isUpdate, PlateReviewStatus status) {
@@ -362,18 +326,6 @@ public class PlateReviewManager implements IPlateReviewService {
 
     private Long approvedStatusId() {
         return PlateReviewStatus.APPROVED.getId();
-    }
-
-    private RequestMetadata resolveRequestMetadata() {
-        ServletRequestAttributes requestAttributes =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (requestAttributes == null) {
-            return new RequestMetadata(null, null);
-        }
-        HttpServletRequest request = requestAttributes.getRequest();
-        String clientIp = extractClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-        return new RequestMetadata(hashingService.sha256(clientIp), hashingService.sha256(userAgent));
     }
 
     private Result validateAddReviewInput(String normalizedPlate, User user, AddPlateReviewRequest request) {
@@ -407,11 +359,9 @@ public class PlateReviewManager implements IPlateReviewService {
                 request.getResponsibilityPolicyVersion()
         );
         plateReviewDao.save(existingReview);
-        moderationEventService.logEvent(
+        plateModerationService.logReviewSubmitted(
                 existingReview,
                 previousStatus == null ? null : previousStatus.getId(),
-                existingReview.getStatusId(),
-                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
                 currentUserId,
                 "USER_RESUBMITTED_REJECTED_REVIEW"
         );
@@ -439,27 +389,14 @@ public class PlateReviewManager implements IPlateReviewService {
         review.setCreatedAt(LocalDateTime.now());
         PlateReview savedReview = plateReviewDao.save(review);
         PlateReview persistedReview = savedReview == null ? review : savedReview;
-        moderationEventService.logEvent(
+        plateModerationService.logReviewSubmitted(
                 persistedReview,
                 null,
-                persistedReview.getStatusId(),
-                PlateReviewModerationActionType.SUBMITTED_FOR_REVIEW,
                 currentUserId,
                 "USER_SUBMITTED_REVIEW"
         );
         refreshPlateStatistics(plate);
 
         return new SuccessResult(resolveReviewSuccessMessage(false, review.getStatus()));
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
-    }
-
-    private record RequestMetadata(String ipHash, String userAgentHash) {
     }
 }
