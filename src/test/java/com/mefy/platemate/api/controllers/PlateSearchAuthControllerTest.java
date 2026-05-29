@@ -2,7 +2,8 @@ package com.mefy.platemate.api.controllers;
 
 import com.mefy.platemate.api.controllers.concrete.PlateController;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
-import com.mefy.platemate.business.abstracts.IPlateService;
+import com.mefy.platemate.business.abstracts.IPlateReviewService;
+import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.config.jwt.JwtAuthenticationInterceptor;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
@@ -25,11 +26,12 @@ class PlateSearchAuthControllerTest {
 
     @Test
     void searchReturnsUnauthorizedWhenTokenMissing() throws Exception {
-        IPlateService plateService = mock(IPlateService.class);
+        IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
+        IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
-        PlateController controller = new PlateController(plateService, plateSearchService);
+        PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
@@ -38,16 +40,17 @@ class PlateSearchAuthControllerTest {
         mockMvc.perform(get("/api/plates/search").param("plate", "34ABC123"))
                 .andExpect(status().isUnauthorized());
 
-        verifyNoInteractions(plateService);
+        verifyNoInteractions(plateReviewService);
     }
 
     @Test
     void searchReturnsOkWhenTokenValid() throws Exception {
-        IPlateService plateService = mock(IPlateService.class);
+        IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
+        IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
-        PlateController controller = new PlateController(plateService, plateSearchService);
+        PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
@@ -80,11 +83,12 @@ class PlateSearchAuthControllerTest {
 
     @Test
     void detailEndpointReturnsNotFoundAfterRemoval() throws Exception {
-        IPlateService plateService = mock(IPlateService.class);
+        IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
+        IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
-        PlateController controller = new PlateController(plateService, plateSearchService);
+        PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .addInterceptors(interceptor)
@@ -98,6 +102,6 @@ class PlateSearchAuthControllerTest {
                         .header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isNotFound());
 
-        verifyNoInteractions(plateService);
+        verifyNoInteractions(plateReviewService);
     }
 }

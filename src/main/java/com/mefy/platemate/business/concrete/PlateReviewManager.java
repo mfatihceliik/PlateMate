@@ -1,15 +1,14 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateReportService;
-import com.mefy.platemate.business.abstracts.IPlateService;
+import com.mefy.platemate.business.abstracts.IPlateReviewService;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
-import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.business.utilities.security.HashingService;
-import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
 import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
@@ -22,20 +21,15 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
-import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
-import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.concrete.User;
-import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
-import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -44,25 +38,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
-public class PlateManager implements IPlateService {
+public class PlateReviewManager implements IPlateReviewService {
 
     private final IPlateDao plateDao;
     private final IPlateReviewDao plateReviewDao;
     private final IUserDao userDao;
     private final IPlateReportService plateReportService;
-    private final IPlateReportDao plateReportDao;
-    private final PlateReportTypeMapper plateReportTypeMapper;
     private final PlateReviewMapper plateReviewMapper;
     private final ContentModerationService contentModerationService;
     private final HashingService hashingService;
@@ -72,8 +62,6 @@ public class PlateManager implements IPlateService {
 
     @Value("${moderation.accepted-responsibility-legacy-fallback:true}")
     private boolean acceptedResponsibilityLegacyFallback = true;
-
-    // searchByPlateCode removed
 
     @Override
     public DataResult<PagedData<PlateReviewDto>> getReviewsByPlateCode(
@@ -241,26 +229,6 @@ public class PlateManager implements IPlateService {
         return new SuccessResult(messageService.getMessage(Messages.REVIEW_DELETED));
     }
 
-    @Override
-    @Transactional
-    public Result syncReports(String plateCode, Long currentUserId, SyncPlateReportsRequest request) {
-        String normalizedPlate = plateSearchService.normalizePlate(plateCode);
-        User user = userDao.findByIdAndActiveTrue(currentUserId).orElse(null);
-
-        Result result = BusinessRules.run(
-                plateSearchService.checkIfPlateValid(normalizedPlate),
-                checkIfUserExists(user)
-        );
-        if (result != null) return result;
-
-        Plate plate = plateSearchService.getOrCreatePlate(normalizedPlate);
-        Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(plate);
-        if (!visibilityResult.isSuccess()) return visibilityResult;
-        return plateReportService.syncReportsForUserAndPlate(plate.getId(), currentUserId, request.getReportTypeCodes());
-    }
-
-    // getOrCreatePlate removed
-
     private void refreshPlateStatistics(Plate plate) {
         if (plate == null || plate.getId() == null) return;
 
@@ -275,9 +243,6 @@ public class PlateManager implements IPlateService {
         plate.setUpdatedAt(LocalDateTime.now());
         plateDao.save(plate);
     }
-
-
-
 
     private Result checkIfUserExists(User user) {
         if (user == null) {
@@ -310,8 +275,6 @@ public class PlateManager implements IPlateService {
         }
         return new SuccessResult();
     }
-
-
 
     private boolean resolveResponsibilityAcceptance(Boolean acceptedResponsibility) {
         if (acceptedResponsibility != null) {

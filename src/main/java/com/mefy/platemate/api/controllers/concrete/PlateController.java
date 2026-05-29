@@ -2,7 +2,8 @@ package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IPlateController;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
-import com.mefy.platemate.business.abstracts.IPlateService;
+import com.mefy.platemate.business.abstracts.IPlateReviewService;
+import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -22,8 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PlateController implements IPlateController {
 
-    private final IPlateService plateService;
+    private final IPlateReviewService plateReviewService;
     private final IPlateSearchService plateSearchService;
+    private final IPlateReportService plateReportService;
 
     @Override
     public ResponseEntity<DataResult<PlateDetailDto>> search(
@@ -44,7 +46,7 @@ public class PlateController implements IPlateController {
             @RequestParam(defaultValue = "20") int size
     ) {
         PaginationRequest paginationRequest = PaginationRequest.of(page, size);
-        DataResult<PagedData<PlateReviewDto>> result = plateService.getReviewsByPlateCode(plateCode, paginationRequest);
+        DataResult<PagedData<PlateReviewDto>> result = plateReviewService.getReviewsByPlateCode(plateCode, paginationRequest);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -57,7 +59,7 @@ public class PlateController implements IPlateController {
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddPlateReviewRequest request
     ) {
-        Result result = plateService.addReview(plateCode, currentUserId, request);
+        Result result = plateReviewService.addReview(plateCode, currentUserId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -70,7 +72,7 @@ public class PlateController implements IPlateController {
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody UpdatePlateReviewRequest request
     ) {
-        Result result = plateService.updateReview(id, currentUserId, request);
+        Result result = plateReviewService.updateReview(id, currentUserId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -82,7 +84,7 @@ public class PlateController implements IPlateController {
             @PathVariable Long id,
             @RequestAttribute("userId") Long currentUserId
     ) {
-        Result result = plateService.deleteReview(id, currentUserId);
+        Result result = plateReviewService.deleteReview(id, currentUserId);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }
@@ -95,7 +97,7 @@ public class PlateController implements IPlateController {
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody SyncPlateReportsRequest request
     ) {
-        Result result = plateService.syncReports(plateCode, currentUserId, request);
+        Result result = plateReportService.syncReports(plateCode, currentUserId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

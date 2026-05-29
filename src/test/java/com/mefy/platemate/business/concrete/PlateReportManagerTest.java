@@ -1,6 +1,8 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
+import com.mefy.platemate.business.abstracts.IPlateSearchService;
+import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -37,6 +39,8 @@ class PlateReportManagerTest {
     private IPlateReportTypeDao plateReportTypeDao;
     @Mock
     private IMessageService messageService;
+    private IPlateSearchService plateSearchService;
+    private IUserDao userDao;
 
     private PlateReportManager plateReportManager;
 
@@ -46,7 +50,9 @@ class PlateReportManagerTest {
                 plateReportDao,
                 plateReportTypeDao,
                 new PlateReportTypePolicyService(),
-                messageService
+                messageService,
+                plateSearchService,
+                userDao
         );
     }
 
