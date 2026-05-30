@@ -53,7 +53,7 @@ public class ChatController implements IChatController {
         return ResponseEntity.ok(result);
     }
 
-    // REST ile mesaj gönderme (Socket alternatifi — offline fallback)
+    // Send message via REST (Socket alternative — offline fallback)
     @Override
     public ResponseEntity<DataResult<ChatMessageDto>> sendMessage(
             @RequestAttribute("userId") Long currentUserId,

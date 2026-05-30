@@ -21,6 +21,6 @@ public class City implements IEntity {
     @Column(nullable = false)
     private String name;
 
-    // Yurt dışı için gerekirse:
+    // For international support if needed:
     // private String countryCode;
 }

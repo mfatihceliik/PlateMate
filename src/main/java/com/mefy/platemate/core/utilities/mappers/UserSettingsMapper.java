@@ -18,6 +18,6 @@ public class UserSettingsMapper implements ModelMapperService<UserSettings, User
 
     @Override
     public UserSettings dtoToEntity(UserSettingsDto dto) {
-        return null; // Şimdilik ihtiyaç yok
+        return null; // Not needed for now
     }
 }

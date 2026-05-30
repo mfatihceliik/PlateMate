@@ -26,7 +26,7 @@ public class UserFcmToken implements IEntity {
     @Column(nullable = false, unique = true)
     private String token;
 
-    private String deviceId; // Cihaz bazlı takip için
+    private String deviceId; // For device-based tracking
 
     private LocalDateTime createdAt = LocalDateTime.now();
     

@@ -20,12 +20,12 @@ public class Friendship implements IEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Arkadaşlık isteğini gönderen kişi
+    // The user who sent the friendship request
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
-    // Arkadaşlık isteğini alan kişi
+    // The user who received the friendship request
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "addressee_id", nullable = false)
     private User addressee;
@@ -39,7 +39,7 @@ public class Friendship implements IEntity {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    private LocalDateTime respondedAt; // Kabul/Red tarihi
+    private LocalDateTime respondedAt; // Accepted/Rejected date
 
     @Transient
     public String getStatusCode() {

@@ -19,9 +19,9 @@ public class ChatRoom implements IEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String roomName; // 1-1 mesajlarda boş kalabilir, gruplarda isim alır
+    private String roomName; // Can be null for 1-1 chats, populated for groups
 
-    private boolean isGroup = false; // 1-1 mi yoksa grup mu ayrımı için
+    private boolean isGroup = false; // Distinguishes between 1-1 and group chats
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

@@ -20,7 +20,7 @@ public class UserSettings implements IEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private boolean messagingEnabled = true;      // Mesajlaşma aç/kapa
-    private boolean messageNotificationsEnabled = true;    // Mesaj bildirimleri
-    private boolean friendNotificationsEnabled = true;      // Arkadaşlık bildirimleri
+    private boolean messagingEnabled = true;      // Enable/disable messaging
+    private boolean messageNotificationsEnabled = true;    // Message notifications
+    private boolean friendNotificationsEnabled = true;      // Friendship notifications
 }

@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public class EmailValidator {
 
-    // RFC 5322 standartlarına yakın, yaygın kullanılan bir Regex
+    // A commonly used regex close to RFC 5322 standards
     private static final String EMAIL_PATTERN =
             "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
 

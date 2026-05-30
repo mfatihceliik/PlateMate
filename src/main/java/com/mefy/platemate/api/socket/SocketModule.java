@@ -28,11 +28,11 @@ public class SocketModule {
         this.tokenProvider = tokenProvider;
         this.participantService = participantService;
 
-        // Lifecycle listener'ları kaydet
+        // Register lifecycle listeners
         server.addConnectListener(onConnected());
         server.addDisconnectListener(onDisconnected());
 
-        // Her handler kendi event'lerini kendisi register eder (SRP)
+        // Each handler registers its own events (SRP)
         for (ISocketRegistrar registrar : registrars) {
             registrar.registerEvents(server);
         }
@@ -42,7 +42,7 @@ public class SocketModule {
         return client -> {
             String token = client.getHandshakeData().getSingleUrlParam("token");
 
-            // Token yoksa veya geçersizse bağlantıyı reddet
+            // Reject connection if token is missing or invalid
             if (token == null || token.isBlank()) {
                 log.warn("Connection rejected — no token provided: {}", client.getSessionId());
                 client.disconnect();
@@ -53,10 +53,10 @@ public class SocketModule {
                 Long userId = tokenProvider.getUserIdFromToken(token);
                 client.set("userId", userId);
 
-                // Kullanıcının kendi özel odasına katılmasını sağla (Bireysel bildirimler için)
+                // Force user to join their own private room (For individual notifications)
                 client.joinRoom(SocketEvents.USER_ROOM_PREFIX + userId);
 
-                // Kullanıcının üye olduğu tüm odalara otomatik katıl (Auto-Join)
+                // Auto-join all rooms the user is a member of
                 var participationResult = participantService.getByUserId(userId);
                 if (participationResult.isSuccess()) {
                     participationResult.getData().forEach(roomId -> {

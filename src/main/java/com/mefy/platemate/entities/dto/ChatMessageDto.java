@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatMessageDto implements IDto {
     private Long id;
-    private String senderUsername; // Kim gönderdi?
+    private String senderUsername; // Who sent it?
     private String messageContent;
     private LocalDateTime sentAt;
     private boolean isRead;

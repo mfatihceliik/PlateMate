@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatRoomDto implements IDto {
     private Long id;
-    private String roomName; // Grup ise grup ismi, değilse boş
+    private String roomName; // Group name if it's a group, empty otherwise
     private boolean isGroup;
     private LocalDateTime lastMessageAt;
-    private String lastMessageContent; // Listede küçük bir önizleme göstermek için
-    private String otherParticipantName; // 1-1 konuşmalarda karşıdaki kişinin adı
+    private String lastMessageContent; // For displaying a short preview in the list
+    private String otherParticipantName; // Name of the other person in 1-1 chats
 }

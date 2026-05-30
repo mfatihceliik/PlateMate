@@ -7,5 +7,5 @@ import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
 public interface ISocialMediaLinkService {
     Result add(AddSocialLinkRequest request, Long currentUserId);
     Result update(UpdateSocialLinkRequest request, Long currentUserId);
-    Result delete(Long id, Long currentUserId); // Sadece profil sahibi silebilir
+    Result delete(Long id, Long currentUserId); // Only profile owner can delete
 }
