@@ -20,11 +20,16 @@ public final class Messages {
     public static final String AUTH_REFRESH_EXPIRED = "auth.refresh.expired";
     public static final String AUTH_REFRESH_REVOKED = "auth.refresh.revoked";
     public static final String AUTH_REFRESH_INVALID = "auth.refresh.invalid";
+    public static final String AUTH_PASSWORD_CHANGED = "auth.password.changed";
+    public static final String AUTH_CURRENT_PASSWORD_INVALID = "auth.current.password.invalid";
+    public static final String AUTH_PASSWORD_SAME_AS_CURRENT = "auth.password.same.as.current";
     public static final String AUTH_UNAUTHORIZED = "auth.unauthorized";
+    public static final String AUTH_TOKEN_INVALID = "auth.token.invalid";
     // Profile Messages
     public static final String PROFILE_NOT_FOUND = "profile.not.found";
     public static final String PROFILE_LISTED = "profile.listed";
     public static final String PROFILE_FOUND = "profile.found";
+    public static final String PROFILE_UPDATED = "profile.updated";
     // Plate Messages
     public static final String PLATE_INVALID = "plate.invalid";
     public static final String PLATE_FOUND = "plate.found";
@@ -71,6 +76,12 @@ public final class Messages {
     public static final String VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL = "validation.plate.removal.status.notnull";
     public static final String VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL = "validation.report.type.severity.notnull";
     public static final String VALIDATION_SOCIAL_PLATFORM_NOTNULL = "validation.social.platform.notnull";
+    public static final String VALIDATION_SOCIAL_PLATFORM_CODE_NOTBLANK = "validation.social.platform.code.notblank";
+    public static final String VALIDATION_SOCIAL_PLATFORM_LABEL_NOTBLANK = "validation.social.platform.label.notblank";
+    public static final String VALIDATION_SOCIAL_PLATFORM_COLOR_INVALID = "validation.social.platform.color.invalid";
+    public static final String VALIDATION_SOCIAL_PLATFORM_SORT_NOTNULL = "validation.social.platform.sort.notnull";
+    public static final String VALIDATION_SOCIAL_PLATFORM_SORT_MIN = "validation.social.platform.sort.min";
+    public static final String VALIDATION_SOCIAL_PLATFORM_ACTIVE_NOTNULL = "validation.social.platform.active.notnull";
 
     // Comment Report Messages
     public static final String COMMENT_REPORT_CREATED = "comment.report.created";
@@ -95,10 +106,26 @@ public final class Messages {
     // Chat & Message Messages
     public static final String CHAT_ROOM_FOUND = "chat.room.found";
     public static final String CHAT_ROOM_CREATED = "chat.room.created";
+    public static final String CHAT_ROOM_LEFT = "chat.room.left";
     public static final String MESSAGE_SENT = "message.sent";
     public static final String MESSAGES_LISTED = "messages.listed";
     public static final String MESSAGES_READ = "messages.read";
     public static final String USER_ROOMS_LISTED = "user.rooms.listed";
+    public static final String MESSAGING_BLOCKED = "messaging.blocked";
+    public static final String MESSAGE_REQUEST_LIMIT_REACHED = "message.request.limit.reached";
+    public static final String MESSAGE_REQUEST_DECLINED = "message.request.declined";
+    public static final String MESSAGE_REQUEST_ACCEPTED = "message.request.accepted";
+    public static final String MESSAGE_REQUEST_DECLINED_OK = "message.request.declined.ok";
+    public static final String MESSAGE_REQUEST_RESPOND_UNAUTHORIZED = "message.request.respond.unauthorized";
+    // User Block Messages
+    public static final String USER_BLOCK_SUCCESS = "user.block.success";
+    public static final String USER_UNBLOCK_SUCCESS = "user.unblock.success";
+    public static final String USER_BLOCK_SELF_NOT_ALLOWED = "user.block.self.not.allowed";
+    public static final String USER_BLOCK_ALREADY_EXISTS = "user.block.already.exists";
+    public static final String USER_BLOCK_NOT_FOUND = "user.block.not.found";
+    // User Report Messages
+    public static final String USER_REPORT_SUCCESS = "user.report.success";
+    public static final String USER_REPORT_SELF_NOT_ALLOWED = "user.report.self.not.allowed";
     // City Messages
     public static final String CITIES_LISTED = "cities.listed";
     public static final String CITY_NOT_FOUND = "city.not.found";
@@ -110,6 +137,33 @@ public final class Messages {
     public static final String SOCIAL_LINK_DELETE_UNAUTHORIZED = "social.link.delete.unauthorized";
     public static final String SOCIAL_LINK_NOT_FOUND = "social.link.not.found";
     public static final String SOCIAL_PLATFORM_ALREADY_EXISTS = "social.platform.already.exists";
+    public static final String SOCIAL_PLATFORMS_LISTED = "social.platforms.listed";
+    public static final String SOCIAL_PLATFORM_ADDED = "social.platform.added";
+    public static final String SOCIAL_PLATFORM_UPDATED = "social.platform.updated";
+    public static final String SOCIAL_PLATFORM_STATUS_UPDATED = "social.platform.status.updated";
+    public static final String SOCIAL_PLATFORM_NOT_FOUND = "social.platform.not.found";
+    public static final String SOCIAL_PLATFORM_CODE_ALREADY_EXISTS = "social.platform.code.already.exists";
+    // Follow Messages
+    public static final String FOLLOW_SUCCESS = "follow.success";
+    public static final String FOLLOW_SELF_NOT_ALLOWED = "follow.self.not.allowed";
+    public static final String FOLLOW_ALREADY_EXISTS = "follow.already.exists";
+    public static final String FOLLOW_NOT_FOUND = "follow.not.found";
+    public static final String UNFOLLOW_SUCCESS = "unfollow.success";
+    // Plate Follow Messages
+    public static final String PLATE_FOLLOW_SUCCESS = "plate.follow.success";
+    public static final String PLATE_UNFOLLOW_SUCCESS = "plate.unfollow.success";
+    public static final String PLATE_FOLLOW_ALREADY_EXISTS = "plate.follow.already.exists";
+    public static final String PLATE_FOLLOW_NOT_FOUND = "plate.follow.not.found";
+    public static final String PLATE_FOLLOW_LIMIT_REACHED = "plate.follow.limit.reached";
+    // Plate Saved / Alarm Messages
+    public static final String PLATE_SAVED_SUCCESS = "plate.saved.success";
+    public static final String PLATE_UNSAVED_SUCCESS = "plate.unsaved.success";
+    public static final String PLATE_ALARM_SUCCESS = "plate.alarm.success";
+    public static final String PLATE_ALARM_REMOVED = "plate.alarm.removed";
+    public static final String PLATE_ALARM_ALREADY_EXISTS = "plate.alarm.already.exists";
+    public static final String PLATE_ALARM_NOT_FOUND = "plate.alarm.not.found";
+    public static final String PLATE_ALARM_LIMIT_REACHED = "plate.alarm.limit.reached";
+    public static final String PLATE_LISTS_FETCHED = "plate.lists.fetched";
     // Friendship Messages
     public static final String FRIENDSHIP_REQUEST_SENT = "friendship.request.sent";
     public static final String FRIENDSHIP_ACCEPTED = "friendship.accepted";
@@ -132,6 +186,10 @@ public final class Messages {
     public static final String NOTIFICATION_NEW_MESSAGE_CONTENT = "notification.new_message.content";
     public static final String NOTIFICATION_FRIEND_REQUEST_TITLE = "notification.friend_request.title";
     public static final String NOTIFICATION_FRIEND_REQUEST_CONTENT = "notification.friend_request.content";
+    public static final String NOTIFICATION_PLATE_REVIEW_TITLE = "notification.plate_review.title";
+    public static final String NOTIFICATION_PLATE_REVIEW_CONTENT = "notification.plate_review.content";
+    public static final String NOTIFICATION_NEW_FOLLOWER_TITLE = "notification.new_follower.title";
+    public static final String NOTIFICATION_NEW_FOLLOWER_CONTENT = "notification.new_follower.content";
 
     // Global Exception Messages
     public static final String VALIDATION_ERROR = "validation.error";
