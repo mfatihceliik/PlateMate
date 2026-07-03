@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IModerationAdminService;
+import com.mefy.platemate.business.abstracts.IPlateFollowService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
@@ -14,8 +15,11 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.entities.concrete.Plate;
+import com.mefy.platemate.entities.concrete.PlateReportType;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
@@ -24,12 +28,15 @@ import com.mefy.platemate.entities.dto.PlateAdminDto;
 import com.mefy.platemate.entities.dto.PlateReviewAdminDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +45,10 @@ public class ModerationAdminManager implements IModerationAdminService {
     private final IPlateReviewDao plateReviewDao;
     private final IPlateDao plateDao;
     private final IPlateReportDao plateReportDao;
+    private final IPlateReportTypeTranslationDao translationDao;
     private final PlateReviewModerationEventService moderationEventService;
     private final IMessageService messageService;
+    private final IPlateFollowService plateFollowService;
 
     @Override
     public DataResult<PagedData<PlateReviewAdminDto>> getPendingComments(PaginationRequest paginationRequest) {
@@ -67,6 +76,10 @@ public class ModerationAdminManager implements IModerationAdminService {
         PlateReviewStatus previousStatus = review.getStatus();
         applyApproveMutation(review);
         logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.APPROVED_BY_ADMIN, adminUserId, "APPROVED_BY_ADMIN");
+
+        if (previousStatus != PlateReviewStatus.APPROVED) {
+            plateFollowService.notifyReviewApproved(review);
+        }
 
         return new SuccessResult(messageService.getMessage(Messages.ADMIN_COMMENT_APPROVED));
     }
@@ -209,12 +222,37 @@ public class ModerationAdminManager implements IModerationAdminService {
                 review.getStatusCode(),
                 review.getModerationReason(),
                 review.getReportCount(),
+                resolveReportTags(review),
                 review.getUserAcceptedResponsibility(),
                 review.getResponsibilityPolicyVersion(),
                 review.getCreatedAt(),
                 review.getUpdatedAt(),
                 review.getDeletedAt()
         );
+    }
+
+    private List<String> resolveReportTags(PlateReview review) {
+        if (review.getPlate() == null || review.getPlate().getId() == null
+                || review.getUser() == null || review.getUser().getId() == null) {
+            return List.of();
+        }
+        Map<Long, PlateReportTypeTranslation> translations = loadTranslations();
+        return plateReportDao
+                .findByPlateIdAndUserIdAndActiveTrue(review.getPlate().getId(), review.getUser().getId())
+                .stream()
+                .map(report -> resolveLabel(report.getReportType(), translations))
+                .toList();
+    }
+
+    private Map<Long, PlateReportTypeTranslation> loadTranslations() {
+        String locale = LocaleContextHolder.getLocale().getLanguage();
+        return translationDao.findByLocale(locale).stream()
+                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t, (a, b) -> a));
+    }
+
+    private String resolveLabel(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
+        PlateReportTypeTranslation translation = translationMap.get(type.getId());
+        return translation != null ? translation.getLabel() : type.getLabel();
     }
 
     private PlateAdminDto toPlateAdminDto(Plate plate) {

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,6 +22,7 @@ public class PlateReviewAdminDto implements IDto {
     private String statusCode;
     private String moderationReason;
     private Integer reportCount;
+    private List<String> reportTags;
     private Boolean userAcceptedResponsibility;
     private String responsibilityPolicyVersion;
     private LocalDateTime createdAt;
