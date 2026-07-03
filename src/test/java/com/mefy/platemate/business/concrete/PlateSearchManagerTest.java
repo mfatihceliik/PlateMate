@@ -7,6 +7,7 @@ import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateFollowDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
@@ -55,6 +56,8 @@ class PlateSearchManagerTest {
     @Mock
     private IPlateReportDao plateReportDao;
     @Mock
+    private IPlateFollowDao plateFollowDao;
+    @Mock
     private IPlateReportTypeTranslationDao translationDao;
     @Mock
     private IPlateValidator plateValidator;
@@ -73,6 +76,7 @@ class PlateSearchManagerTest {
                 plateSearchEventDao,
                 cityDao,
                 plateReportDao,
+                plateFollowDao,
                 translationDao,
                 plateValidator,
                 plateCityResolver,

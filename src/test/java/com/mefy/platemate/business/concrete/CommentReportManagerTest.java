@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -7,6 +8,7 @@ import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
+import com.mefy.platemate.entities.concrete.AppSettingKey;
 import com.mefy.platemate.entities.concrete.CommentReportReason;
 import com.mefy.platemate.entities.concrete.CommentReport;
 import com.mefy.platemate.entities.concrete.CommentReportStatus;
@@ -23,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -51,6 +52,8 @@ class CommentReportManagerTest {
     @Mock
     private PlateReviewModerationEventService moderationEventService;
     @Mock
+    private IAppSettingsService appSettingsService;
+    @Mock
     private IMessageService messageService;
 
     private CommentReportManager manager;
@@ -63,9 +66,9 @@ class CommentReportManagerTest {
                 plateDao,
                 userDao,
                 moderationEventService,
+                appSettingsService,
                 messageService
         );
-        ReflectionTestUtils.setField(manager, "commentReportThreshold", 3);
     }
 
     @Test
@@ -104,6 +107,7 @@ class CommentReportManagerTest {
         when(commentReportDao.existsByCommentIdAndReporterUserId(12L, 7L)).thenReturn(false);
         when(plateReviewDao.countByPlateIdAndStatusId(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(appSettingsService.getInt(AppSettingKey.COMMENT_REPORT_THRESHOLD)).thenReturn(3);
         when(messageService.getMessage("comment.report.created")).thenReturn("created");
 
         Result result = manager.addReport(12L, 7L, new AddCommentReportRequest(CommentReportReason.INSULT, "x"));

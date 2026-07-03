@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.IPlateFollowService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
@@ -7,6 +8,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReview;
@@ -43,9 +45,13 @@ class ModerationAdminManagerTest {
     @Mock
     private IPlateReportDao plateReportDao;
     @Mock
+    private IPlateReportTypeTranslationDao translationDao;
+    @Mock
     private PlateReviewModerationEventService moderationEventService;
     @Mock
     private IMessageService messageService;
+    @Mock
+    private IPlateFollowService plateFollowService;
 
     private ModerationAdminManager manager;
 
@@ -55,8 +61,10 @@ class ModerationAdminManagerTest {
                 plateReviewDao,
                 plateDao,
                 plateReportDao,
+                translationDao,
                 moderationEventService,
-                messageService
+                messageService,
+                plateFollowService
         );
     }
 

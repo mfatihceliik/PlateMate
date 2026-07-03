@@ -6,6 +6,7 @@ import com.mefy.platemate.business.abstracts.IPlateReviewService;
 import com.mefy.platemate.business.abstracts.IPlateReportService;
 import com.mefy.platemate.config.jwt.JwtAuthenticationInterceptor;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
+import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.entities.dto.PlateDetailDto;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -29,7 +31,9 @@ class PlateSearchAuthControllerTest {
         IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
         IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
-        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
+        IMessageService messageService = mock(IMessageService.class);
+        when(messageService.getMessage(anyString())).thenReturn("Invalid or missing token.");
+        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider, messageService);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
         PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
@@ -48,7 +52,8 @@ class PlateSearchAuthControllerTest {
         IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
         IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
-        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
+        IMessageService messageService = mock(IMessageService.class);
+        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider, messageService);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
         PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
@@ -68,7 +73,7 @@ class PlateSearchAuthControllerTest {
         dto.setReviewCount(0);
         dto.setTotalRatingSum(0L);
         dto.setRecentReviews(List.of());
-        dto.setRecentReportTypes(List.of());
+        dto.setTagSummary(List.of());
         when(plateSearchService.searchByPlateCode("34ABC123", 77L))
                 .thenReturn(new SuccessDataResult<>(dto, "ok"));
 
@@ -86,7 +91,8 @@ class PlateSearchAuthControllerTest {
         IPlateReviewService plateReviewService = mock(IPlateReviewService.class);
         IPlateReportService plateReportService = mock(IPlateReportService.class);
         JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
-        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider);
+        IMessageService messageService = mock(IMessageService.class);
+        JwtAuthenticationInterceptor interceptor = new JwtAuthenticationInterceptor(jwtTokenProvider, messageService);
         IPlateSearchService plateSearchService = mock(IPlateSearchService.class);
         PlateController controller = new PlateController(plateReviewService, plateSearchService, plateReportService);
 
