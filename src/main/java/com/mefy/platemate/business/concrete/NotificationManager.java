@@ -30,6 +30,11 @@ public class NotificationManager implements INotificationService {
 
     @Override
     public Result sendNotification(Long userId, String title, String content, String typeName) {
+        return sendNotification(userId, title, content, typeName, null);
+    }
+
+    @Override
+    public Result sendNotification(Long userId, String title, String content, String typeName, Long referenceId) {
         NotificationType type;
         try {
             type = NotificationType.valueOf(typeName);
@@ -46,6 +51,12 @@ public class NotificationManager implements INotificationService {
             if (type == NotificationType.FRIEND_REQUEST && !settings.isFriendNotificationsEnabled()) {
                 return new SuccessResult();
             }
+            if (type == NotificationType.PLATE_REVIEW && !settings.isPlateReviewNotificationsEnabled()) {
+                return new SuccessResult();
+            }
+            if (type == NotificationType.NEW_FOLLOWER && !settings.isNewFollowerNotificationsEnabled()) {
+                return new SuccessResult();
+            }
         }
 
         // 2. Prepare instant signal (DTO)
@@ -54,10 +65,11 @@ public class NotificationManager implements INotificationService {
                 .content(content)
                 .type(type)
                 .timestamp(System.currentTimeMillis())
+                .referenceId(referenceId)
                 .build();
 
-        // 3. SOCKET PUSH (If app is open)
-        socketPushService.sendToUser(userId, SocketEvents.NOTIFICATION_RECEIVED, new SuccessDataResult<>(signal));
+        // 3. SOCKET PUSH (If app is open) — emit raw signal DTO for consistent client parsing
+        socketPushService.sendToUser(userId, SocketEvents.NOTIFICATION_RECEIVED, signal);
 
         // 4. FCM PUSH (If app is closed/in background)
         sendFcmNotification(userId, signal);

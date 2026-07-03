@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.*;
 import com.mefy.platemate.business.abstracts.IFcmService;
 import com.mefy.platemate.entities.dto.NotificationSignalDto;
@@ -15,17 +16,35 @@ public class FcmManager implements IFcmService {
     public void sendPushNotification(List<String> tokens, NotificationSignalDto signal) {
         if (tokens == null || tokens.isEmpty()) return;
 
-        Notification notification = Notification.builder()
-                .setTitle(signal.getTitle())
-                .setBody(signal.getContent())
-                .build();
+        // Firebase may be unconfigured (missing/invalid serviceAccountKey.json → FirebaseApp not
+        // initialized). Skip instead of letting getInstance() throw IllegalStateException into
+        // the caller, which runs inside the message-send @Transactional and would roll it back.
+        if (FirebaseApp.getApps().isEmpty()) {
+            log.warn("FCM skipped: FirebaseApp not initialized (check serviceAccountKey.json).");
+            return;
+        }
 
-        MulticastMessage message = MulticastMessage.builder()
+        // DATA-ONLY payload (no setNotification): the Android client's onMessageReceived runs even
+        // when the app is in the background, so it can BOTH render its own type-based notification
+        // AND cache the incoming message into Room. A notification-payload would be auto-displayed
+        // by the system tray without ever invoking onMessageReceived in background, leaving the
+        // local chat list stale until the next foreground sync.
+        MulticastMessage.Builder builder = MulticastMessage.builder()
                 .addAllTokens(tokens)
-                .setNotification(notification)
+                .putData("title", signal.getTitle() != null ? signal.getTitle() : "")
+                .putData("content", signal.getContent() != null ? signal.getContent() : "")
                 .putData("type", signal.getType().name())
                 .putData("timestamp", String.valueOf(signal.getTimestamp()))
-                .build();
+                // HIGH priority so data messages wake the app promptly in Doze/background.
+                .setAndroidConfig(AndroidConfig.builder()
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .build());
+
+        if (signal.getReferenceId() != null) {
+            builder.putData("referenceId", String.valueOf(signal.getReferenceId()));
+        }
+
+        MulticastMessage message = builder.build();
 
         try {
             BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
@@ -41,7 +60,9 @@ public class FcmManager implements IFcmService {
                     }
                 }
             }
-        } catch (FirebaseMessagingException e) {
+        } catch (Exception e) {
+            // Catch broadly (FirebaseMessagingException, IllegalStateException, etc.) so a
+            // delivery failure never propagates into the message-send transaction.
             log.error("Firebase messaging error: {}", e.getMessage());
         }
     }

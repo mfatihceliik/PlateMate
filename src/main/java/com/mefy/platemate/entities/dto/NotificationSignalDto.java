@@ -16,4 +16,5 @@ public class NotificationSignalDto implements IDto {
     private String content;
     private NotificationType type;
     private long timestamp;
+    private Long referenceId; // MESSAGE → chat room id; null for other types
 }
