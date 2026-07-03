@@ -11,4 +11,5 @@ public interface IChatMessageService {
     DataResult<ChatMessageDto> sendMessage(SendMessageRequest request, Long currentUserId);
     DataResult<List<ChatMessageDto>> getMessagesByRoomId(Long roomId, Long currentUserId);
     Result markAsRead(Long roomId, Long currentUserId); // Mark messages as read
+    void markPendingDelivered(Long userId); // On (re)connect: mark incoming SENT messages as DELIVERED
 }

@@ -32,6 +32,7 @@ public interface IFriendshipDao extends JpaRepository<Friendship, Long> {
             from Friendship f
             where (f.requester.id = :userId or f.addressee.id = :userId)
               and f.statusId = :statusId
+            order by coalesce(f.respondedAt, f.createdAt) desc
             """)
     List<Friendship> findByUserIdAndStatusId(@Param("userId") Long userId, @Param("statusId") Long statusId);
 

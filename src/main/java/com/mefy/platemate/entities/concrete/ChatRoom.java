@@ -23,12 +23,22 @@ public class ChatRoom implements IEntity {
 
     private boolean isGroup = false; // Distinguishes between 1-1 and group chats
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "request_status", nullable = false, length = 20)
+    private ChatRoomRequestStatus requestStatus = ChatRoomRequestStatus.ACCEPTED;
+
+    // For 1-1 message requests: the user who started the conversation (must wait for approval)
+    @Column(name = "initiator_id")
+    private Long initiatorId;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
 
     private LocalDateTime lastMessageAt;
 
+    // Ordered so the preview mapper's messages.get(size-1) is deterministically the latest message.
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
+    @OrderBy("id ASC")
     private List<ChatMessage> messages;
 
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)

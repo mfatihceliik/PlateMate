@@ -29,4 +29,7 @@ public class Participant implements IEntity {
     private ChatRoom chatRoom;
 
     private LocalDateTime joinedAt = LocalDateTime.now();
+
+    @Column(name = "hidden_at")
+    private LocalDateTime hiddenAt;
 }

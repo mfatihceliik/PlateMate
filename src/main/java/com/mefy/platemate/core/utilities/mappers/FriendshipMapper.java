@@ -32,7 +32,8 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
         dto.setId(entity.getId());
         dto.setStatusId(entity.getStatusId());
         dto.setStatusCode(entity.getStatusCode());
-        dto.setCreatedAt(entity.getCreatedAt());
+        java.time.LocalDateTime dateToUse = entity.getRespondedAt() != null ? entity.getRespondedAt() : entity.getCreatedAt();
+        dto.setCreatedAt(dateToUse);
 
         // Determine the other party
         User friend = entity.getRequester().getId().equals(currentUserId)

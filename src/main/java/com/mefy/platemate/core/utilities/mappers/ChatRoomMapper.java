@@ -15,6 +15,8 @@ public class ChatRoomMapper implements ModelMapperService<ChatRoom, ChatRoomDto>
         dto.setRoomName(entity.getRoomName());
         dto.setGroup(entity.isGroup());
         dto.setLastMessageAt(entity.getLastMessageAt());
+        dto.setRequestStatus(entity.getRequestStatus() == null ? null : entity.getRequestStatus().name());
+        dto.setInitiatorId(entity.getInitiatorId());
 
         // For the preview of the last message (if messages are loaded)
         if (entity.getMessages() != null && !entity.getMessages().isEmpty()) {
@@ -32,6 +34,23 @@ public class ChatRoomMapper implements ModelMapperService<ChatRoom, ChatRoomDto>
                     .ifPresent(user -> dto.setOtherParticipantName(user.getUsername()));
         }
 
+        return dto;
+    }
+
+    // Resolves the OTHER participant (id + name) relative to the current user.
+    public ChatRoomDto entityToDto(ChatRoom entity, Long currentUserId) {
+        ChatRoomDto dto = entityToDto(entity);
+        if (dto == null) return null;
+        if (!entity.isGroup() && entity.getParticipants() != null && currentUserId != null) {
+            entity.getParticipants().stream()
+                    .map(Participant::getUser)
+                    .filter(user -> user != null && !currentUserId.equals(user.getId()))
+                    .findFirst()
+                    .ifPresent(user -> {
+                        dto.setOtherParticipantId(user.getId());
+                        dto.setOtherParticipantName(user.getUsername());
+                    });
+        }
         return dto;
     }
 

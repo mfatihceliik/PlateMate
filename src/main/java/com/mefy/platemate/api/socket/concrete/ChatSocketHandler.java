@@ -55,13 +55,11 @@ public class ChatSocketHandler implements IChatSocketHandler {
 
         DataResult<ChatMessageDto> result = null;
         try {
+            // sendMessage persists and broadcasts new_message to each participant's user room
+            // (sender included), so no room broadcast is needed here.
             result = chatMessageService.sendMessage(data, senderId);
 
-            if (result.isSuccess()) {
-                client.getNamespace()
-                        .getRoomOperations(data.getChatRoomId().toString())
-                        .sendEvent(SocketEvents.NEW_MESSAGE, result);
-            } else {
+            if (!result.isSuccess()) {
                 // Business rule error (e.g., messaging disabled)
                 client.sendEvent(SocketEvents.ERROR, result);
             }

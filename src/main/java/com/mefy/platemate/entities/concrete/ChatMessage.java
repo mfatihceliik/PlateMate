@@ -32,5 +32,22 @@ public class ChatMessage implements IEntity {
 
     private boolean isRead = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_status", nullable = false, length = 20)
+    private MessageStatus status = MessageStatus.SENT;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     private LocalDateTime sentAt = LocalDateTime.now();
+
+    @PrePersist
+    private void onCreate() {
+        // Server is the source of truth for the send time; never trust the client clock.
+        sentAt = LocalDateTime.now();
+        if (status == null) status = MessageStatus.SENT;
+    }
 }

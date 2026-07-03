@@ -11,11 +11,18 @@ public class ChatMessageMapper implements ModelMapperService<ChatMessage, ChatMe
         if (entity == null) return null;
         ChatMessageDto dto = new ChatMessageDto();
         dto.setId(entity.getId());
+        if (entity.getChatRoom() != null) {
+            dto.setChatRoomId(entity.getChatRoom().getId());
+        }
         dto.setMessageContent(entity.getContent());
         dto.setSentAt(entity.getSentAt());
         dto.setRead(entity.isRead());
+        dto.setStatus(entity.getStatus() == null ? null : entity.getStatus().name());
+        dto.setDeliveredAt(entity.getDeliveredAt());
+        dto.setReadAt(entity.getReadAt());
 
         if (entity.getSender() != null) {
+            dto.setSenderUserId(entity.getSender().getId());
             dto.setSenderUsername(entity.getSender().getUsername());
         }
         return dto;

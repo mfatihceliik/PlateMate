@@ -4,6 +4,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
 import com.mefy.platemate.entities.dto.ChatRoomDto;
+import com.mefy.platemate.entities.dto.PresenceDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,20 @@ public interface IChatController {
             @RequestParam Long otherUserId
     );
 
+    @GetMapping("/rooms/{roomId}")
+    ResponseEntity<DataResult<ChatRoomDto>> getRoom(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
+
     @GetMapping("/rooms/{roomId}/messages")
     ResponseEntity<DataResult<List<ChatMessageDto>>> getMessages(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
+
+    @GetMapping("/rooms/{roomId}/presence")
+    ResponseEntity<DataResult<PresenceDto>> getRoomPresence(
             @PathVariable Long roomId,
             @RequestAttribute("userId") Long currentUserId
     );
@@ -37,6 +50,24 @@ public interface IChatController {
 
     @PutMapping("/rooms/{roomId}/read")
     ResponseEntity<Result> markAsRead(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
+
+    @PostMapping("/rooms/{roomId}/accept")
+    ResponseEntity<Result> acceptRequest(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
+
+    @PostMapping("/rooms/{roomId}/decline")
+    ResponseEntity<Result> declineRequest(
+            @PathVariable Long roomId,
+            @RequestAttribute("userId") Long currentUserId
+    );
+
+    @DeleteMapping("/rooms/{roomId}")
+    ResponseEntity<Result> leaveRoom(
             @PathVariable Long roomId,
             @RequestAttribute("userId") Long currentUserId
     );

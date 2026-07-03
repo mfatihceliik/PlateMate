@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.abstracts;
 
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.ChatRoomDto;
 
 import java.util.List;
@@ -8,4 +9,7 @@ import java.util.List;
 public interface IChatRoomService {
     DataResult<ChatRoomDto> getOrCreateChatRoom(Long userOneId, Long userTwoId);
     DataResult<List<ChatRoomDto>> getUserRooms(Long userId); // All chat rooms of the user
+    DataResult<ChatRoomDto> getRoom(Long roomId, Long currentUserId); // Single room (participant only)
+    Result respondToRequest(Long roomId, Long currentUserId, boolean accept); // Approve/decline a message request
+    Result leaveRoom(Long roomId, Long currentUserId); // Remove the current user from the room
 }

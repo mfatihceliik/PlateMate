@@ -53,6 +53,30 @@ public class ParticipantManager implements IParticipantService {
 
     @Override
     @Transactional
+    public Result removeFromRoom(Long roomId, Long userId) {
+        // Soft-hide only: the participant row (membership) is preserved so the user keeps
+        // receiving future messages/socket pushes for this room; it just drops out of their
+        // own room list until unhideForUser() clears hiddenAt (e.g. the other side messages again).
+        Participant participant = participantDao.findByUserIdAndChatRoomId(userId, roomId).orElse(null);
+        if (participant != null) {
+            participant.setHiddenAt(LocalDateTime.now());
+            participantDao.save(participant);
+        }
+        return new SuccessResult();
+    }
+
+    @Override
+    @Transactional
+    public void unhideForUser(Long roomId, Long userId) {
+        Participant participant = participantDao.findByUserIdAndChatRoomId(userId, roomId).orElse(null);
+        if (participant != null && participant.getHiddenAt() != null) {
+            participant.setHiddenAt(null);
+            participantDao.save(participant);
+        }
+    }
+
+    @Override
+    @Transactional
     public Result delete(Long id) {
         participantDao.deleteById(id);
         return new SuccessResult();
@@ -60,7 +84,7 @@ public class ParticipantManager implements IParticipantService {
 
     @Override
     public DataResult<List<Long>> getByUserId(Long userId) {
-        List<Long> roomIds = participantDao.findByUserId(userId).stream()
+        List<Long> roomIds = participantDao.findByUserIdAndHiddenAtIsNull(userId).stream()
                 .map(p -> p.getChatRoom().getId())
                 .collect(java.util.stream.Collectors.toList());
         return new SuccessDataResult<>(roomIds);

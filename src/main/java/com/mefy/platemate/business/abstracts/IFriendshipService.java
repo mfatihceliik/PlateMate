@@ -13,4 +13,5 @@ public interface IFriendshipService {
     Result removeFriend(Long friendshipId, Long currentUserId);
     DataResult<List<FriendshipDto>> getFriends(Long userId);
     DataResult<List<FriendshipDto>> getPendingRequests(Long userId);
+    boolean areFriends(Long userId1, Long userId2);
 }

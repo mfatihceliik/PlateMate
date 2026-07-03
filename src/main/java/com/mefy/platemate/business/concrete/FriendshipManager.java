@@ -136,6 +136,18 @@ public class FriendshipManager implements IFriendshipService {
         return new SuccessDataResult<>(dtos, messageService.getMessage(Messages.PENDING_REQUESTS_LISTED));
     }
 
+    @Override
+    public boolean areFriends(Long userId1, Long userId2) {
+        if (userId1 == null || userId2 == null || userId1.equals(userId2)) {
+            return false;
+        }
+        return friendshipDao.countActiveBetweenUsers(
+                userId1,
+                userId2,
+                java.util.Set.of(FriendshipRequestStatusCodes.ACCEPTED_ID)
+        ) > 0;
+    }
+
     private Result checkIfSelfRequest(Long requesterId, Long addresseeId) {
         if (requesterId.equals(addresseeId)) {
             return new ErrorResult(messageService.getMessage(Messages.FRIENDSHIP_SELF_REQUEST));

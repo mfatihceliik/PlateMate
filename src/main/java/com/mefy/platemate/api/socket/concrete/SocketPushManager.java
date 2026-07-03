@@ -17,4 +17,14 @@ public class SocketPushManager implements ISocketPushService {
         socketServer.getRoomOperations(SocketEvents.USER_ROOM_PREFIX + userId)
                 .sendEvent(eventName, payload);
     }
+
+    @Override
+    public boolean isUserOnline(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        return !socketServer.getRoomOperations(SocketEvents.USER_ROOM_PREFIX + userId)
+                .getClients()
+                .isEmpty();
+    }
 }
