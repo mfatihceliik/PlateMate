@@ -12,19 +12,24 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.entities.concrete.PlateReportSeverity;
 import com.mefy.platemate.entities.concrete.PlateReportType;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.dto.PlateReportTypeAdminDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReportTypeRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReportTypeRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +37,15 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
 
     private final IPlateReportDao plateReportDao;
     private final IPlateReportTypeDao plateReportTypeDao;
+    private final IPlateReportTypeTranslationDao translationDao;
     private final PlateReportTypePolicyService plateReportTypePolicyService;
     private final IMessageService messageService;
 
     @Override
     public DataResult<List<PlateReportTypeDto>> getActiveReportTypes() {
+        Map<Long, PlateReportTypeTranslation> translationMap = loadTranslations();
         List<PlateReportTypeDto> data = plateReportTypeDao.findByActiveTrueOrderBySortOrderAsc().stream()
-                .map(this::toPublicDto)
+                .map(type -> toPublicDto(type, translationMap))
                 .toList();
         return new SuccessDataResult<>(data, messageService.getMessage(Messages.PLATE_REPORT_TYPES_LISTED));
     }
@@ -143,11 +150,19 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
         return plateReportTypePolicyService.normalizeIncomingCode(code);
     }
 
-    private PlateReportTypeDto toPublicDto(PlateReportType type) {
+    private PlateReportTypeDto toPublicDto(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
+        String code = type.getCode();
+        PlateReportTypeTranslation translation = translationMap.get(type.getId());
+        String label = translation != null
+                ? translation.getLabel()
+                : plateReportTypePolicyService.neutralLabel(code, type.getLabel());
+        String description = translation != null && translation.getDescription() != null
+                ? translation.getDescription()
+                : plateReportTypePolicyService.neutralDescription(code, type.getDescription());
         return new PlateReportTypeDto(
-                type.getCode(),
-                plateReportTypePolicyService.neutralLabel(type.getCode(), type.getLabel()),
-                plateReportTypePolicyService.neutralDescription(type.getCode(), type.getDescription()),
+                code,
+                label,
+                description,
                 type.getIconKey(),
                 type.getSeverityId(),
                 type.getSeverityCode(),
@@ -155,6 +170,12 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
                 type.getWeight(),
                 type.getSortOrder()
         );
+    }
+
+    private Map<Long, PlateReportTypeTranslation> loadTranslations() {
+        String locale = LocaleContextHolder.getLocale().getLanguage();
+        return translationDao.findByLocale(locale).stream()
+                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t));
     }
 
     private PlateReportTypeAdminDto toAdminDto(PlateReportType type) {

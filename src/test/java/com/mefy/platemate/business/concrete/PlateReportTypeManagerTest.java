@@ -7,6 +7,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.entities.concrete.PlateReportSeverity;
 import com.mefy.platemate.entities.concrete.PlateReportType;
 import com.mefy.platemate.entities.dto.PlateReportTypeAdminDto;
@@ -37,6 +38,8 @@ class PlateReportTypeManagerTest {
     @Mock
     private IPlateReportTypeDao plateReportTypeDao;
     @Mock
+    private IPlateReportTypeTranslationDao translationDao;
+    @Mock
     private IMessageService messageService;
 
     private PlateReportTypeManager manager;
@@ -46,6 +49,7 @@ class PlateReportTypeManagerTest {
         manager = new PlateReportTypeManager(
                 plateReportDao,
                 plateReportTypeDao,
+                translationDao,
                 new PlateReportTypePolicyService(),
                 messageService
         );
