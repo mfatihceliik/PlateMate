@@ -83,13 +83,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginFailureReturnsUnauthorized() {
+    void loginFailureReturnsBadRequest() {
         LoginRequest request = new LoginRequest("fatih", null, "password123");
         when(authService.login(request)).thenReturn(new ErrorDataResult<>("invalid credentials"));
 
         ResponseEntity<DataResult<UserDto>> response = authController.login(request);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
     }
 

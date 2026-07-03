@@ -31,4 +31,6 @@ public interface IUserService {
     DataResult<UserAdminDto> getByUsernameForAdmin(String username);
 
     DataResult<User> getByUsernameOrEmailForAuth(String identifier);
+
+    DataResult<User> getByIdForAuth(Long id);
 }

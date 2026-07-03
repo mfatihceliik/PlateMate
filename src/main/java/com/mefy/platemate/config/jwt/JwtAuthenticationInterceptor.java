@@ -2,6 +2,8 @@ package com.mefy.platemate.config.jwt;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.core.utilities.messages.IMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -20,6 +22,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class JwtAuthenticationInterceptor implements HandlerInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final IMessageService messageService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -28,7 +31,8 @@ public class JwtAuthenticationInterceptor implements HandlerInterceptor {
         if (token == null || !jwtTokenProvider.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json; charset=UTF-8");
-            response.getWriter().write("{\"success\":false,\"message\":\"Geçersiz veya eksik token.\"}");
+            String msg = messageService.getMessage(Messages.AUTH_TOKEN_INVALID).replace("\"", "\\\"");
+            response.getWriter().write("{\"success\":false,\"message\":\"" + msg + "\"}");
             return false; // Stop request
         }
 

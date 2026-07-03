@@ -187,6 +187,18 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<User> getByIdForAuth(Long id) {
+        User user = userDao.findByIdAndActiveTrue(id).orElse(null);
+
+        Result result = BusinessRules.run(checkIfUserExists(user));
+        if (result != null) {
+            return new ErrorDataResult<>(result.getMessage());
+        }
+
+        return new SuccessDataResult<>(user, messageService.getMessage(Messages.USER_FOUND));
+    }
+
+    @Override
     public DataResult<User> getByUsernameOrEmailForAuth(String identifier) {
         User user = userDao.findByUsernameOrEmailAndActiveTrue(identifier, identifier).orElse(null);
         

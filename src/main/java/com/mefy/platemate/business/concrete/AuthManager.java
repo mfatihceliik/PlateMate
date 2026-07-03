@@ -9,6 +9,7 @@ import com.mefy.platemate.core.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
+import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
@@ -16,12 +17,14 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.AuthTokensDto;
 import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.request.ChangePasswordRequest;
 import com.mefy.platemate.entities.dto.request.LoginRequest;
 import com.mefy.platemate.entities.dto.request.RefreshTokenRequest;
 import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -98,6 +101,27 @@ public class AuthManager implements IAuthService {
     public Result logout(RefreshTokenRequest request) {
         refreshTokenService.revoke(request.getRefreshToken());
         return new SuccessResult(messageService.getMessage(Messages.AUTH_LOGOUT_SUCCESS));
+    }
+
+    @Override
+    @Transactional
+    public Result changePassword(Long userId, ChangePasswordRequest request) {
+        DataResult<User> userResult = userService.getByIdForAuth(userId);
+        if (!userResult.isSuccess()) {
+            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        }
+
+        User user = userResult.getData();
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            return new ErrorResult(messageService.getMessage(Messages.AUTH_CURRENT_PASSWORD_INVALID));
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            return new ErrorResult(messageService.getMessage(Messages.AUTH_PASSWORD_SAME_AS_CURRENT));
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        return new SuccessResult(messageService.getMessage(Messages.AUTH_PASSWORD_CHANGED));
     }
 
     private void attachTokens(UserDto userDto, AuthTokensDto authTokens) {
