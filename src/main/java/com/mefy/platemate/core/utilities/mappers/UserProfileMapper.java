@@ -18,6 +18,11 @@ public class UserProfileMapper implements ModelMapperService<UserProfile, UserPr
         if (entity == null) return null;
         UserProfileDto dto = new UserProfileDto();
         dto.setId(entity.getId());
+        dto.setDisplayName(entity.getDisplayName());
+        dto.setBio(entity.getBio());
+        dto.setProfilePhotoUrl(entity.getProfilePhotoUrl());
+        dto.setVerified(entity.isVerified());
+
         if (entity.getUser() != null) {
             dto.setUsername(entity.getUser().getUsername());
         }

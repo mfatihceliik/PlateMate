@@ -14,6 +14,13 @@ import java.util.List;
 public class UserProfileDto implements IDto {
     private Long id;
     private String username;
+    private String displayName;
+    private String bio;
+    private String profilePhotoUrl;
+    private Boolean verified;
+    private Integer followerCount;
+    private Integer followingCount;
+    private Boolean isFollowing;
     private Integer totalFriendCounts;
     private Double averageGivenRating;
     private Integer reviewCount;
@@ -23,6 +30,6 @@ public class UserProfileDto implements IDto {
     private UserReviewStatusCountsDto reviewStatusCounts;
     private UserReviewEvaluationTotalsDto evaluationTotals;
     private List<SocialMediaLinkDto> socialMediaLinks;
-    private List<PlateReviewDto> plateReviews;
+    private List<UserProfileReviewDto> plateReviews;
     private List<UserProfileFriendRequestDto> friendRequests;
 }
