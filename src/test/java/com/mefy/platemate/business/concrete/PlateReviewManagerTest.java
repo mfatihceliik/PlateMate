@@ -14,7 +14,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
-
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
@@ -66,6 +66,8 @@ class PlateReviewManagerTest {
     @Mock
     private IPlateReviewDao plateReviewDao;
     @Mock
+    private IPlateReportDao plateReportDao;
+    @Mock
     private IUserDao userDao;
     @Mock
     private IPlateReportService plateReportService;
@@ -83,6 +85,7 @@ class PlateReviewManagerTest {
         plateReviewManager = new PlateReviewManager(
                 plateDao,
                 plateReviewDao,
+                plateReportDao,
                 userDao,
                 plateReportService,
                 new PlateReviewMapper(),
@@ -124,9 +127,10 @@ class PlateReviewManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(10L, 99L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview("34 ABC 123", 99L, new AddPlateReviewRequest(5, "iyi", null, true));
+        DataResult result = plateReviewManager.addReview("34 ABC 123", 99L, new AddPlateReviewRequest(5, "iyi", null, true));
 
         assertTrue(result.isSuccess());
         assertEquals("pending-review", result.getMessage());
@@ -156,9 +160,10 @@ class PlateReviewManagerTest {
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
         when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(99L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(10L, 99L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34 ABC 123",
                 99L,
                 new AddPlateReviewRequest(5, "iyi", List.of("RED_LIGHT_VIOLATION"), true)
@@ -187,9 +192,10 @@ class PlateReviewManagerTest {
         when(plateReviewDao.sumRatingByPlateIdAndStatus(88L, PlateReviewStatus.APPROVED.getId())).thenReturn(4L);
         when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(77L), eq(List.of())))
                 .thenReturn(new SuccessResult("synced"));
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(88L, 77L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview("34ABC123", 77L, new AddPlateReviewRequest(4, "iyi", List.of(), true));
+        DataResult result = plateReviewManager.addReview("34ABC123", 77L, new AddPlateReviewRequest(4, "iyi", List.of(), true));
 
         assertTrue(result.isSuccess());
         verify(plateReportService).syncReportsForUserAndPlate(eq(plate.getId()), eq(77L), eq(List.of()));
@@ -220,7 +226,7 @@ class PlateReviewManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 99L,
                 new AddPlateReviewRequest(5, "yeni yorum", List.of("RED_LIGHT_VIOLATION"), true)
@@ -261,9 +267,10 @@ class PlateReviewManagerTest {
                 .thenReturn(new SuccessResult("synced"));
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(10L, 99L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 99L,
                 new AddPlateReviewRequest(5, "yeniden yorum", List.of("RED_LIGHT_VIOLATION"), true)
@@ -300,7 +307,7 @@ class PlateReviewManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 99L,
                 new AddPlateReviewRequest(5, "yeni yorum", List.of("RED_LIGHT_VIOLATION"), true)
@@ -336,7 +343,7 @@ class PlateReviewManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.of(existingReview));
         when(messageService.getMessage(Messages.REVIEW_ALREADY_EXISTS_FOR_PLATE)).thenReturn("already-exists");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 99L,
                 new AddPlateReviewRequest(5, "yeni yorum", List.of("RED_LIGHT_VIOLATION"), true)
@@ -436,7 +443,7 @@ class PlateReviewManagerTest {
         when(messageService.getMessage(Messages.REVIEW_RESPONSIBILITY_REQUIRED))
                 .thenReturn("responsibility-required");
 
-        Result result = plateReviewManager.addReview("34ABC123", 99L, new AddPlateReviewRequest(5, "iyi", null, false));
+        DataResult result = plateReviewManager.addReview("34ABC123", 99L, new AddPlateReviewRequest(5, "iyi", null, false));
 
         assertFalse(result.isSuccess());
         assertEquals("responsibility-required", result.getMessage());
@@ -460,9 +467,10 @@ class PlateReviewManagerTest {
         when(plateReviewDao.findByPlateIdAndUserId(10L, 99L)).thenReturn(Optional.empty());
         when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(10L, 99L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 99L,
                 new AddPlateReviewRequest(5, "Bu adam hirsiz", null, true)
@@ -522,7 +530,7 @@ class PlateReviewManagerTest {
         when(userDao.findByIdAndActiveTrue(90L)).thenReturn(Optional.of(user));
         when(messageService.getMessage(Messages.REVIEW_COMMENT_PREMIUM_REQUIRED)).thenReturn("premium-required");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 90L,
                 new AddPlateReviewRequest(5, "yorum", List.of("RED_LIGHT_VIOLATION"), true)
@@ -542,7 +550,7 @@ class PlateReviewManagerTest {
         when(userDao.findByIdAndActiveTrue(91L)).thenReturn(Optional.of(user));
         when(messageService.getMessage(Messages.REVIEW_REPORT_TYPE_REQUIRED_FOR_NON_PREMIUM)).thenReturn("tag-required");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 91L,
                 new AddPlateReviewRequest(5, "", List.of(), true)
@@ -572,9 +580,10 @@ class PlateReviewManagerTest {
         when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(plateReportService.syncReportsForUserAndPlate(eq(plate.getId()), eq(92L), eq(List.of("RED_LIGHT_VIOLATION"))))
                 .thenReturn(new SuccessResult("synced"));
+        when(plateReportDao.findByPlateIdAndUserIdAndActiveTrue(10L, 92L)).thenReturn(List.of());
         when(messageService.getMessage(Messages.REVIEW_PENDING_REVIEW)).thenReturn("pending-review");
 
-        Result result = plateReviewManager.addReview(
+        DataResult result = plateReviewManager.addReview(
                 "34ABC123",
                 92L,
                 new AddPlateReviewRequest(5, "", List.of("RED_LIGHT_VIOLATION"), true)

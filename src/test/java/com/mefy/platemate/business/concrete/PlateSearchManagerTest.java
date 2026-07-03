@@ -3,14 +3,12 @@ package com.mefy.platemate.business.concrete;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
 import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
-import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
-import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
-import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.entities.concrete.City;
@@ -21,6 +19,7 @@ import com.mefy.platemate.entities.concrete.PlateReportType;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.PlateSearchEvent;
 import com.mefy.platemate.entities.concrete.PlateStatus;
+import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.PlateDetailDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
@@ -58,9 +55,7 @@ class PlateSearchManagerTest {
     @Mock
     private IPlateReportDao plateReportDao;
     @Mock
-    private PlateReportTypeMapper plateReportTypeMapper;
-    @Mock
-    private PlateReviewMapper plateReviewMapper;
+    private IPlateReportTypeTranslationDao translationDao;
     @Mock
     private IPlateValidator plateValidator;
     @Mock
@@ -78,8 +73,7 @@ class PlateSearchManagerTest {
                 plateSearchEventDao,
                 cityDao,
                 plateReportDao,
-                plateReportTypeMapper,
-                plateReviewMapper,
+                translationDao,
                 plateValidator,
                 plateCityResolver,
                 messageService
@@ -104,10 +98,12 @@ class PlateSearchManagerTest {
         city.setName("Istanbul");
         when(cityDao.findById(34)).thenReturn(Optional.of(city));
         when(plateDao.save(any(Plate.class))).thenReturn(saved);
-        
-        when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
-        when(plateReportDao.findByPlateIdInAndActiveTrue(List.of(1L))).thenReturn(List.of());
+
+        when(plateReviewDao.getRatingDistribution(eq(1L), eq(PlateReviewStatus.APPROVED.getId())))
+                .thenReturn(List.of());
+        when(plateReportDao.findByPlateIdWithReportType(eq(1L), eq(PlateReviewStatus.APPROVED.getId()))).thenReturn(List.of());
+        when(plateReviewDao.findRecentByPlateCodeWithUserProfile(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
+                .thenReturn(List.of());
         when(messageService.getMessage(Messages.PLATE_FOUND)).thenReturn("plate-found");
 
         DataResult<PlateDetailDto> result = plateSearchManager.searchByPlateCode("34 ABC 123", 42L);
@@ -119,7 +115,7 @@ class PlateSearchManagerTest {
         assertEquals(0, result.getData().getReviewCount());
         assertEquals(0L, result.getData().getTotalRatingSum());
         assertTrue(result.getData().getRecentReviews().isEmpty());
-        assertTrue(result.getData().getRecentReportTypes().isEmpty());
+        assertTrue(result.getData().getTagSummary().isEmpty());
 
         ArgumentCaptor<PlateSearchEvent> eventCaptor = ArgumentCaptor.forClass(PlateSearchEvent.class);
         verify(plateSearchEventDao).save(eventCaptor.capture());
@@ -160,17 +156,28 @@ class PlateSearchManagerTest {
         reportType.setSortOrder(1);
         reportType.setActive(true);
 
+        User reportUser = new User();
+        reportUser.setId(99L);
+
         PlateReport report = new PlateReport();
         report.setId(10L);
         report.setPlate(plate);
+        report.setUser(reportUser);
         report.setReportType(reportType);
         report.setActive(true);
 
         when(plateValidator.isValid("34ABC123")).thenReturn(true);
         when(plateDao.findByPlateCode("34ABC123")).thenReturn(Optional.of(plate));
-        when(plateReviewDao.findByPlatePlateCodeAndStatusId(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
-        when(plateReportDao.findByPlateIdInAndActiveTrue(List.of(55L))).thenReturn(List.of(report));
+        when(plateReviewDao.getRatingDistribution(eq(55L), eq(PlateReviewStatus.APPROVED.getId())))
+                .thenReturn(List.of(
+                        new Object[]{5, 6L},
+                        new Object[]{4, 2L},
+                        new Object[]{3, 1L},
+                        new Object[]{2, 1L}
+                ));
+        when(plateReportDao.findByPlateIdWithReportType(eq(55L), eq(PlateReviewStatus.APPROVED.getId()))).thenReturn(List.of(report));
+        when(plateReviewDao.findRecentByPlateCodeWithUserProfile(eq("34ABC123"), eq(PlateReviewStatus.APPROVED.getId()), any(Pageable.class)))
+                .thenReturn(List.of());
 
         when(plateSearchEventDao.countByPlateId(55L)).thenReturn(6L);
         when(plateReviewDao.countByPlateIdAndStatusId(55L, PlateReviewStatus.APPROVED.getId())).thenReturn(2L);
@@ -195,6 +202,15 @@ class PlateSearchManagerTest {
         assertEquals(5L, result.getData().getTotalWeightedReportScore());
         assertEquals(25.0, result.getData().getScore());
         assertEquals(lastReport, result.getData().getLastActivityAt());
+
+        assertEquals(1, result.getData().getTagSummary().size());
+        assertEquals("RED_LIGHT_VIOLATION", result.getData().getTagSummary().get(0).getCode());
+        assertEquals(1L, result.getData().getTagSummary().get(0).getCount());
+
+        assertEquals(5, result.getData().getRatingDistribution().size());
+        assertEquals(5, result.getData().getRatingDistribution().get(0).getRating());
+        assertEquals(6L, result.getData().getRatingDistribution().get(0).getCount());
+
         verify(plateSearchEventDao).save(any(PlateSearchEvent.class));
     }
 }

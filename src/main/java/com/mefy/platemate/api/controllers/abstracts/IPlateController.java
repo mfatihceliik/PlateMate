@@ -5,6 +5,7 @@ import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.PlateDetailDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.ReviewResponseDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
@@ -37,7 +38,7 @@ public interface IPlateController {
     );
 
     @PostMapping("/{plateCode}/reviews")
-    ResponseEntity<Result> addReview(
+    ResponseEntity<DataResult<ReviewResponseDto>> addReview(
             @PathVariable String plateCode,
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddPlateReviewRequest request

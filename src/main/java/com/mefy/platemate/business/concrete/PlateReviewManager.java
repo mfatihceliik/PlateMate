@@ -19,13 +19,17 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
+import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.User;
+import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.ReviewResponseDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 import jakarta.transaction.Transactional;
@@ -45,6 +49,7 @@ public class PlateReviewManager implements IPlateReviewService {
 
     private final IPlateDao plateDao;
     private final IPlateReviewDao plateReviewDao;
+    private final IPlateReportDao plateReportDao;
     private final IUserDao userDao;
     private final IPlateReportService plateReportService;
     private final PlateReviewMapper plateReviewMapper;
@@ -88,40 +93,44 @@ public class PlateReviewManager implements IPlateReviewService {
 
     @Override
     @Transactional
-    public Result addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request) {
+    public DataResult<ReviewResponseDto> addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request) {
         String normalizedPlate = plateSearchService.normalizePlate(plateCode);
         User user = userDao.findByIdAndActiveTrue(currentUserId).orElse(null);
 
         Result validationResult = validateAddReviewInput(normalizedPlate, user, request);
-        if (validationResult != null) return validationResult;
+        if (validationResult != null) return new ErrorDataResult<>(validationResult.getMessage());
 
         String normalizedComment = normalizeComment(request.getComment());
         Result submissionRulesResult = validateSubmissionRules(user, normalizedComment, request.getReportTypeCodes());
-        if (submissionRulesResult != null) return submissionRulesResult;
+        if (submissionRulesResult != null) return new ErrorDataResult<>(submissionRulesResult.getMessage());
 
         ContentModerationResult moderation = plateModerationService.resolveModeration(user, normalizedComment);
         if (!moderation.isAllowed()) {
-            return new ErrorResult(messageService.getMessage(Messages.REVIEW_CONTENT_NOT_ALLOWED));
+            return new ErrorDataResult<>(messageService.getMessage(Messages.REVIEW_CONTENT_NOT_ALLOWED));
         }
 
         Plate plate = plateSearchService.getOrCreatePlate(normalizedPlate);
         Result visibilityResult = plateSearchService.checkIfPlatePubliclyVisible(plate);
-        if (!visibilityResult.isSuccess()) return visibilityResult;
+        if (!visibilityResult.isSuccess()) return new ErrorDataResult<>(visibilityResult.getMessage());
 
         PlateReview existingReview = plateReviewDao.findByPlateIdAndUserId(plate.getId(), currentUserId).orElse(null);
         Result existingReviewCheck = checkExistingReviewStatus(existingReview);
-        if (!existingReviewCheck.isSuccess()) return existingReviewCheck;
+        if (!existingReviewCheck.isSuccess()) return new ErrorDataResult<>(existingReviewCheck.getMessage());
 
         if (request.getReportTypeCodes() != null) {
             Result syncResult = plateReportService.syncReportsForUserAndPlate(plate.getId(), currentUserId, request.getReportTypeCodes());
-            if (!syncResult.isSuccess()) return syncResult;
+            if (!syncResult.isSuccess()) return new ErrorDataResult<>(syncResult.getMessage());
         }
 
+        PlateReview savedReview;
         if (existingReview != null) {
-            return resubmitRejectedReview(existingReview, request, moderation, currentUserId, plate);
+            savedReview = resubmitRejectedReview(existingReview, request, moderation, currentUserId, plate);
+        } else {
+            savedReview = submitNewReview(plate, user, request, moderation, currentUserId);
         }
 
-        return submitNewReview(plate, user, request, moderation, currentUserId);
+        ReviewResponseDto responseDto = buildReviewResponse(savedReview, plate, user);
+        return new SuccessDataResult<>(responseDto, resolveReviewSuccessMessage(existingReview != null, savedReview.getStatus()));
     }
 
     @Override
@@ -343,7 +352,7 @@ public class PlateReviewManager implements IPlateReviewService {
         return new SuccessResult();
     }
 
-    private Result resubmitRejectedReview(
+    private PlateReview resubmitRejectedReview(
             PlateReview existingReview,
             AddPlateReviewRequest request,
             ContentModerationResult moderation,
@@ -366,10 +375,10 @@ public class PlateReviewManager implements IPlateReviewService {
                 "USER_RESUBMITTED_REJECTED_REVIEW"
         );
         refreshPlateStatistics(plate);
-        return new SuccessResult(resolveReviewSuccessMessage(true, existingReview.getStatus()));
+        return existingReview;
     }
 
-    private Result submitNewReview(
+    private PlateReview submitNewReview(
             Plate plate,
             User user,
             AddPlateReviewRequest request,
@@ -396,7 +405,33 @@ public class PlateReviewManager implements IPlateReviewService {
                 "USER_SUBMITTED_REVIEW"
         );
         refreshPlateStatistics(plate);
+        return persistedReview;
+    }
 
-        return new SuccessResult(resolveReviewSuccessMessage(false, review.getStatus()));
+    private ReviewResponseDto buildReviewResponse(PlateReview review, Plate plate, User user) {
+        ReviewResponseDto dto = new ReviewResponseDto();
+        dto.setReviewId(review.getId());
+        dto.setPlateCode(plate.getPlateCode());
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
+        dto.setStatus(review.getStatusCode());
+        dto.setUserId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setCreatedAt(review.getCreatedAt());
+        dto.setUpdatedAt(review.getUpdatedAt());
+
+        UserProfile profile = user.getProfile();
+        if (profile != null) {
+            dto.setDisplayName(profile.getDisplayName());
+            dto.setProfilePhotoUrl(profile.getProfilePhotoUrl());
+        }
+
+        List<PlateReport> activeReports = plateReportDao.findByPlateIdAndUserIdAndActiveTrue(plate.getId(), user.getId());
+        List<String> reportCodes = activeReports.stream()
+                .map(r -> r.getReportType().getCode())
+                .toList();
+        dto.setReportTypeCodes(reportCodes);
+
+        return dto;
     }
 }

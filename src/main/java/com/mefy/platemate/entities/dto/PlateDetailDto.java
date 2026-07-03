@@ -20,7 +20,13 @@ public class PlateDetailDto implements IDto {
     private Integer reviewCount;
     private Long totalRatingSum;
 
-    // 2. Discovery Metrics (from DiscoveryPlateCardDto)
+    // 2. Rating Distribution (5-star to 1-star)
+    private List<RatingDistributionDto> ratingDistribution;
+
+    // 3. Aggregated Tag Counts
+    private List<PlateTagSummaryDto> tagSummary;
+
+    // 4. Discovery Metrics
     private Long totalSearchCount;
     private Long totalReviewCount;
     private Long totalReportCount;
@@ -28,7 +34,9 @@ public class PlateDetailDto implements IDto {
     private Double score;
     private LocalDateTime lastActivityAt;
 
-    // 3. Detailed Data
-    private List<PlateReviewDto> recentReviews;
-    private List<PlateReportTypeDto> recentReportTypes;
+    // 5. Recent Reviews with User Info and Tags
+    private List<PlateDetailReviewDto> recentReviews;
+
+    // 6. Whether the current user follows this plate
+    private Boolean following;
 }

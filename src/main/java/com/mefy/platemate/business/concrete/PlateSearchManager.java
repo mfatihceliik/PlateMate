@@ -5,8 +5,6 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
 import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
-import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -16,19 +14,26 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateFollowDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReport;
+import com.mefy.platemate.entities.concrete.PlateReportType;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
+import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.PlateSearchEvent;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.PlateDetailDto;
-import com.mefy.platemate.entities.dto.PlateReportTypeDto;
-import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.PlateDetailReviewDto;
+import com.mefy.platemate.entities.dto.PlateTagSummaryDto;
+import com.mefy.platemate.entities.dto.RatingDistributionDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,8 +41,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,8 +58,8 @@ public class PlateSearchManager implements IPlateSearchService {
     private final IPlateSearchEventDao plateSearchEventDao;
     private final ICityDao cityDao;
     private final IPlateReportDao plateReportDao;
-    private final PlateReportTypeMapper plateReportTypeMapper;
-    private final PlateReviewMapper plateReviewMapper;
+    private final IPlateFollowDao plateFollowDao;
+    private final IPlateReportTypeTranslationDao translationDao;
     private final IPlateValidator plateValidator;
     private final TrPlateCityResolver plateCityResolver;
     private final IMessageService messageService;
@@ -68,7 +78,7 @@ public class PlateSearchManager implements IPlateSearchService {
         }
 
         recordSearchEvent(plate, currentUserId);
-        PlateDetailDto dto = buildPlateDetailDto(plate, normalizedPlate);
+        PlateDetailDto dto = buildPlateDetailDto(plate, normalizedPlate, currentUserId);
 
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PLATE_FOUND));
     }
@@ -134,9 +144,11 @@ public class PlateSearchManager implements IPlateSearchService {
         plateSearchEventDao.save(event);
     }
 
-    private PlateDetailDto buildPlateDetailDto(Plate plate, String normalizedPlate) {
+    private PlateDetailDto buildPlateDetailDto(Plate plate, String normalizedPlate, Long currentUserId) {
         PlateDetailDto dto = new PlateDetailDto();
         dto.setId(plate.getId());
+        dto.setFollowing(currentUserId != null && plate.getId() != null
+                && plateFollowDao.existsByUserIdAndPlateId(currentUserId, plate.getId()));
         dto.setPlateCode(plate.getPlateCode());
         dto.setCityName(
                 plate.getCity() != null
@@ -147,22 +159,104 @@ public class PlateSearchManager implements IPlateSearchService {
         dto.setReviewCount(plate.getReviewCount() == null ? 0 : plate.getReviewCount());
         dto.setTotalRatingSum(plate.getTotalRatingSum() == null ? 0L : plate.getTotalRatingSum());
 
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
-        List<PlateReviewDto> reviews = plateReviewDao
-                .findByPlatePlateCodeAndStatusId(normalizedPlate, PlateReviewStatus.APPROVED.getId(), pageable)
-                .map(plateReviewMapper::entityToDto)
-                .getContent();
-        dto.setRecentReviews(reviews);
+        Long approvedStatusId = PlateReviewStatus.APPROVED.getId();
 
-        List<PlateReport> reports = plateReportDao
-                .findByPlateIdInAndActiveTrue(java.util.List.of(plate.getId()));
-        List<PlateReportTypeDto> reportTypes = reports.stream()
-                .map(r -> plateReportTypeMapper.entityToDto(r.getReportType()))
-                .distinct()
-                .toList();
-        dto.setRecentReportTypes(reportTypes);
+        dto.setRatingDistribution(buildRatingDistribution(plate.getId(), approvedStatusId, dto.getReviewCount()));
+
+        List<PlateReport> allReports = plateReportDao.findByPlateIdWithReportType(plate.getId(), approvedStatusId);
+        Map<Long, PlateReportTypeTranslation> translationMap = loadTranslations();
+        dto.setTagSummary(buildTagSummary(allReports, translationMap));
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+        List<PlateReview> reviews = plateReviewDao
+                .findRecentByPlateCodeWithUserProfile(normalizedPlate, approvedStatusId, pageable);
+
+        Map<Long, List<String>> userTagMap = buildUserTagMap(allReports, translationMap);
+        dto.setRecentReviews(reviews.stream()
+                .map(r -> toDetailReviewDto(r, userTagMap))
+                .toList());
 
         populateTotalMetrics(plate, dto);
+        return dto;
+    }
+
+    private List<RatingDistributionDto> buildRatingDistribution(Long plateId, Long statusId, int totalReviewCount) {
+        List<Object[]> rows = plateReviewDao.getRatingDistribution(plateId, statusId);
+        Map<Integer, Long> countByRating = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            countByRating.put(((Number) row[0]).intValue(), ((Number) row[1]).longValue());
+        }
+
+        List<RatingDistributionDto> result = new ArrayList<>();
+        for (int star = 5; star >= 1; star--) {
+            long count = countByRating.getOrDefault(star, 0L);
+            double pct = totalReviewCount > 0 ? (count * 100.0 / totalReviewCount) : 0.0;
+            result.add(new RatingDistributionDto(star, count, Math.round(pct * 10.0) / 10.0));
+        }
+        return result;
+    }
+
+    private List<PlateTagSummaryDto> buildTagSummary(List<PlateReport> reports, Map<Long, PlateReportTypeTranslation> translationMap) {
+        Map<Long, PlateReportType> typeById = new LinkedHashMap<>();
+        Map<Long, Long> countByTypeId = new LinkedHashMap<>();
+
+        for (PlateReport report : reports) {
+            PlateReportType type = report.getReportType();
+            typeById.putIfAbsent(type.getId(), type);
+            countByTypeId.merge(type.getId(), 1L, Long::sum);
+        }
+
+        return countByTypeId.entrySet().stream()
+                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+                .map(entry -> {
+                    PlateReportType type = typeById.get(entry.getKey());
+                    return new PlateTagSummaryDto(
+                            type.getCode(),
+                            resolveLabel(type, translationMap),
+                            type.getIconKey(),
+                            type.getColorHex(),
+                            entry.getValue()
+                    );
+                })
+                .toList();
+    }
+
+    private Map<Long, List<String>> buildUserTagMap(List<PlateReport> reports, Map<Long, PlateReportTypeTranslation> translationMap) {
+        return reports.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getUser().getId(),
+                        Collectors.mapping(r -> resolveLabel(r.getReportType(), translationMap), Collectors.toList())
+                ));
+    }
+
+    private String resolveLabel(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
+        PlateReportTypeTranslation translation = translationMap.get(type.getId());
+        return translation != null ? translation.getLabel() : type.getLabel();
+    }
+
+    private Map<Long, PlateReportTypeTranslation> loadTranslations() {
+        String locale = LocaleContextHolder.getLocale().getLanguage();
+        return translationDao.findByLocale(locale).stream()
+                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t));
+    }
+
+    private PlateDetailReviewDto toDetailReviewDto(PlateReview review, Map<Long, List<String>> userTagMap) {
+        PlateDetailReviewDto dto = new PlateDetailReviewDto();
+        dto.setId(review.getId());
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
+        dto.setCreatedAt(review.getCreatedAt());
+
+        if (review.getUser() != null) {
+            dto.setUserId(review.getUser().getId());
+            dto.setUsername(review.getUser().getUsername());
+            if (review.getUser().getProfile() != null) {
+                dto.setDisplayName(review.getUser().getProfile().getDisplayName());
+                dto.setProfilePhotoUrl(review.getUser().getProfile().getProfilePhotoUrl());
+            }
+            dto.setReportTags(userTagMap.getOrDefault(review.getUser().getId(), Collections.emptyList()));
+        }
+
         return dto;
     }
 

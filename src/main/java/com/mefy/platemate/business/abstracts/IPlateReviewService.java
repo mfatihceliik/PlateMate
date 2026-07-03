@@ -5,12 +5,13 @@ import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.ReviewResponseDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 
 public interface IPlateReviewService {
     DataResult<PagedData<PlateReviewDto>> getReviewsByPlateCode(String plateCode, PaginationRequest paginationRequest);
-    Result addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request);
+    DataResult<ReviewResponseDto> addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request);
     Result updateReview(Long reviewId, Long currentUserId, UpdatePlateReviewRequest request);
     Result deleteReview(Long reviewId, Long currentUserId);
 }

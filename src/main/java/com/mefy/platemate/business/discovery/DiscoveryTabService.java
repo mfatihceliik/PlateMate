@@ -42,7 +42,7 @@ public class DiscoveryTabService {
     private final PlateReportTypeMapper plateReportTypeMapper;
 
     public DiscoveryTabsDto buildTabs(int limit) {
-        List<ScoredDiscoveryPlate> trendScored = buildTrendTabScored(limit, timeWindowService.todayWindow());
+        List<ScoredDiscoveryPlate> trendScored = buildTrendTabScored(limit, timeWindowService.lastDaysWindow(7));
         List<ScoredDiscoveryPlate> attentionScored = buildDangerousTabScored(limit, timeWindowService.lastDaysWindow(7));
         List<ScoredDiscoveryPlate> goodDriverScored = buildGoodDriverTabScored(limit, timeWindowService.lastDaysWindow(30));
         List<ScoredDiscoveryPlate> newScored = buildNewTabScored(limit);
@@ -90,8 +90,8 @@ public class DiscoveryTabService {
         return map;
     }
 
-    private List<ScoredDiscoveryPlate> buildTrendTabScored(int limit, TimeWindow todayWindow) {
-        Map<Long, PlateDailyMetrics> metricsByPlateId = discoveryAggregationService.buildDailyMetrics(todayWindow);
+    private List<ScoredDiscoveryPlate> buildTrendTabScored(int limit, TimeWindow window) {
+        Map<Long, PlateDailyMetrics> metricsByPlateId = discoveryAggregationService.buildDailyMetrics(window);
         if (metricsByPlateId.isEmpty()) {
             return List.of();
         }

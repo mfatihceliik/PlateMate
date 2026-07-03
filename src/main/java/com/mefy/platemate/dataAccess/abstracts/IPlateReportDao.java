@@ -22,7 +22,32 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
 
     List<PlateReport> findByPlateIdAndUserIdAndActiveTrue(Long plateId, Long userId);
 
+    @Query("""
+            SELECT r FROM PlateReport r JOIN FETCH r.reportType
+            WHERE r.user.id = :userId AND r.plate.id IN :plateIds AND r.active = true
+              AND EXISTS (SELECT 1 FROM PlateReview rv
+                          WHERE rv.plate.id = r.plate.id
+                            AND rv.user.id = r.user.id
+                            AND rv.statusId = :approvedStatusId)
+            """)
+    List<PlateReport> findByUserIdAndPlateIdInAndActiveTrue(
+            @Param("userId") Long userId,
+            @Param("plateIds") Collection<Long> plateIds,
+            @Param("approvedStatusId") Long approvedStatusId);
+
     List<PlateReport> findByPlateIdInAndActiveTrue(java.util.Collection<Long> plateIds);
+
+    @Query("""
+            SELECT r FROM PlateReport r JOIN FETCH r.reportType
+            WHERE r.plate.id = :plateId AND r.active = true
+              AND EXISTS (SELECT 1 FROM PlateReview rv
+                          WHERE rv.plate.id = r.plate.id
+                            AND rv.user.id = r.user.id
+                            AND rv.statusId = :approvedStatusId)
+            """)
+    List<PlateReport> findByPlateIdWithReportType(
+            @Param("plateId") Long plateId,
+            @Param("approvedStatusId") Long approvedStatusId);
 
     long countByActiveTrueAndLastReportedAtGreaterThanEqualAndLastReportedAtLessThan(LocalDateTime start, LocalDateTime end);
 

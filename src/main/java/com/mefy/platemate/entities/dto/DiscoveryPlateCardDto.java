@@ -15,7 +15,7 @@ public class DiscoveryPlateCardDto implements IDto {
     private String cityName;
     private Double ratingAverage;
     private Integer reviewCount;
-    private Long todaySearchCount;
+    private Long weeklySearchCount;
     private Long todayReviewCount;
     private Long todayReportCount;
     private Long todayWeightedReportScore;

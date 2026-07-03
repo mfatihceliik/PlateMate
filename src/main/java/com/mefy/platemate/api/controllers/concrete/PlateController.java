@@ -10,6 +10,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.PlateDetailDto;
 import com.mefy.platemate.entities.dto.PlateReviewDto;
+import com.mefy.platemate.entities.dto.ReviewResponseDto;
 import com.mefy.platemate.entities.dto.request.AddPlateReviewRequest;
 import com.mefy.platemate.entities.dto.request.SyncPlateReportsRequest;
 import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
@@ -54,12 +55,12 @@ public class PlateController implements IPlateController {
     }
 
     @Override
-    public ResponseEntity<Result> addReview(
+    public ResponseEntity<DataResult<ReviewResponseDto>> addReview(
             @PathVariable String plateCode,
             @RequestAttribute("userId") Long currentUserId,
             @Valid @RequestBody AddPlateReviewRequest request
     ) {
-        Result result = plateReviewService.addReview(plateCode, currentUserId, request);
+        DataResult<ReviewResponseDto> result = plateReviewService.addReview(plateCode, currentUserId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

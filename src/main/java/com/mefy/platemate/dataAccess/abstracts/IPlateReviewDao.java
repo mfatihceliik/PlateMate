@@ -26,9 +26,28 @@ public interface IPlateReviewDao extends JpaRepository<PlateReview, Long> {
         return findByPlatePlateCodeAndStatusId(plateCode, status == null ? null : status.getId(), pageable);
     }
 
+    @Query("""
+            select r.rating as rating, count(r) as cnt
+            from PlateReview r
+            where r.plate.id = :plateId
+              and r.statusId = :statusId
+            group by r.rating
+            order by r.rating desc
+            """)
+    List<Object[]> getRatingDistribution(@Param("plateId") Long plateId, @Param("statusId") Long statusId);
+
+    @Query("SELECT r FROM PlateReview r JOIN FETCH r.user u LEFT JOIN FETCH u.profile WHERE r.plate.plateCode = :plateCode AND r.statusId = :statusId ORDER BY r.createdAt DESC")
+    List<PlateReview> findRecentByPlateCodeWithUserProfile(@Param("plateCode") String plateCode, @Param("statusId") Long statusId, Pageable pageable);
+
     Page<PlateReview> findByUserId(Long userId, Pageable pageable);
 
     Page<PlateReview> findByUserIdAndStatusId(Long userId, Long statusId, Pageable pageable);
+
+    @Query("SELECT r FROM PlateReview r JOIN FETCH r.plate p LEFT JOIN FETCH p.city JOIN FETCH r.user WHERE r.user.id = :userId ORDER BY r.createdAt DESC")
+    List<PlateReview> findRecentByUserIdWithPlateAndCity(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT r FROM PlateReview r JOIN FETCH r.plate p LEFT JOIN FETCH p.city JOIN FETCH r.user WHERE r.user.id = :userId AND r.statusId = :statusId ORDER BY r.createdAt DESC")
+    List<PlateReview> findRecentByUserIdAndStatusIdWithPlateAndCity(@Param("userId") Long userId, @Param("statusId") Long statusId, Pageable pageable);
 
     default Page<PlateReview> findByUserIdAndStatus(Long userId, PlateReviewStatus status, Pageable pageable) {
         return findByUserIdAndStatusId(userId, status == null ? null : status.getId(), pageable);
