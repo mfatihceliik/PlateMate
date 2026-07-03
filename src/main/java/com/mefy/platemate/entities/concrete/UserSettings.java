@@ -21,6 +21,10 @@ public class UserSettings implements IEntity {
     private User user;
 
     private boolean messagingEnabled = true;      // Enable/disable messaging
+    private boolean onlineVisibilityEnabled = true;  // Show online status to others (reciprocal)
     private boolean messageNotificationsEnabled = true;    // Message notifications
     private boolean friendNotificationsEnabled = true;      // Friendship notifications
+    private boolean plateReviewNotificationsEnabled = true;  // Followed plate review notifications
+    private boolean newFollowerNotificationsEnabled = true;   // New follower notifications
+    private boolean reviewReplyNotificationsEnabled = true;   // Review reply notifications
 }

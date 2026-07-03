@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateSettingsRequest implements IDto {
     private Boolean messagingEnabled;
+    private Boolean onlineVisibilityEnabled;
     private Boolean messageNotificationsEnabled;
     private Boolean friendNotificationsEnabled;
+    private Boolean plateReviewNotificationsEnabled;
+    private Boolean newFollowerNotificationsEnabled;
+    private Boolean reviewReplyNotificationsEnabled;
 }

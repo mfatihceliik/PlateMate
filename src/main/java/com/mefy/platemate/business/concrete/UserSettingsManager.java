@@ -63,7 +63,9 @@ public class UserSettingsManager implements IUserSettingsService {
                 : profile.getSocialMediaLinks().stream().map(socialMediaLinkMapper::entityToDto).toList();
 
         UserSettingsOverviewDto overviewDto = new UserSettingsOverviewDto(
+                user.getUsername(),
                 user.getEmail(),
+                user.getCreatedAt(),
                 user.isPremiumActive(),
                 resolvePremiumUntil(user.getId()),
                 userSettingsMapper.entityToDto(settings),
@@ -80,11 +82,23 @@ public class UserSettingsManager implements IUserSettingsService {
         if (request.getMessagingEnabled() != null) {
             settings.setMessagingEnabled(request.getMessagingEnabled());
         }
+        if (request.getOnlineVisibilityEnabled() != null) {
+            settings.setOnlineVisibilityEnabled(request.getOnlineVisibilityEnabled());
+        }
         if (request.getMessageNotificationsEnabled() != null) {
             settings.setMessageNotificationsEnabled(request.getMessageNotificationsEnabled());
         }
         if (request.getFriendNotificationsEnabled() != null) {
             settings.setFriendNotificationsEnabled(request.getFriendNotificationsEnabled());
+        }
+        if (request.getPlateReviewNotificationsEnabled() != null) {
+            settings.setPlateReviewNotificationsEnabled(request.getPlateReviewNotificationsEnabled());
+        }
+        if (request.getNewFollowerNotificationsEnabled() != null) {
+            settings.setNewFollowerNotificationsEnabled(request.getNewFollowerNotificationsEnabled());
+        }
+        if (request.getReviewReplyNotificationsEnabled() != null) {
+            settings.setReviewReplyNotificationsEnabled(request.getReviewReplyNotificationsEnabled());
         }
 
         userSettingsDao.save(settings);
@@ -97,6 +111,7 @@ public class UserSettingsManager implements IUserSettingsService {
         UserSettings settings = new UserSettings();
         settings.setUser(user);
         settings.setMessagingEnabled(true);
+        settings.setOnlineVisibilityEnabled(true);
         settings.setMessageNotificationsEnabled(true);
         settings.setFriendNotificationsEnabled(true);
         return userSettingsDao.save(settings);

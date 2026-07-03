@@ -11,8 +11,12 @@ public class UserSettingsMapper implements ModelMapperService<UserSettings, User
         if (entity == null) return null;
         UserSettingsDto dto = new UserSettingsDto();
         dto.setMessagingEnabled(entity.isMessagingEnabled());
+        dto.setOnlineVisibilityEnabled(entity.isOnlineVisibilityEnabled());
         dto.setMessageNotificationsEnabled(entity.isMessageNotificationsEnabled());
         dto.setFriendNotificationsEnabled(entity.isFriendNotificationsEnabled());
+        dto.setPlateReviewNotificationsEnabled(entity.isPlateReviewNotificationsEnabled());
+        dto.setNewFollowerNotificationsEnabled(entity.isNewFollowerNotificationsEnabled());
+        dto.setReviewReplyNotificationsEnabled(entity.isReviewReplyNotificationsEnabled());
         return dto;
     }
 

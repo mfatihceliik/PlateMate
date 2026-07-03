@@ -10,7 +10,6 @@ import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserSettingsDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserSubscriptionDao;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
-import com.mefy.platemate.entities.concrete.SocialPlatform;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRole;
@@ -79,7 +78,7 @@ class UserSettingsManagerTest {
         settings.setFriendNotificationsEnabled(true);
 
         SocialMediaLink link = new SocialMediaLink();
-        link.setPlatform(SocialPlatform.INSTAGRAM);
+        link.setPlatformId(1L);
         link.setUrl("https://instagram.com/fatih");
 
         UserProfile profile = new UserProfile();
@@ -106,7 +105,7 @@ class UserSettingsManagerTest {
         assertTrue(result.getData().getUserSettings().isMessagingEnabled());
         assertFalse(result.getData().getUserSettings().isMessageNotificationsEnabled());
         assertEquals(1, result.getData().getSocialMediaLinks().size());
-        assertEquals(SocialPlatform.INSTAGRAM, result.getData().getSocialMediaLinks().get(0).getPlatform());
+        assertEquals(1L, result.getData().getSocialMediaLinks().get(0).getPlatformId());
     }
 
     @Test
