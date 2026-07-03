@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.abstracts.ICommentReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
@@ -16,6 +17,7 @@ import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
+import com.mefy.platemate.entities.concrete.AppSettingKey;
 import com.mefy.platemate.entities.concrete.CommentReport;
 import com.mefy.platemate.entities.concrete.CommentReportReason;
 import com.mefy.platemate.entities.concrete.CommentReportStatus;
@@ -28,7 +30,6 @@ import com.mefy.platemate.entities.dto.request.AddCommentReportRequest;
 import com.mefy.platemate.entities.dto.request.ReviewCommentReportRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -43,10 +44,8 @@ public class CommentReportManager implements ICommentReportService {
     private final IPlateDao plateDao;
     private final IUserDao userDao;
     private final PlateReviewModerationEventService moderationEventService;
+    private final IAppSettingsService appSettingsService;
     private final com.mefy.platemate.core.utilities.messages.IMessageService messageService;
-
-    @Value("${moderation.comment-report-threshold:3}")
-    private int commentReportThreshold = 3;
 
     @Override
     @Transactional
@@ -139,6 +138,7 @@ public class CommentReportManager implements ICommentReportService {
     private void handleReportThresholdAndSave(PlateReview comment, Long reporterUserId) {
         int currentCount = comment.getReportCount() == null ? 0 : comment.getReportCount();
         comment.setReportCount(currentCount + 1);
+        int commentReportThreshold = appSettingsService.getInt(AppSettingKey.COMMENT_REPORT_THRESHOLD);
         if (comment.getReportCount() >= commentReportThreshold
                 && PlateReviewStatus.APPROVED.getId().equals(comment.getStatusId())) {
             PlateReviewStatus previousStatus = comment.getStatus();
