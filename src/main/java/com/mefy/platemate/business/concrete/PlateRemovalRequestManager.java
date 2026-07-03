@@ -21,6 +21,7 @@ import com.mefy.platemate.entities.concrete.PlateRemovalRequest;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequestReason;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequestStatus;
 import com.mefy.platemate.entities.concrete.PlateStatus;
+import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.PlateRemovalRequestDto;
 import com.mefy.platemate.entities.dto.request.AddPlateRemovalRequestRequest;
 import com.mefy.platemate.entities.dto.request.ReviewPlateRemovalRequestRequest;
@@ -68,11 +69,17 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             return new ErrorDataResult<>(validationResult.getMessage());
         }
 
+        User requester = userDao.findByIdAndActiveTrue(requesterUserId).orElse(null);
+
         LocalDateTime now = LocalDateTime.now();
         PlateRemovalRequest removalRequest = new PlateRemovalRequest();
         removalRequest.setPlate(plate);
         removalRequest.setRequesterUserId(requesterUserId);
-        removalRequest.setRequesterEmail(request.getRequesterEmail() == null ? null : request.getRequesterEmail().trim());
+        removalRequest.setRequesterUsername(requester == null ? null : requester.getUsername());
+        String requesterEmail = (request.getRequesterEmail() == null || request.getRequesterEmail().isBlank())
+                ? (requester == null ? null : requester.getEmail())
+                : request.getRequesterEmail().trim();
+        removalRequest.setRequesterEmail(requesterEmail);
         removalRequest.setReason(reason);
         removalRequest.setDescription(request.getDescription().trim());
         removalRequest.setStatus(PlateRemovalRequestStatus.OPEN);
@@ -181,6 +188,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
                 plateCode,
                 request.getRequesterUserId(),
                 request.getRequesterEmail(),
+                request.getRequesterUsername(),
                 request.getReasonId(),
                 request.getReasonCode(),
                 request.getDescription(),

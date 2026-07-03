@@ -16,6 +16,7 @@ public class PlateRemovalRequestDto implements IDto {
     private String plateCode;
     private Long requesterUserId;
     private String requesterEmail;
+    private String requesterUsername;
     private Long reasonId;
     private String reasonCode;
     private String description;

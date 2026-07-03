@@ -47,6 +47,9 @@ public class PlateRemovalRequest implements IEntity {
     @Column(name = "requester_email", length = 255)
     private String requesterEmail;
 
+    @Column(name = "requester_username", length = 255)
+    private String requesterUsername;
+
     @Column(name = "reason_id", nullable = false)
     private Long reasonId;
 
