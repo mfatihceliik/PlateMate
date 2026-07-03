@@ -26,10 +26,11 @@ Documents REST controller architecture, conventions, and access rules. For endpo
 
 | Controller | Base route | Service | Notes |
 | --- | --- | --- | --- |
-| `AuthController` | `/api/auth` | `IAuthService` | Public auth. |
+| `AuthController` | `/api/auth` | `IAuthService` | Public auth + JWT-protected change-password. |
 | `UserController` | `/api/users` | `IUserService`, `IAdminAccessService` | Admin reads; self/admin delete; self update. |
-| `UserProfileController` | `/api/profiles` | `IUserProfileService` | Requester id for visibility. |
+| `UserProfileController` | `/api/profiles` | `IUserProfileService` | Requester id for visibility; self-only update. |
 | `UserSettingsController` | `/api/settings` | `IUserSettingsService` | Self-only. |
+| `FollowController` | `/api/follows` | `IFollowService` | Follow/unfollow. |
 | `FriendshipController` | `/api/friendships` | `IFriendshipService` | Request lifecycle. |
 | `PlateController` | `/api/plates` | `IPlateSearchService`, `IPlateReviewService`, `IPlateReportService` | Search, reviews, reports. |
 | `PlateRemovalRequestController` | `/api/plates` | `IPlateRemovalRequestService` | Removal requests. |

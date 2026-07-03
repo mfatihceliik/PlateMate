@@ -63,8 +63,6 @@ Pagination rules:
 ## 3) Request Models (Android)
 
 ```kotlin
-enum class SocialPlatform { INSTAGRAM, X, SNAPCHAT, LINKEDIN, FACEBOOK }
-
 data class RegisterRequest(
     val username: String, // min 3, max 30, not blank
     val password: String, // min 6, not blank
@@ -135,14 +133,38 @@ data class UpdatePlateReportTypeActiveRequest(
 )
 
 data class AddSocialLinkRequest(
-    val platform: SocialPlatform,
+    val platformId: Long?, // either platformId or platformCode required; id wins if both given
+    val platformCode: String?,
     val url: String // not blank
 )
 
 data class UpdateSocialLinkRequest(
     val id: Long,
-    val platform: SocialPlatform,
+    val platformId: Long?,
+    val platformCode: String?,
     val url: String // not blank
+)
+
+data class AddSocialPlatformRequest( // admin only
+    val code: String, // not blank
+    val label: String, // not blank
+    val iconUrl: String?,
+    val backgroundColorHex: String?, // "#RRGGBB" or "#AARRGGBB" if present
+    val iconTintColorHex: String?,
+    val sortOrder: Int // min 1
+)
+
+data class UpdateSocialPlatformRequest( // admin only, same shape as Add
+    val code: String,
+    val label: String,
+    val iconUrl: String?,
+    val backgroundColorHex: String?,
+    val iconTintColorHex: String?,
+    val sortOrder: Int
+)
+
+data class UpdateSocialPlatformActiveRequest( // admin only
+    val active: Boolean
 )
 
 data class SendMessageRequest(
@@ -178,8 +200,32 @@ data class UserDto(
 
 data class SocialMediaLinkDto(
     val id: Long,
-    val platform: SocialPlatform,
+    val platformId: Long?,
+    val platformCode: String?,
     val url: String
+)
+
+data class SocialPlatformDto( // GET /api/social-platforms, active only
+    val id: Long,
+    val code: String,
+    val label: String,
+    val iconUrl: String?,
+    val backgroundColorHex: String?,
+    val iconTintColorHex: String?,
+    val sortOrder: Int
+)
+
+data class SocialPlatformAdminDto( // GET/POST/PUT /api/admin/social-platforms
+    val id: Long,
+    val code: String,
+    val label: String,
+    val iconUrl: String?,
+    val backgroundColorHex: String?,
+    val iconTintColorHex: String?,
+    val sortOrder: Int,
+    val active: Boolean,
+    val createdAt: IsoDateTime,
+    val updatedAt: IsoDateTime
 )
 
 data class PlateDetailDto(
@@ -450,6 +496,11 @@ data class CityDto(
 | Social Links | POST | `/api/social-links` | Yes | Body: `AddSocialLinkRequest` | HTTP `201`, `ApiResult` |
 | Social Links | PUT | `/api/social-links` | Yes | Body: `UpdateSocialLinkRequest` | HTTP `200`, `ApiResult` |
 | Social Links | DELETE | `/api/social-links/{id}` | Yes | Path: `id: Long` | HTTP `200`, `ApiResult` |
+| Social Platforms | GET | `/api/social-platforms` | Yes | - | HTTP `200`, `ApiDataResult<List<SocialPlatformDto>>` |
+| Admin Social Platforms | GET | `/api/admin/social-platforms` | Yes | - | HTTP `200`, `ApiDataResult<List<SocialPlatformAdminDto>>` |
+| Admin Social Platforms | POST | `/api/admin/social-platforms` | Yes | Body: `AddSocialPlatformRequest` | HTTP `201`, `ApiDataResult<SocialPlatformAdminDto>` |
+| Admin Social Platforms | PUT | `/api/admin/social-platforms/{id}` | Yes | Path: `id: Long`, Body: `UpdateSocialPlatformRequest` | HTTP `200`, `ApiDataResult<SocialPlatformAdminDto>` |
+| Admin Social Platforms | PATCH | `/api/admin/social-platforms/{id}/active` | Yes | Path: `id: Long`, Body: `UpdateSocialPlatformActiveRequest` | HTTP `200`, `ApiResult` |
 | Friendships | POST | `/api/friendships/request/{addresseeId}` | Yes | Path: `addresseeId: Long` | HTTP `201`, `ApiResult` |
 | Friendships | PUT | `/api/friendships/{id}/accept` | Yes | Path: `id: Long` | HTTP `200`, `ApiResult` |
 | Friendships | PUT | `/api/friendships/{id}/reject` | Yes | Path: `id: Long` | HTTP `200`, `ApiResult` |
@@ -619,6 +670,21 @@ interface PlateMateApi {
 
     @DELETE("api/social-links/{id}")
     suspend fun deleteSocialLink(@Path("id") id: Long): Response<ApiResult>
+
+    @GET("api/social-platforms")
+    suspend fun getSocialPlatforms(): Response<ApiDataResult<List<SocialPlatformDto>>>
+
+    @GET("api/admin/social-platforms")
+    suspend fun getAdminSocialPlatforms(): Response<ApiDataResult<List<SocialPlatformAdminDto>>>
+
+    @POST("api/admin/social-platforms")
+    suspend fun addSocialPlatform(@Body body: AddSocialPlatformRequest): Response<ApiDataResult<SocialPlatformAdminDto>>
+
+    @PUT("api/admin/social-platforms/{id}")
+    suspend fun updateSocialPlatform(@Path("id") id: Long, @Body body: UpdateSocialPlatformRequest): Response<ApiDataResult<SocialPlatformAdminDto>>
+
+    @PATCH("api/admin/social-platforms/{id}/active")
+    suspend fun setSocialPlatformActive(@Path("id") id: Long, @Body body: UpdateSocialPlatformActiveRequest): Response<ApiResult>
 
     @POST("api/friendships/request/{addresseeId}")
     suspend fun sendFriendRequest(@Path("addresseeId") addresseeId: Long): Response<ApiResult>

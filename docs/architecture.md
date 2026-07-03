@@ -34,22 +34,22 @@ Base package: `com.mefy.platemate`
 
 | Package | File Count | Notes |
 | --- | --- | --- |
-| `api/controllers/concrete` | 20 | 19 business endpoints + 1 `SwaggerRedirectController`. Interface pattern fully implemented (V15 resolved). |
-| `api/controllers/abstracts` | 19 | Interfaces for all business controllers. |
+| `api/controllers/concrete` | 21 | 20 business endpoints + 1 `SwaggerRedirectController`. Interface pattern fully implemented (V15 resolved). |
+| `api/controllers/abstracts` | 20 | Interfaces for all business controllers. |
 | `api/socket` | 6 | Includes `SocketModule`, abstracts, and concrete socket handlers. |
-| `business/concrete` | 25 | Manager implementations. Formerly monolithic `PlateManager` (15 deps) was decomposed into `PlateSearchManager`, `PlateReviewManager`, and `PlateModerationManager` (V13 resolved). |
-| `business/abstracts` | 26 | Service interfaces. |
+| `business/concrete` | 26 | Manager implementations. Formerly monolithic `PlateManager` (15 deps) was decomposed into `PlateSearchManager`, `PlateReviewManager`, and `PlateModerationManager` (V13 resolved). |
+| `business/abstracts` | 27 | Service interfaces. |
 | `business/utilities` | 11 | Validators, moderation, rules, time, constants. |
-| `dataAccess/abstracts` | 21 | Spring Data JPA Repositories. |
-| `entities/concrete` | 46 | JPA entities and lookup enum constants. |
-| `entities/dto` | 55 | 33 Response DTOs, 22 Request DTOs. |
+| `dataAccess/abstracts` | 22 | Spring Data JPA Repositories. |
+| `entities/concrete` | 47 | JPA entities and lookup enum constants. |
+| `entities/dto` | 61 | 37 Response DTOs, 24 Request DTOs. |
 | `core/utilities` | 23 | Mappers (11), Results (6), Pagination (4), Messages (2). |
 | `config` (security/jwt) | 10 | `SecurityConfig`, JWT (2), MVC, Firebase, Socket, Seeds. |
 
 ## Request Flow
 
 1. HTTP → Spring MVC controller
-2. `JwtAuthenticationInterceptor` validates bearer token for `/api/**` (except `/api/auth/**`, `/api/cities/**`, `/ws/**`)
+2. `JwtAuthenticationInterceptor` validates bearer token for `/api/**` (except `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`, `/api/cities/**`, `/ws/**`)
 3. Controller reads `@RequestAttribute("userId")`
 4. Controller delegates to service interface
 5. Manager validates, persists, maps, returns `Result`/`DataResult<T>`

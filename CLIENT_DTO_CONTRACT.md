@@ -105,12 +105,34 @@ export interface UserDto {
 ### Profile / Social
 
 ```ts
-export type SocialPlatform = "INSTAGRAM" | "X" | "SNAPCHAT" | "LINKEDIN" | "FACEBOOK"
-
 export interface SocialMediaLinkDto {
   id: number
-  platform: SocialPlatform
+  platformId: number | null
+  platformCode: string | null
   url: string
+}
+
+export interface SocialPlatformDto { // GET /api/social-platforms, active only
+  id: number
+  code: string
+  label: string
+  iconUrl: string | null
+  backgroundColorHex: string | null
+  iconTintColorHex: string | null
+  sortOrder: number
+}
+
+export interface SocialPlatformAdminDto { // GET/POST/PUT /api/admin/social-platforms
+  id: number
+  code: string
+  label: string
+  iconUrl: string | null
+  backgroundColorHex: string | null
+  iconTintColorHex: string | null
+  sortOrder: number
+  active: boolean
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
 }
 
 export interface UserProfileDto {
@@ -423,14 +445,31 @@ export interface UpdatePlateReportTypeActiveRequest {
 }
 
 export interface AddSocialLinkRequest {
-  platform: SocialPlatform
+  platformId: number | null // either platformId or platformCode required; id wins if both given
+  platformCode: string | null
   url: string
 }
 
 export interface UpdateSocialLinkRequest {
   id: number
-  platform: SocialPlatform
+  platformId: number | null
+  platformCode: string | null
   url: string
+}
+
+export interface AddSocialPlatformRequest { // admin only
+  code: string
+  label: string
+  iconUrl: string | null
+  backgroundColorHex: string | null // "#RRGGBB" or "#AARRGGBB" if present
+  iconTintColorHex: string | null
+  sortOrder: number
+}
+
+export interface UpdateSocialPlatformRequest extends AddSocialPlatformRequest {} // admin only
+
+export interface UpdateSocialPlatformActiveRequest { // admin only
+  active: boolean
 }
 
 export interface SendMessageRequest {

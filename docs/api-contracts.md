@@ -31,14 +31,15 @@ Canonical endpoint reference: routes, request/response DTOs, status codes, and a
 | `401 Unauthorized` | Login/refresh failure, missing/invalid JWT |
 | `403 Forbidden` | Admin access failure, self-only access failure |
 
-## Auth Endpoints (Public)
+## Auth Endpoints
 
-| Method/path | Request | Response | Notes |
-| --- | --- | --- | --- |
-| `POST /api/auth/register` | `RegisterRequest` | `DataResult<UserDto>` | 201 |
-| `POST /api/auth/login` | `LoginRequest` | `DataResult<UserDto>` | Invalid → 401 |
-| `POST /api/auth/refresh` | `RefreshTokenRequest` | `DataResult<UserDto>` | Failure → 401 with error code |
-| `POST /api/auth/logout` | `RefreshTokenRequest` | `Result` | Revokes refresh token |
+| Method/path | Request | Response | Auth | Notes |
+| --- | --- | --- | --- | --- |
+| `POST /api/auth/register` | `RegisterRequest` | `DataResult<UserDto>` | Public | 201 |
+| `POST /api/auth/login` | `LoginRequest` | `DataResult<UserDto>` | Public | Invalid → 401 |
+| `POST /api/auth/refresh` | `RefreshTokenRequest` | `DataResult<UserDto>` | Public | Failure → 401 with error code |
+| `POST /api/auth/logout` | `RefreshTokenRequest` | `Result` | Public | Revokes refresh token |
+| `PUT /api/auth/change-password` | `ChangePasswordRequest` | `Result` | JWT | Verifies current password; 400 on mismatch |
 
 ## User / Profile / Settings Endpoints
 
@@ -50,9 +51,17 @@ Canonical endpoint reference: routes, request/response DTOs, status codes, and a
 | `PUT /api/users/{userId}` | `UpdateUserRequest` | `Result` | Self-only |
 | `DELETE /api/users/{id}` | path id | `Result` | Self or admin |
 | `GET /api/profiles/{userId}` | path id | `DataResult<UserProfileDto>` | JWT |
+| `PUT /api/profiles/{userId}` | `UpdateProfileRequest` | `Result` | Self-only |
 | `GET /api/settings/{userId}` | path id | `DataResult<UserSettingsDto>` | Self-only |
 | `GET /api/settings/{userId}/overview` | path id | `DataResult<UserSettingsOverviewDto>` | Self-only |
 | `PUT /api/settings/{userId}` | `UpdateSettingsRequest` | `Result` | Self-only |
+
+## Follow Endpoints
+
+| Method/path | Request | Response | Auth |
+| --- | --- | --- | --- |
+| `POST /api/follows/{userId}` | path id | `Result` | JWT |
+| `DELETE /api/follows/{userId}` | path id | `Result` | JWT |
 
 ## Plate / Review / Report Endpoints
 
@@ -74,6 +83,7 @@ Canonical endpoint reference: routes, request/response DTOs, status codes, and a
 | `POST /api/social-links` | `AddSocialLinkRequest` | `Result` | JWT |
 | `PUT /api/social-links` | `UpdateSocialLinkRequest` | `Result` | Owner |
 | `DELETE /api/social-links/{id}` | path id | `Result` | Owner |
+| `GET /api/social-platforms` | none | `DataResult<List<SocialPlatformDto>>` | JWT |
 | `POST /api/friendships/request/{addresseeId}` | path id | `Result` | JWT |
 | `PUT /api/friendships/{id}/accept` | path id | `Result` | Addressee |
 | `PUT /api/friendships/{id}/reject` | path id | `Result` | Addressee |
@@ -118,6 +128,10 @@ Canonical endpoint reference: routes, request/response DTOs, status codes, and a
 | `POST /api/admin/plate-report-types` | `AddPlateReportTypeRequest` | `DataResult<PlateReportTypeAdminDto>` |
 | `PUT /api/admin/plate-report-types/{id}` | `UpdatePlateReportTypeRequest` | `DataResult<PlateReportTypeAdminDto>` |
 | `PATCH /api/admin/plate-report-types/{id}/active` | `UpdatePlateReportTypeActiveRequest` | `Result` |
+| `GET /api/admin/social-platforms` | token user id | `DataResult<List<SocialPlatformAdminDto>>` |
+| `POST /api/admin/social-platforms` | `AddSocialPlatformRequest` | `DataResult<SocialPlatformAdminDto>` |
+| `PUT /api/admin/social-platforms/{id}` | `UpdateSocialPlatformRequest` | `DataResult<SocialPlatformAdminDto>` |
+| `PATCH /api/admin/social-platforms/{id}/active` | `UpdateSocialPlatformActiveRequest` | `Result` |
 
 All admin endpoints require `IAdminAccessService.checkAdmin(...)`.
 

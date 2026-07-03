@@ -2,7 +2,7 @@
 type: backend-doc
 area: socket-chat
 tags: [backend, spring-boot, socketio]
-updated: 2026-05-29
+updated: 2026-06-29
 ---
 
 # Socket Chat
@@ -25,7 +25,8 @@ Documents Socket.io chat architecture, handshake auth, room-join behavior, and e
 
 1. Handshake: read `token` from query param → `JwtTokenProvider.validateToken` → reject if invalid
 2. On connect: parse `userId` from token → store in client context → join `user_{userId}` room → auto-join all chat rooms via `IParticipantService.getByUserId`
-3. On disconnect: log session
+3. After join + pending-delivery: `IPresenceService.broadcastPresence(userId, true)` notifies chat partners (respecting reciprocal visibility)
+4. On disconnect: log session; if no remaining connections, `broadcastPresence(userId, false)`
 
 ## Events
 
@@ -34,6 +35,15 @@ Documents Socket.io chat architecture, handshake auth, room-join behavior, and e
 | `join_room` | `ChatSocketHandler` | Validate membership via `IParticipantService` → join room |
 | `send_message` | `ChatSocketHandler` | Validate membership → `IChatMessageService.sendMessage` → emit `new_message` to room (or `error` on failure) |
 | `notification_received` | `NotificationManager` | Sent to `user_{userId}` room for real-time notifications |
+| `presence_online` / `presence_offline` | `PresenceManager` | On connect/disconnect, pushed to each chat partner's `user_{id}` room when reciprocal visibility allows (`{ userId, online }`) |
+
+## Delete Conversation
+
+Self-only, via `Participant.hiddenAt` (set by `leaveRoom`, cleared by `ChatMessageManager.sendMessage`/`ChatRoomManager.getOrCreateChatRoom`). No new socket event: the other participant's room/messages/membership are untouched, so they have nothing to be notified about.
+
+## Presence
+
+`PresenceManager` (`IPresenceService`) computes online status from active socket rooms (`ISocketPushService.isUserOnline`). Visibility is **reciprocal**: A sees B's status only when both have `UserSettings.onlineVisibilityEnabled = true`. Snapshot for a conversation: `GET /api/chat/rooms/{roomId}/presence` → `PresenceDto{ userId, online }`.
 
 ## Service Boundary
 

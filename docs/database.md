@@ -38,12 +38,17 @@ Documents database config, schema, migrations, indexes, constraints, and Docker 
 | V10 | Friendship status → lookup ids, active pair unique index |
 | V11 | Created lookup tables, nullable id columns for enum-like fields |
 | V12 | Lookup ids authoritative, dropped legacy columns/`premium_until`/profile aggregates |
+| V23 | `social_platforms` gained `icon_url`, `background_color_hex`, `icon_tint_color_hex`, `created_at`, `updated_at`, converted `id` to an identity column, and seed data fixed (added `GITHUB`, deactivated `SNAPCHAT`) — turns the previously-dead lookup table into the source of truth for the Android social-link platform picker |
+| V24 | Populated `icon_url` for seeded platforms (Simple Icons via jsDelivr) — V23 left it null, so the client rendered every platform with the generic fallback icon |
+| V25 | `participants` gained `hidden_at` — supports per-user "delete conversation" (self-only, auto-revives when the other participant messages again) without touching shared `chat_rooms`/`chat_messages` content |
 
 ## Lookup Tables
 
 `plate_review_statuses`, `friendship_request_statuses`, `user_subscription_statuses`, `plate_statuses`, `comment_report_reasons`, `comment_report_statuses`, `plate_removal_request_reasons`, `plate_removal_request_statuses`, `plate_report_severities`, `social_platforms`, `plate_review_moderation_action_types`, `user_role_codes`
 
-Code uses helper classes (`PlateReviewStatus`, `SocialPlatform`, `UserRoleCode`) to resolve ids/codes.
+Code uses helper classes (`PlateReviewStatus`, `UserRoleCode`) to resolve ids/codes.
+
+`social_platforms` is the exception: `id, code, label, sort_order, active` (from V11/V12) plus `icon_url, background_color_hex, icon_tint_color_hex, created_at, updated_at` (from V23). No enum helper — `SocialMediaLinkManager`/`SocialPlatformManager` resolve rows directly via `ISocialPlatformLookupDao`, and the table is admin-manageable through `/api/admin/social-platforms`.
 
 ## Important Constraints & Indexes
 

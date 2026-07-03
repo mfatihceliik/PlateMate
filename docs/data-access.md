@@ -33,6 +33,7 @@ Repositories: `dataAccess/abstracts/I*Dao` extending `JpaRepository`. Projection
 | `IPlateSearchEventDao` | `PlateSearchEvent` | search counts, timestamps | `PlateManager`, discovery |
 | `IPlateRemovalRequestDao` | `PlateRemovalRequest` | listing, status filters | `PlateRemovalRequestManager` |
 | `ICommentReportDao` | `CommentReport` | duplicate check, paged listing | `CommentReportManager` |
+| `IFollowDao` | `Follow` | follower/following counts, existence check, find by pair | `FollowManager` |
 | `IFriendshipDao` | `Friendship` | active pair count, accepted/pending lists, recent profile | `FriendshipManager`, `UserProfileManager` |
 | `ISocialMediaLinkDao` | `SocialMediaLink` | duplicate platform check, id lookup | `SocialMediaLinkManager` |
 | `IChatRoomDao` | `ChatRoom` | persistence/listing | `ChatRoomManager` |

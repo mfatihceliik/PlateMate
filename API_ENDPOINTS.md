@@ -431,10 +431,10 @@ veya
 ### Add Social Link
 - **Method**: `POST`
 - **URL**: `/api/social-links`
-- **Body**:
+- **Body** (either `platformId` or `platformCode`; `platformId` wins if both given):
 ```json
 {
-  "platform": "INSTAGRAM",
+  "platformCode": "INSTAGRAM",
   "url": "https://instagram.com/user"
 }
 ```
@@ -446,7 +446,7 @@ veya
 ```json
 {
   "id": 1,
-  "platform": "X",
+  "platformCode": "X",
   "url": "https://x.com/user"
 }
 ```
@@ -454,6 +454,52 @@ veya
 ### Delete Social Link
 - **Method**: `DELETE`
 - **URL**: `/api/social-links/{id}`
+
+---
+
+## 11) Social Platforms (`/api/social-platforms`, `/api/admin/social-platforms`)
+
+Platform catalog backing the Social Links picker — admin-manageable, no code deploy needed to add a platform. See `social_platforms` in `docs/database.md`.
+
+### List Active Platforms
+- **Method**: `GET`
+- **URL**: `/api/social-platforms`
+- **Response**: `DataResult<List<SocialPlatformDto>>`, sorted by `sortOrder`
+
+### Admin: List All Platforms (incl. inactive)
+- **Method**: `GET`
+- **URL**: `/api/admin/social-platforms`
+- **Response**: `DataResult<List<SocialPlatformAdminDto>>`
+
+### Admin: Add Platform
+- **Method**: `POST`
+- **URL**: `/api/admin/social-platforms`
+- **Body**:
+```json
+{
+  "code": "TIKTOK",
+  "label": "TikTok",
+  "iconUrl": "https://cdn.example.com/icons/tiktok.png",
+  "backgroundColorHex": "#F1F5F9",
+  "iconTintColorHex": "#0F172A",
+  "sortOrder": 6
+}
+```
+
+### Admin: Update Platform
+- **Method**: `PUT`
+- **URL**: `/api/admin/social-platforms/{id}`
+- **Body**: same shape as Add
+
+### Admin: Toggle Platform Active
+- **Method**: `PATCH`
+- **URL**: `/api/admin/social-platforms/{id}/active`
+- **Body**:
+```json
+{
+  "active": false
+}
+```
 
 ---
 

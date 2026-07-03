@@ -21,12 +21,13 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | Manager | Interface | Main responsibility | Key dependencies |
 | --- | --- | --- | --- |
 | `AdminAccessManager` | `IAdminAccessService` | Admin role check | `IUserDao` |
-| `AuthManager` | `IAuthService` | Register, login, refresh, logout | `IUserService`, `IRefreshTokenService`, `PasswordEncoder`, `JwtTokenProvider` |
+| `AuthManager` | `IAuthService` | Register, login, refresh, logout, change password | `IUserService`, `IRefreshTokenService`, `PasswordEncoder`, `JwtTokenProvider` |
 | `RefreshTokenManager` | `IRefreshTokenService` | Token issue/refresh/revoke | `IUserRefreshTokenDao`, `JwtTokenProvider` |
 | `UserManager` | `IUserService` | User CRUD and auth lookups | `IUserDao`, `IUserRoleDao`, `IUserSubscriptionDao` |
-| `UserProfileManager` | `IUserProfileService` | Profile aggregation (self/non-self visibility) | `IUserProfileDao`, `IFriendshipDao`, `IPlateReviewDao`, `IUserSettingsService` |
+| `UserProfileManager` | `IUserProfileService` | Profile aggregation (self/non-self visibility) and profile update | `IUserProfileDao`, `IUserDao`, `IFriendshipDao`, `IPlateReviewDao`, `IPlateReportDao`, `IFollowService`, `IUserSettingsService` |
+| `FollowManager` | `IFollowService` | Follow/unfollow, follower/following counts | `IFollowDao`, `IUserDao` |
 | `UserSettingsManager` | `IUserSettingsService` | Settings defaults, updates, overview | `IUserSettingsDao`, `IUserDao`, `IUserProfileDao`, `IUserSubscriptionDao` |
-| `PlateSearchManager` | `IPlateSearchService` | Plate search, plate creation, aggregate dto | `IPlateDao`, `IPlateReviewDao`, `IPlateReportDao`, `IPlateSearchEventDao`, `ICityDao` |
+| `PlateSearchManager` | `IPlateSearchService` | Plate search, plate creation, detail dto with rating distribution, tag summary, enhanced reviews | `IPlateDao`, `IPlateReviewDao`, `IPlateReportDao`, `IPlateSearchEventDao`, `ICityDao` |
 | `PlateReviewManager` | `IPlateReviewService` | Plate review lifecycle (add/update/delete) | `IPlateDao`, `IPlateReviewDao`, `IPlateReportService`, `IPlateModerationService` |
 | `PlateModerationManager` | `IPlateModerationService` | Content moderation, request hashing, moderation event logging | `ContentModerationService`, `HashingService`, `PlateReviewModerationEventService` |
 | `PlateReportManager` | `IPlateReportService` | Sync report tags per user/plate | `IPlateReportDao`, `IPlateReportTypeDao` |
@@ -58,6 +59,7 @@ Flow: `Controller → Service Interface → Manager → Repository/DataAccess`
 | `ChatRoomManager` | `ParticipantManager` | `IParticipantService` | Validating and managing room membership |
 | `ChatMessageManager` | `NotificationManager` | `INotificationService` | Triggering real-time and push notifications for new messages |
 | `UserProfileManager` | `UserSettingsManager` | `IUserSettingsService` | Fetching user settings for profile visibility rules when viewing self-profile |
+| `UserProfileManager` | `FollowManager` | `IFollowService` | Fetching follower/following counts and isFollowing status for profile |
 | `CommentReportManager` | `ModerationAdminManager` | indirect | Triggering admin review when report threshold is met |
 
 ## Manager Implementation Pattern
