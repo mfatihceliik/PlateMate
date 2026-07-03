@@ -8,8 +8,9 @@ import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ISocialMediaLinkDao;
+import com.mefy.platemate.dataAccess.abstracts.ISocialPlatformLookupDao;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
-import com.mefy.platemate.entities.concrete.SocialPlatform;
+import com.mefy.platemate.entities.concrete.SocialPlatformLookup;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.request.AddSocialLinkRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSocialLinkRequest;
@@ -21,12 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SocialMediaLinkManager implements ISocialMediaLinkService {
     private final ISocialMediaLinkDao socialMediaLinkDao;
+    private final ISocialPlatformLookupDao socialPlatformLookupDao;
     private final IMessageService messageService;
 
     @Override
     @Transactional
     public Result add(AddSocialLinkRequest request, Long currentUserId) {
-        SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
+        SocialPlatformLookup platform = resolvePlatform(request.getPlatformId(), request.getPlatformCode());
 
         Result result = BusinessRules.run(
                 checkIfPlatformProvided(platform),
@@ -39,7 +41,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         profile.setId(currentUserId);
 
         SocialMediaLink link = new SocialMediaLink();
-        link.setPlatform(platform);
+        link.setPlatformId(platform.getId());
         link.setUrl(request.getUrl());
         link.setUserProfile(profile);
 
@@ -47,14 +49,29 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         return new SuccessResult(messageService.getMessage(Messages.SOCIAL_LINK_ADDED));
     }
 
-    private Result checkIfPlatformExists(Long userProfileId, SocialPlatform platform) {
-        if (socialMediaLinkDao.existsByUserProfileIdAndPlatform(userProfileId, platform)) {
+    private SocialPlatformLookup resolvePlatform(Long platformId, String platformCode) {
+        if (platformId != null) {
+            return socialPlatformLookupDao.findById(platformId)
+                    .filter(SocialPlatformLookup::getActive)
+                    .orElse(null);
+        }
+        if (platformCode != null) {
+            return socialPlatformLookupDao.findByCodeIgnoreCase(platformCode)
+                    .filter(SocialPlatformLookup::getActive)
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    private Result checkIfPlatformExists(Long userProfileId, SocialPlatformLookup platform) {
+        if (platform == null) return new SuccessResult();
+        if (socialMediaLinkDao.existsByUserProfileIdAndPlatformId(userProfileId, platform.getId())) {
             return new ErrorResult(messageService.getMessage(Messages.SOCIAL_PLATFORM_ALREADY_EXISTS));
         }
         return new SuccessResult();
     }
 
-    private Result checkIfPlatformProvided(SocialPlatform platform) {
+    private Result checkIfPlatformProvided(SocialPlatformLookup platform) {
         if (platform == null) {
             return new ErrorResult(messageService.getMessage(Messages.VALIDATION_SOCIAL_PLATFORM_NOTNULL));
         }
@@ -65,8 +82,8 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     @Transactional
     public Result update(UpdateSocialLinkRequest request, Long currentUserId) {
         SocialMediaLink existingLink = socialMediaLinkDao.findById(request.getId()).orElse(null);
-        SocialPlatform platform = SocialPlatform.resolve(request.getPlatformId(), request.getPlatformCode());
-        
+        SocialPlatformLookup platform = resolvePlatform(request.getPlatformId(), request.getPlatformCode());
+
         Result result = BusinessRules.run(
                 checkIfLinkExists(existingLink),
                 checkIfUserAuthorizedForLink(existingLink, currentUserId),
@@ -75,7 +92,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
         );
         if (result != null) return result;
 
-        existingLink.setPlatform(platform);
+        existingLink.setPlatformId(platform.getId());
         existingLink.setUrl(request.getUrl());
         socialMediaLinkDao.save(existingLink);
 
@@ -86,7 +103,7 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
     @Transactional
     public Result delete(Long id, Long currentUserId) {
         SocialMediaLink link = socialMediaLinkDao.findById(id).orElse(null);
-        
+
         Result result = BusinessRules.run(
                 checkIfLinkExists(link),
                 checkIfUserAuthorizedForLink(link, currentUserId)
@@ -105,17 +122,17 @@ public class SocialMediaLinkManager implements ISocialMediaLinkService {
 
     private Result checkIfUserAuthorizedForLink(SocialMediaLink link, Long currentUserId) {
         if (link == null) return new SuccessResult();
-        
+
         if (!link.getUserProfile().getId().equals(currentUserId)) {
             return new ErrorResult(messageService.getMessage(Messages.SOCIAL_LINK_DELETE_UNAUTHORIZED));
         }
         return new SuccessResult();
     }
 
-    private Result checkPlatformUpdate(SocialPlatform newPlatform, SocialMediaLink existingLink, Long currentUserId) {
-        if (existingLink == null) return new SuccessResult();
-        
-        if (existingLink.getPlatform() != newPlatform) {
+    private Result checkPlatformUpdate(SocialPlatformLookup newPlatform, SocialMediaLink existingLink, Long currentUserId) {
+        if (existingLink == null || newPlatform == null) return new SuccessResult();
+
+        if (!newPlatform.getId().equals(existingLink.getPlatformId())) {
             return BusinessRules.run(checkIfPlatformExists(currentUserId, newPlatform));
         }
         return new SuccessResult();

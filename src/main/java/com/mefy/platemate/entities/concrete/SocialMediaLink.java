@@ -31,28 +31,7 @@ public class SocialMediaLink implements IEntity {
     private UserProfile userProfile;
 
     @Transient
-    public SocialPlatform getPlatform() {
-        SocialPlatform fromId = SocialPlatform.fromId(platformId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return SocialPlatform.fromCode(resolvePlatformCodeFromRef());
-    }
-
-    public void setPlatform(SocialPlatform platform) {
-        this.platformId = platform == null ? null : platform.getId();
-    }
-
-    @Transient
     public String getPlatformCode() {
-        SocialPlatform platform = SocialPlatform.fromId(platformId);
-        if (platform != null) {
-            return platform.getCode();
-        }
-        return resolvePlatformCodeFromRef();
-    }
-
-    private String resolvePlatformCodeFromRef() {
         if (platformRef == null || !Hibernate.isInitialized(platformRef)) {
             return null;
         }

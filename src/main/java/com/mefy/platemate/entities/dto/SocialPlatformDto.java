@@ -8,9 +8,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SocialMediaLinkDto implements IDto {
+public class SocialPlatformDto implements IDto {
     private Long id;
-    private Long platformId;
-    private String platformCode;
-    private String url;
+    private String code;
+    private String label;
+    private String iconUrl;
+    private String backgroundColorHex;
+    private String iconTintColorHex;
+    private Integer sortOrder;
 }
