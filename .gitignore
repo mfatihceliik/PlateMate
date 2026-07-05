@@ -39,6 +39,9 @@ out/
 ### Firebase ###
 serviceAccountKey.json
 
+### Secrets ###
+.env
+
 ### Private working docs ###
 docs/
 ANDROID_AUTH_REFRESH_HANDOFF.md
