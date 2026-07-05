@@ -32,6 +32,9 @@ public class SocialPlatformLookup implements IEntity {
     @Column(name = "icon_url", length = 500)
     private String iconUrl;
 
+    @Column(name = "base_url", length = 500)
+    private String baseUrl;
+
     @Column(name = "background_color_hex", length = 9)
     private String backgroundColorHex;
 

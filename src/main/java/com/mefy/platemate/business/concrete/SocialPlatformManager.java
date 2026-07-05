@@ -56,7 +56,7 @@ public class SocialPlatformManager implements ISocialPlatformService {
         LocalDateTime now = LocalDateTime.now();
         SocialPlatformLookup platform = new SocialPlatformLookup();
         platform.setCode(normalizedCode);
-        applyFields(platform, request.getLabel(), request.getIconUrl(), request.getBackgroundColorHex(), request.getIconTintColorHex(), request.getSortOrder());
+        applyFields(platform, request.getLabel(), request.getIconUrl(), request.getBaseUrl(), request.getBackgroundColorHex(), request.getIconTintColorHex(), request.getSortOrder());
         platform.setActive(true);
         platform.setCreatedAt(now);
         platform.setUpdatedAt(now);
@@ -79,7 +79,7 @@ public class SocialPlatformManager implements ISocialPlatformService {
             return new ErrorDataResult<>(messageService.getMessage(Messages.SOCIAL_PLATFORM_CODE_ALREADY_EXISTS));
         }
 
-        applyFields(existing, request.getLabel(), request.getIconUrl(), request.getBackgroundColorHex(), request.getIconTintColorHex(), request.getSortOrder());
+        applyFields(existing, request.getLabel(), request.getIconUrl(), request.getBaseUrl(), request.getBackgroundColorHex(), request.getIconTintColorHex(), request.getSortOrder());
         existing.setCode(normalizedCode);
         existing.setUpdatedAt(LocalDateTime.now());
 
@@ -106,12 +106,14 @@ public class SocialPlatformManager implements ISocialPlatformService {
             SocialPlatformLookup platform,
             String label,
             String iconUrl,
+            String baseUrl,
             String backgroundColorHex,
             String iconTintColorHex,
             Integer sortOrder
     ) {
         platform.setLabel(label.trim());
         platform.setIconUrl(iconUrl == null ? null : iconUrl.trim());
+        platform.setBaseUrl(baseUrl == null ? null : baseUrl.trim());
         platform.setBackgroundColorHex(backgroundColorHex == null ? null : backgroundColorHex.trim().toUpperCase(Locale.ROOT));
         platform.setIconTintColorHex(iconTintColorHex == null ? null : iconTintColorHex.trim().toUpperCase(Locale.ROOT));
         platform.setSortOrder(sortOrder);
@@ -127,6 +129,7 @@ public class SocialPlatformManager implements ISocialPlatformService {
                 platform.getCode(),
                 platform.getLabel(),
                 platform.getIconUrl(),
+                platform.getBaseUrl(),
                 platform.getBackgroundColorHex(),
                 platform.getIconTintColorHex(),
                 platform.getSortOrder()
@@ -139,6 +142,7 @@ public class SocialPlatformManager implements ISocialPlatformService {
                 platform.getCode(),
                 platform.getLabel(),
                 platform.getIconUrl(),
+                platform.getBaseUrl(),
                 platform.getBackgroundColorHex(),
                 platform.getIconTintColorHex(),
                 platform.getSortOrder(),

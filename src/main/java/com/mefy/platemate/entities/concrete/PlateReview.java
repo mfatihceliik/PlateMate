@@ -20,7 +20,6 @@ import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -65,10 +64,6 @@ public class PlateReview implements IEntity {
     @Column(name = "status_id", nullable = false)
     private Long statusId = PlateReviewStatus.PENDING_REVIEW.getId();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
-    private PlateReviewStatusLookup statusRef;
-
     @Column(length = 255)
     private String moderationReason;
 
@@ -101,11 +96,7 @@ public class PlateReview implements IEntity {
 
     @Transient
     public PlateReviewStatus getStatus() {
-        PlateReviewStatus fromId = PlateReviewStatus.fromId(statusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateReviewStatus.fromCode(resolveStatusCodeFromRef());
+        return PlateReviewStatus.fromId(statusId);
     }
 
     public void setStatus(PlateReviewStatus status) {
@@ -115,17 +106,7 @@ public class PlateReview implements IEntity {
     @Transient
     public String getStatusCode() {
         PlateReviewStatus status = PlateReviewStatus.fromId(statusId);
-        if (status != null) {
-            return status.getCode();
-        }
-        return resolveStatusCodeFromRef();
-    }
-
-    private String resolveStatusCodeFromRef() {
-        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
-            return null;
-        }
-        return statusRef.getCode();
+        return status == null ? null : status.getCode();
     }
 
     @PrePersist

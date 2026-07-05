@@ -14,7 +14,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -35,10 +34,6 @@ public class UserSubscription implements IEntity {
     @Column(name = "status_id", nullable = false)
     private Long statusId = UserSubscriptionStatus.PENDING.getId();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
-    private UserSubscriptionStatusLookup statusRef;
-
     @Column(nullable = false)
     private Integer purchasedDays;
 
@@ -56,11 +51,7 @@ public class UserSubscription implements IEntity {
 
     @Transient
     public UserSubscriptionStatus getStatus() {
-        UserSubscriptionStatus fromId = UserSubscriptionStatus.fromId(statusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return UserSubscriptionStatus.fromCode(resolveStatusCodeFromRef());
+        return UserSubscriptionStatus.fromId(statusId);
     }
 
     public void setStatus(UserSubscriptionStatus status) {
@@ -70,16 +61,6 @@ public class UserSubscription implements IEntity {
     @Transient
     public String getStatusCode() {
         UserSubscriptionStatus status = UserSubscriptionStatus.fromId(statusId);
-        if (status != null) {
-            return status.getCode();
-        }
-        return resolveStatusCodeFromRef();
-    }
-
-    private String resolveStatusCodeFromRef() {
-        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
-            return null;
-        }
-        return statusRef.getCode();
+        return status == null ? null : status.getCode();
     }
 }

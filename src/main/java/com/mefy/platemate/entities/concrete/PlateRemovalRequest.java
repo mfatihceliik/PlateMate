@@ -17,7 +17,6 @@ import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -53,19 +52,11 @@ public class PlateRemovalRequest implements IEntity {
     @Column(name = "reason_id", nullable = false)
     private Long reasonId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reason_id", insertable = false, updatable = false)
-    private PlateRemovalRequestReasonLookup reasonRef;
-
     @Column(nullable = false, length = 1000)
     private String description;
 
     @Column(name = "status_id", nullable = false)
     private Long statusId = PlateRemovalRequestStatus.OPEN.getId();
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
-    private PlateRemovalRequestStatusLookup statusRef;
 
     @Column(name = "admin_note", length = 1000)
     private String adminNote;
@@ -84,11 +75,7 @@ public class PlateRemovalRequest implements IEntity {
 
     @Transient
     public PlateRemovalRequestReason getReason() {
-        PlateRemovalRequestReason fromId = PlateRemovalRequestReason.fromId(reasonId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateRemovalRequestReason.fromCode(resolveReasonCodeFromRef());
+        return PlateRemovalRequestReason.fromId(reasonId);
     }
 
     public void setReason(PlateRemovalRequestReason reason) {
@@ -98,19 +85,12 @@ public class PlateRemovalRequest implements IEntity {
     @Transient
     public String getReasonCode() {
         PlateRemovalRequestReason reason = PlateRemovalRequestReason.fromId(reasonId);
-        if (reason != null) {
-            return reason.getCode();
-        }
-        return resolveReasonCodeFromRef();
+        return reason == null ? null : reason.getCode();
     }
 
     @Transient
     public PlateRemovalRequestStatus getStatus() {
-        PlateRemovalRequestStatus fromId = PlateRemovalRequestStatus.fromId(statusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateRemovalRequestStatus.fromCode(resolveStatusCodeFromRef());
+        return PlateRemovalRequestStatus.fromId(statusId);
     }
 
     public void setStatus(PlateRemovalRequestStatus status) {
@@ -120,24 +100,7 @@ public class PlateRemovalRequest implements IEntity {
     @Transient
     public String getStatusCode() {
         PlateRemovalRequestStatus status = PlateRemovalRequestStatus.fromId(statusId);
-        if (status != null) {
-            return status.getCode();
-        }
-        return resolveStatusCodeFromRef();
-    }
-
-    private String resolveReasonCodeFromRef() {
-        if (reasonRef == null || !Hibernate.isInitialized(reasonRef)) {
-            return null;
-        }
-        return reasonRef.getCode();
-    }
-
-    private String resolveStatusCodeFromRef() {
-        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
-            return null;
-        }
-        return statusRef.getCode();
+        return status == null ? null : status.getCode();
     }
 
     @PrePersist

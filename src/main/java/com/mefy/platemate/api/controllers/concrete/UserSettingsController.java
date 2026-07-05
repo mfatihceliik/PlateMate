@@ -10,6 +10,7 @@ import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserSettingsDto;
 import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
+import com.mefy.platemate.entities.dto.request.UpdateAppearanceRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -65,6 +66,24 @@ public class UserSettingsController implements IUserSettingsController {
         }
 
         Result result = userSettingsService.updateSettings(userId, request);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Result> updateAppearance(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId,
+            UpdateAppearanceRequest request) {
+
+        if (!userId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResult(messageService.getMessage(Messages.AUTH_UNAUTHORIZED)));
+        }
+
+        Result result = userSettingsService.updateAppearance(userId, request);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

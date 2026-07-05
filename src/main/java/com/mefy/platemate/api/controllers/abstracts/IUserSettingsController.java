@@ -4,6 +4,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserSettingsDto;
 import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
+import com.mefy.platemate.entities.dto.request.UpdateAppearanceRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -27,5 +28,12 @@ public interface IUserSettingsController {
             @PathVariable Long userId,
             @RequestAttribute("userId") Long tokenUserId,
             @Valid @RequestBody UpdateSettingsRequest request
+    );
+
+    @PutMapping("/{userId}/appearance")
+    ResponseEntity<Result> updateAppearance(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long tokenUserId,
+            @Valid @RequestBody UpdateAppearanceRequest request
     );
 }

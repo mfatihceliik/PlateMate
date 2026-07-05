@@ -16,7 +16,6 @@ import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -47,20 +46,8 @@ public class PlateReviewModerationEvent implements IEntity {
     @Column(name = "to_status_id", nullable = false)
     private Long toStatusId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "from_status_id", insertable = false, updatable = false)
-    private PlateReviewStatusLookup fromStatusRef;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "to_status_id", insertable = false, updatable = false)
-    private PlateReviewStatusLookup toStatusRef;
-
     @Column(name = "action_type_id", nullable = false)
     private Long actionTypeId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "action_type_id", insertable = false, updatable = false)
-    private PlateReviewModerationActionTypeLookup actionTypeRef;
 
     @Column(name = "actor_user_id")
     private Long actorUserId;
@@ -73,11 +60,7 @@ public class PlateReviewModerationEvent implements IEntity {
 
     @Transient
     public PlateReviewStatus getFromStatus() {
-        PlateReviewStatus fromId = PlateReviewStatus.fromId(fromStatusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateReviewStatus.fromCode(resolveFromStatusCodeFromRef());
+        return PlateReviewStatus.fromId(fromStatusId);
     }
 
     public void setFromStatus(PlateReviewStatus fromStatus) {
@@ -86,11 +69,7 @@ public class PlateReviewModerationEvent implements IEntity {
 
     @Transient
     public PlateReviewStatus getToStatus() {
-        PlateReviewStatus fromId = PlateReviewStatus.fromId(toStatusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateReviewStatus.fromCode(resolveToStatusCodeFromRef());
+        return PlateReviewStatus.fromId(toStatusId);
     }
 
     public void setToStatus(PlateReviewStatus toStatus) {
@@ -99,11 +78,7 @@ public class PlateReviewModerationEvent implements IEntity {
 
     @Transient
     public PlateReviewModerationActionType getActionType() {
-        PlateReviewModerationActionType fromId = PlateReviewModerationActionType.fromId(actionTypeId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateReviewModerationActionType.fromCode(resolveActionTypeCodeFromRef());
+        return PlateReviewModerationActionType.fromId(actionTypeId);
     }
 
     public void setActionType(PlateReviewModerationActionType actionType) {
@@ -113,31 +88,7 @@ public class PlateReviewModerationEvent implements IEntity {
     @Transient
     public String getActionTypeCode() {
         PlateReviewModerationActionType actionType = PlateReviewModerationActionType.fromId(actionTypeId);
-        if (actionType != null) {
-            return actionType.getCode();
-        }
-        return resolveActionTypeCodeFromRef();
-    }
-
-    private String resolveFromStatusCodeFromRef() {
-        if (fromStatusRef == null || !Hibernate.isInitialized(fromStatusRef)) {
-            return null;
-        }
-        return fromStatusRef.getCode();
-    }
-
-    private String resolveToStatusCodeFromRef() {
-        if (toStatusRef == null || !Hibernate.isInitialized(toStatusRef)) {
-            return null;
-        }
-        return toStatusRef.getCode();
-    }
-
-    private String resolveActionTypeCodeFromRef() {
-        if (actionTypeRef == null || !Hibernate.isInitialized(actionTypeRef)) {
-            return null;
-        }
-        return actionTypeRef.getCode();
+        return actionType == null ? null : actionType.getCode();
     }
 
     @PrePersist

@@ -38,3 +38,10 @@ out/
 
 ### Firebase ###
 serviceAccountKey.json
+
+### Private working docs ###
+docs/
+ANDROID_AUTH_REFRESH_HANDOFF.md
+ANDROID_CONTROLLER_ENDPOINT_CONTRACT.md
+CLAUDE.md
+CLIENT_DTO_CONTRACT.md

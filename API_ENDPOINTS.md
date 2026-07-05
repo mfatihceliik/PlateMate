@@ -503,6 +503,56 @@ Platform catalog backing the Social Links picker — admin-manageable, no code d
 
 ---
 
+## 11b) Premium Catalog (`/api/premium`, `/api/admin/premium`)
+
+Backend-driven pricing + feature bullets for the client's Premium screen — admin-manageable, no code deploy. See `premium_plans` / `premium_features` in `docs/database.md`. Feature text is bilingual (`*Tr` / `*En`); the client picks by device locale.
+
+### Public: Get Catalog
+- **Method**: `GET`
+- **URL**: `/api/premium`
+- **Response**: `DataResult<PremiumCatalogDto>` — `{ plans: [PremiumPlanDto], features: [PremiumFeatureDto] }` (active only, sorted by `sortOrder`). `PremiumPlanDto` = `{ id, period (MONTHLY|YEARLY), amount, currency, discountPercent, sortOrder }`; `PremiumFeatureDto` = `{ id, iconKey, titleTr, titleEn, subtitleTr, subtitleEn, sortOrder }`.
+
+### Admin: List Plans / Update Plan / Toggle Plan Active (edit-only)
+- `GET /api/admin/premium/plans` → `DataResult<List<PremiumPlanAdminDto>>`
+- `PUT /api/admin/premium/plans/{id}` — Body `{ "amount": 399.00, "currency": "TRY", "discountPercent": 32, "sortOrder": 2 }`
+- `PATCH /api/admin/premium/plans/{id}/active` — Body `{ "active": false }`
+
+### Admin: Features CRUD
+- `GET /api/admin/premium/features` → `DataResult<List<PremiumFeatureAdminDto>>`
+- `POST /api/admin/premium/features` — Body `{ "iconKey": "star", "titleTr": "...", "titleEn": "...", "subtitleTr": null, "subtitleEn": null, "sortOrder": 7 }`
+- `PUT /api/admin/premium/features/{id}` — same shape as Add
+- `PATCH /api/admin/premium/features/{id}/active` — Body `{ "active": false }`
+
+All `/api/admin/premium/**` endpoints require an `ADMIN` role (in-code `AdminAccessManager.checkAdmin`, `403` otherwise).
+
+---
+
+## 11c) Theme Catalog (`/api/theme`, `/api/admin/theme`) + Appearance
+
+Backend-driven accent-color palette + grid size for the client's Theme Color screen (admin-manageable),
+plus per-user appearance written through from the client. See `accent_colors` / `theme_config` /
+`user_settings.theme_mode,accent_hex` in `docs/database.md`.
+
+### Public: Get Catalog
+- **Method**: `GET`
+- **URL**: `/api/theme/catalog`
+- **Response**: `DataResult<ThemeCatalogDto>` — `{ gridSize: int, colors: [AccentColorDto{ id, hex "#RRGGBB", sortOrder }] }` (active only, sorted).
+
+### User: Write-through Appearance
+- **Method**: `PUT`
+- **URL**: `/api/settings/{userId}/appearance` (owner only — `userId` must equal the token user)
+- **Body**: `{ "themeMode": "SYSTEM|LIGHT|DARK", "accentHex": "#06B6D4" | null }`
+- **Response**: `Result`
+
+### Admin: Colors CRUD + Grid Size (`ADMIN` role, else `403`)
+- `GET /api/admin/theme/colors` → `DataResult<List<AccentColorAdminDto>>`
+- `POST /api/admin/theme/colors` — Body `{ "hex": "#123456", "sortOrder": 9 }`
+- `PUT /api/admin/theme/colors/{id}` — same shape as Add
+- `PATCH /api/admin/theme/colors/{id}/active` — Body `{ "active": false }`
+- `PUT /api/admin/theme/grid-size` — Body `{ "gridSize": 4 }` (1–8)
+
+---
+
 ## 11) Friendships (`/api/friendships`)
 
 - **Status Lookup (hard-cut)**:

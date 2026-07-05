@@ -51,7 +51,6 @@ public interface IFriendshipDao extends JpaRepository<Friendship, Long> {
             from Friendship f
             join fetch f.requester r
             join fetch f.addressee a
-            left join fetch f.statusRef s
             where r.id = :userId or a.id = :userId
             order by coalesce(f.respondedAt, f.createdAt) desc
             """)

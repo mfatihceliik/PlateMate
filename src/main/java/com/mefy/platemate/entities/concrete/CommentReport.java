@@ -18,7 +18,6 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -51,19 +50,11 @@ public class CommentReport implements IEntity {
     @Column(name = "reason_id", nullable = false)
     private Long reasonId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reason_id", insertable = false, updatable = false)
-    private CommentReportReasonLookup reasonRef;
-
     @Column(length = 1000)
     private String description;
 
     @Column(name = "status_id", nullable = false)
     private Long statusId = CommentReportStatus.OPEN.getId();
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
-    private CommentReportStatusLookup statusRef;
 
     @Column(name = "admin_note", length = 1000)
     private String adminNote;
@@ -82,11 +73,7 @@ public class CommentReport implements IEntity {
 
     @Transient
     public CommentReportReason getReason() {
-        CommentReportReason fromId = CommentReportReason.fromId(reasonId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return CommentReportReason.fromCode(resolveReasonCodeFromRef());
+        return CommentReportReason.fromId(reasonId);
     }
 
     public void setReason(CommentReportReason reason) {
@@ -96,19 +83,12 @@ public class CommentReport implements IEntity {
     @Transient
     public String getReasonCode() {
         CommentReportReason reason = CommentReportReason.fromId(reasonId);
-        if (reason != null) {
-            return reason.getCode();
-        }
-        return resolveReasonCodeFromRef();
+        return reason == null ? null : reason.getCode();
     }
 
     @Transient
     public CommentReportStatus getStatus() {
-        CommentReportStatus fromId = CommentReportStatus.fromId(statusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return CommentReportStatus.fromCode(resolveStatusCodeFromRef());
+        return CommentReportStatus.fromId(statusId);
     }
 
     public void setStatus(CommentReportStatus status) {
@@ -118,24 +98,7 @@ public class CommentReport implements IEntity {
     @Transient
     public String getStatusCode() {
         CommentReportStatus status = CommentReportStatus.fromId(statusId);
-        if (status != null) {
-            return status.getCode();
-        }
-        return resolveStatusCodeFromRef();
-    }
-
-    private String resolveReasonCodeFromRef() {
-        if (reasonRef == null || !Hibernate.isInitialized(reasonRef)) {
-            return null;
-        }
-        return reasonRef.getCode();
-    }
-
-    private String resolveStatusCodeFromRef() {
-        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
-            return null;
-        }
-        return statusRef.getCode();
+        return status == null ? null : status.getCode();
     }
 
     @PrePersist

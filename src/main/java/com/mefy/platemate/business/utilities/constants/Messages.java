@@ -82,6 +82,24 @@ public final class Messages {
     public static final String VALIDATION_SOCIAL_PLATFORM_SORT_NOTNULL = "validation.social.platform.sort.notnull";
     public static final String VALIDATION_SOCIAL_PLATFORM_SORT_MIN = "validation.social.platform.sort.min";
     public static final String VALIDATION_SOCIAL_PLATFORM_ACTIVE_NOTNULL = "validation.social.platform.active.notnull";
+    public static final String VALIDATION_PREMIUM_AMOUNT_NOTNULL = "validation.premium.amount.notnull";
+    public static final String VALIDATION_PREMIUM_AMOUNT_MIN = "validation.premium.amount.min";
+    public static final String VALIDATION_PREMIUM_CURRENCY_INVALID = "validation.premium.currency.invalid";
+    public static final String VALIDATION_PREMIUM_DISCOUNT_RANGE = "validation.premium.discount.range";
+    public static final String VALIDATION_PREMIUM_SORT_NOTNULL = "validation.premium.sort.notnull";
+    public static final String VALIDATION_PREMIUM_SORT_MIN = "validation.premium.sort.min";
+    public static final String VALIDATION_PREMIUM_ICON_NOTBLANK = "validation.premium.icon.notblank";
+    public static final String VALIDATION_PREMIUM_TITLE_NOTBLANK = "validation.premium.title.notblank";
+    public static final String VALIDATION_PREMIUM_ACTIVE_NOTNULL = "validation.premium.active.notnull";
+    public static final String VALIDATION_ACCENT_COLOR_HEX_NOTBLANK = "validation.accent.color.hex.notblank";
+    public static final String VALIDATION_ACCENT_COLOR_HEX_INVALID = "validation.accent.color.hex.invalid";
+    public static final String VALIDATION_ACCENT_COLOR_SORT_NOTNULL = "validation.accent.color.sort.notnull";
+    public static final String VALIDATION_ACCENT_COLOR_SORT_MIN = "validation.accent.color.sort.min";
+    public static final String VALIDATION_ACCENT_COLOR_ACTIVE_NOTNULL = "validation.accent.color.active.notnull";
+    public static final String VALIDATION_THEME_GRIDSIZE_NOTNULL = "validation.theme.gridsize.notnull";
+    public static final String VALIDATION_THEME_GRIDSIZE_RANGE = "validation.theme.gridsize.range";
+    public static final String VALIDATION_APPEARANCE_MODE_INVALID = "validation.appearance.mode.invalid";
+    public static final String VALIDATION_APPEARANCE_ACCENT_INVALID = "validation.appearance.accent.invalid";
 
     // Comment Report Messages
     public static final String COMMENT_REPORT_CREATED = "comment.report.created";
@@ -143,6 +161,26 @@ public final class Messages {
     public static final String SOCIAL_PLATFORM_STATUS_UPDATED = "social.platform.status.updated";
     public static final String SOCIAL_PLATFORM_NOT_FOUND = "social.platform.not.found";
     public static final String SOCIAL_PLATFORM_CODE_ALREADY_EXISTS = "social.platform.code.already.exists";
+    // Premium Catalog Messages
+    public static final String PREMIUM_CATALOG_LOADED = "premium.catalog.loaded";
+    public static final String PREMIUM_PLANS_LISTED = "premium.plans.listed";
+    public static final String PREMIUM_PLAN_UPDATED = "premium.plan.updated";
+    public static final String PREMIUM_PLAN_STATUS_UPDATED = "premium.plan.status.updated";
+    public static final String PREMIUM_PLAN_NOT_FOUND = "premium.plan.not.found";
+    public static final String PREMIUM_FEATURES_LISTED = "premium.features.listed";
+    public static final String PREMIUM_FEATURE_ADDED = "premium.feature.added";
+    public static final String PREMIUM_FEATURE_UPDATED = "premium.feature.updated";
+    public static final String PREMIUM_FEATURE_STATUS_UPDATED = "premium.feature.status.updated";
+    public static final String PREMIUM_FEATURE_NOT_FOUND = "premium.feature.not.found";
+    // Theme Catalog Messages
+    public static final String THEME_CATALOG_LOADED = "theme.catalog.loaded";
+    public static final String THEME_GRID_SIZE_UPDATED = "theme.grid.size.updated";
+    public static final String ACCENT_COLORS_LISTED = "accent.colors.listed";
+    public static final String ACCENT_COLOR_ADDED = "accent.color.added";
+    public static final String ACCENT_COLOR_UPDATED = "accent.color.updated";
+    public static final String ACCENT_COLOR_STATUS_UPDATED = "accent.color.status.updated";
+    public static final String ACCENT_COLOR_NOT_FOUND = "accent.color.not.found";
+    public static final String ACCENT_COLOR_ALREADY_EXISTS = "accent.color.already.exists";
     // Follow Messages
     public static final String FOLLOW_SUCCESS = "follow.success";
     public static final String FOLLOW_SELF_NOT_ALLOWED = "follow.self.not.allowed";

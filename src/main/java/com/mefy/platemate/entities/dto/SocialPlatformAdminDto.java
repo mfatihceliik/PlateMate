@@ -15,6 +15,7 @@ public class SocialPlatformAdminDto implements IDto {
     private String code;
     private String label;
     private String iconUrl;
+    private String baseUrl;
     private String backgroundColorHex;
     private String iconTintColorHex;
     private Integer sortOrder;

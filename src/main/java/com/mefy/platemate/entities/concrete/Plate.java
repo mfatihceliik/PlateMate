@@ -17,7 +17,6 @@ import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 
@@ -39,10 +38,6 @@ public class Plate implements IEntity {
 
     @Column(name = "status_id", nullable = false)
     private Long statusId = PlateStatus.ACTIVE.getId();
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", insertable = false, updatable = false)
-    private PlateStatusLookup statusRef;
 
     @Column(length = 500)
     private String hiddenReason;
@@ -71,11 +66,7 @@ public class Plate implements IEntity {
 
     @Transient
     public PlateStatus getStatus() {
-        PlateStatus fromId = PlateStatus.fromId(statusId);
-        if (fromId != null) {
-            return fromId;
-        }
-        return PlateStatus.fromCode(resolveStatusCodeFromRef());
+        return PlateStatus.fromId(statusId);
     }
 
     public void setStatus(PlateStatus status) {
@@ -85,17 +76,7 @@ public class Plate implements IEntity {
     @Transient
     public String getStatusCode() {
         PlateStatus status = PlateStatus.fromId(statusId);
-        if (status != null) {
-            return status.getCode();
-        }
-        return resolveStatusCodeFromRef();
-    }
-
-    private String resolveStatusCodeFromRef() {
-        if (statusRef == null || !Hibernate.isInitialized(statusRef)) {
-            return null;
-        }
-        return statusRef.getCode();
+        return status == null ? null : status.getCode();
     }
 
     @PrePersist

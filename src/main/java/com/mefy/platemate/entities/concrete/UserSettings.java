@@ -27,4 +27,10 @@ public class UserSettings implements IEntity {
     private boolean plateReviewNotificationsEnabled = true;  // Followed plate review notifications
     private boolean newFollowerNotificationsEnabled = true;   // New follower notifications
     private boolean reviewReplyNotificationsEnabled = true;   // Review reply notifications
+
+    @Column(name = "theme_mode", nullable = false, length = 16)
+    private String themeMode = "SYSTEM";  // SYSTEM | LIGHT | DARK (write-through from client)
+
+    @Column(name = "accent_hex", length = 7)
+    private String accentHex;             // #RRGGBB of the selected accent, nullable
 }

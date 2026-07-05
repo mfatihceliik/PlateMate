@@ -21,6 +21,8 @@ public class AddSocialPlatformRequest implements IDto {
 
     private String iconUrl;
 
+    private String baseUrl;
+
     @Pattern(regexp = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$", message = "{validation.social.platform.color.invalid}")
     private String backgroundColorHex;
 

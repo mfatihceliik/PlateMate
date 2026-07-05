@@ -21,6 +21,7 @@ import com.mefy.platemate.entities.concrete.UserSettings;
 import com.mefy.platemate.entities.dto.SocialMediaLinkDto;
 import com.mefy.platemate.entities.dto.UserSettingsDto;
 import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
+import com.mefy.platemate.entities.dto.request.UpdateAppearanceRequest;
 import com.mefy.platemate.entities.dto.request.UpdateSettingsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -101,6 +102,16 @@ public class UserSettingsManager implements IUserSettingsService {
             settings.setReviewReplyNotificationsEnabled(request.getReviewReplyNotificationsEnabled());
         }
 
+        userSettingsDao.save(settings);
+        return new SuccessResult(messageService.getMessage(Messages.SETTINGS_UPDATED));
+    }
+
+    @Override
+    @Transactional
+    public Result updateAppearance(Long userId, UpdateAppearanceRequest request) {
+        UserSettings settings = userSettingsDao.findByUserId(userId).orElseGet(() -> createDefaultSettings(userId));
+        settings.setThemeMode(request.getThemeMode().trim().toUpperCase());
+        settings.setAccentHex(request.getAccentHex() == null ? null : request.getAccentHex().trim().toUpperCase());
         userSettingsDao.save(settings);
         return new SuccessResult(messageService.getMessage(Messages.SETTINGS_UPDATED));
     }
