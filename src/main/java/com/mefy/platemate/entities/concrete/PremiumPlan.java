@@ -7,12 +7,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "premium_plans")
@@ -26,6 +31,9 @@ public class PremiumPlan implements IEntity {
 
     @Column(nullable = false, unique = true, length = 16)
     private String period; // MONTHLY | YEARLY
+
+    @OneToMany(mappedBy = "premiumPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<PremiumPlanTranslation> translations = new HashSet<>();
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;

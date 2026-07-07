@@ -25,5 +25,6 @@ public class UserDto implements IDto {
     private Integer currentSubscriptionPurchasedDays;
     private Long currentSubscriptionStatusId;
     private String currentSubscriptionStatusCode;
+    private String currentSubscriptionStatusLabel;
     // Password yok!
 }

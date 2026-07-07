@@ -1,9 +1,10 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.ISubscriptionService;
 import com.mefy.platemate.business.abstracts.IUserSettingsService;
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.core.utilities.mappers.SocialMediaLinkMapper;
-import com.mefy.platemate.core.utilities.mappers.UserSettingsMapper;
+import com.mefy.platemate.business.utilities.mappers.SocialMediaLinkMapper;
+import com.mefy.platemate.business.utilities.mappers.UserSettingsMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -13,9 +14,6 @@ import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserSettingsDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserSubscriptionDao;
-import com.mefy.platemate.entities.concrete.UserSubscription;
-import com.mefy.platemate.entities.concrete.UserSubscriptionStatus;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserSettings;
 import com.mefy.platemate.entities.dto.SocialMediaLinkDto;
@@ -27,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,7 +34,7 @@ public class UserSettingsManager implements IUserSettingsService {
     private final IUserSettingsDao userSettingsDao;
     private final IUserDao userDao;
     private final IUserProfileDao userProfileDao;
-    private final IUserSubscriptionDao userSubscriptionDao;
+    private final ISubscriptionService subscriptionService;
     private final UserSettingsMapper userSettingsMapper;
     private final SocialMediaLinkMapper socialMediaLinkMapper;
     private final IMessageService messageService;
@@ -68,7 +65,7 @@ public class UserSettingsManager implements IUserSettingsService {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.isPremiumActive(),
-                resolvePremiumUntil(user.getId()),
+                subscriptionService.resolvePremiumUntil(user.getId()),
                 userSettingsMapper.entityToDto(settings),
                 socialLinks
         );
@@ -127,15 +124,5 @@ public class UserSettingsManager implements IUserSettingsService {
         settings.setFriendNotificationsEnabled(true);
         return userSettingsDao.save(settings);
     }
-
-    private LocalDateTime resolvePremiumUntil(Long userId) {
-        LocalDateTime now = LocalDateTime.now();
-        List<UserSubscription> subscriptions = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId);
-        return subscriptions.stream()
-                .filter(s -> s.getStatus() != UserSubscriptionStatus.CANCELED)
-                .map(UserSubscription::getExpiresAt)
-                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
-    }
 }
+

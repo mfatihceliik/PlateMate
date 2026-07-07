@@ -3,12 +3,15 @@ package com.mefy.platemate.business.concrete;
 import com.mefy.platemate.business.abstracts.IFollowService;
 import com.mefy.platemate.business.abstracts.INotificationService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
+import com.mefy.platemate.business.utilities.rules.RelationshipRules;
+import com.mefy.platemate.business.utilities.rules.UserRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
+import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IFollowDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Follow;
 import com.mefy.platemate.entities.concrete.NotificationType;
 import com.mefy.platemate.entities.concrete.User;
@@ -21,30 +24,33 @@ import org.springframework.stereotype.Service;
 public class FollowManager implements IFollowService {
 
     private final IFollowDao followDao;
-    private final IUserDao userDao;
     private final INotificationService notificationService;
     private final IMessageService messageService;
+    private final UserRules userRules;
+    private final RelationshipRules relationshipRules;
 
     @Override
     @Transactional
     public Result follow(Long followerId, Long followingId) {
-        if (followerId.equals(followingId)) {
-            return new ErrorResult(messageService.getMessage(Messages.FOLLOW_SELF_NOT_ALLOWED));
+        Result guard = BusinessRules.run(
+                () -> relationshipRules.notSelf(followerId, followingId, Messages.FOLLOW_SELF_NOT_ALLOWED),
+                () -> relationshipRules.notAlreadyExists(
+                        followDao.existsByFollowerIdAndFollowingId(followerId, followingId),
+                        Messages.FOLLOW_ALREADY_EXISTS));
+        if (guard != null) {
+            return guard;
         }
 
-        if (followDao.existsByFollowerIdAndFollowingId(followerId, followingId)) {
-            return new ErrorResult(messageService.getMessage(Messages.FOLLOW_ALREADY_EXISTS));
+        DataResult<User> followerResult = userRules.resolveActiveUser(followerId);
+        if (!followerResult.isSuccess()) {
+            return new ErrorResult(followerResult.getMessage());
         }
-
-        User follower = userDao.findByIdAndActiveTrue(followerId).orElse(null);
-        if (follower == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        DataResult<User> followingResult = userRules.resolveActiveUser(followingId);
+        if (!followingResult.isSuccess()) {
+            return new ErrorResult(followingResult.getMessage());
         }
-
-        User following = userDao.findByIdAndActiveTrue(followingId).orElse(null);
-        if (following == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
+        User follower = followerResult.getData();
+        User following = followingResult.getData();
 
         Follow follow = new Follow();
         follow.setFollower(follower);

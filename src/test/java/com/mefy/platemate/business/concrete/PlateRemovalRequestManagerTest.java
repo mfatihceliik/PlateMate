@@ -41,6 +41,8 @@ class PlateRemovalRequestManagerTest {
     private IUserDao userDao;
     @Mock
     private IMessageService messageService;
+    @Mock
+    private com.mefy.platemate.business.utilities.mappers.PlateRemovalRequestMapper plateRemovalRequestMapper;
 
     private PlateRemovalRequestManager manager;
 
@@ -50,7 +52,8 @@ class PlateRemovalRequestManagerTest {
                 plateRemovalRequestDao,
                 plateDao,
                 userDao,
-                messageService
+                messageService,
+                plateRemovalRequestMapper
         );
         ReflectionTestUtils.setField(manager, "hidePlateOnRemovalRequest", true);
     }

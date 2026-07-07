@@ -11,9 +11,7 @@ import lombok.NoArgsConstructor;
 public class PremiumFeatureDto implements IDto {
     private Long id;
     private String iconKey;
-    private String titleTr;
-    private String titleEn;
-    private String subtitleTr;
-    private String subtitleEn;
+    private String title;
+    private String subtitle;
     private Integer sortOrder;
 }

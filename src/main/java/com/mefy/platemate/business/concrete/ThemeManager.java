@@ -2,6 +2,8 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IThemeService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.mappers.AccentColorAdminMapper;
+import com.mefy.platemate.business.utilities.mappers.AccentColorMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -20,7 +22,6 @@ import com.mefy.platemate.entities.dto.request.AccentColorRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -34,11 +35,13 @@ public class ThemeManager implements IThemeService {
     private final IAccentColorDao accentColorDao;
     private final IThemeConfigDao themeConfigDao;
     private final IMessageService messageService;
+    private final AccentColorMapper accentColorMapper;
+    private final AccentColorAdminMapper accentColorAdminMapper;
 
     @Override
     public DataResult<ThemeCatalogDto> getCatalog() {
         List<AccentColorDto> colors = accentColorDao.findByActiveTrueOrderBySortOrderAsc().stream()
-                .map(this::toDto)
+                .map(accentColorMapper::entityToDto)
                 .toList();
         int gridSize = themeConfigDao.findById(CONFIG_ID)
                 .map(ThemeConfig::getGridSize)
@@ -50,7 +53,7 @@ public class ThemeManager implements IThemeService {
     @Override
     public DataResult<List<AccentColorAdminDto>> getAllColors() {
         List<AccentColorAdminDto> data = accentColorDao.findAllByOrderBySortOrderAsc().stream()
-                .map(this::toAdminDto)
+                .map(accentColorAdminMapper::entityToDto)
                 .toList();
         return new SuccessDataResult<>(data, messageService.getMessage(Messages.ACCENT_COLORS_LISTED));
     }
@@ -70,7 +73,7 @@ public class ThemeManager implements IThemeService {
         color.setCreatedAt(now);
         color.setUpdatedAt(now);
         AccentColor saved = accentColorDao.save(color);
-        return new SuccessDataResult<>(toAdminDto(saved), messageService.getMessage(Messages.ACCENT_COLOR_ADDED));
+        return new SuccessDataResult<>(accentColorAdminMapper.entityToDto(saved), messageService.getMessage(Messages.ACCENT_COLOR_ADDED));
     }
 
     @Override
@@ -88,7 +91,7 @@ public class ThemeManager implements IThemeService {
         existing.setSortOrder(request.getSortOrder());
         existing.setUpdatedAt(LocalDateTime.now());
         AccentColor updated = accentColorDao.save(existing);
-        return new SuccessDataResult<>(toAdminDto(updated), messageService.getMessage(Messages.ACCENT_COLOR_UPDATED));
+        return new SuccessDataResult<>(accentColorAdminMapper.entityToDto(updated), messageService.getMessage(Messages.ACCENT_COLOR_UPDATED));
     }
 
     @Override
@@ -124,18 +127,4 @@ public class ThemeManager implements IThemeService {
         return hex.trim().toUpperCase(Locale.ROOT);
     }
 
-    private AccentColorDto toDto(AccentColor color) {
-        return new AccentColorDto(color.getId(), color.getHex(), color.getSortOrder());
-    }
-
-    private AccentColorAdminDto toAdminDto(AccentColor color) {
-        return new AccentColorAdminDto(
-                color.getId(),
-                color.getHex(),
-                color.getSortOrder(),
-                color.getActive(),
-                color.getCreatedAt(),
-                color.getUpdatedAt()
-        );
-    }
 }

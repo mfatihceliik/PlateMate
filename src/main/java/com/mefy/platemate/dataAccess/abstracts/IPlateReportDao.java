@@ -200,6 +200,7 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             select r.id as reportId,
                    r.user.username as username,
                    r.plate.plateCode as plateCode,
+                   r.reportType.id as reportTypeId,
                    r.reportType.code as reportTypeCode,
                    r.reportType.label as reportTypeLabel,
                    r.lastReportedAt as occurredAt
@@ -219,6 +220,7 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             select r.id as reportId,
                    r.user.username as username,
                    r.plate.plateCode as plateCode,
+                   r.reportType.id as reportTypeId,
                    r.reportType.code as reportTypeCode,
                    r.reportType.label as reportTypeLabel,
                    r.lastReportedAt as occurredAt

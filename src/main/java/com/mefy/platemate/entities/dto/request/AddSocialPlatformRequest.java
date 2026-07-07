@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,8 +18,8 @@ public class AddSocialPlatformRequest implements IDto {
     @NotBlank(message = "{validation.social.platform.code.notblank}")
     private String code;
 
-    @NotBlank(message = "{validation.social.platform.label.notblank}")
-    private String label;
+    @NotNull(message = "{validation.social.platform.label.notblank}")
+    private Map<String, String> labels;
 
     private String iconUrl;
 

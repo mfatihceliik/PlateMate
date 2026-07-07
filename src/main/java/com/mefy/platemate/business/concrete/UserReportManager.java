@@ -2,11 +2,14 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IUserReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
+import com.mefy.platemate.business.utilities.rules.RelationshipRules;
+import com.mefy.platemate.business.utilities.rules.UserRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
+import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserReportDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserReport;
@@ -19,25 +22,29 @@ import org.springframework.stereotype.Service;
 public class UserReportManager implements IUserReportService {
 
     private final IUserReportDao userReportDao;
-    private final IUserDao userDao;
     private final IMessageService messageService;
+    private final UserRules userRules;
+    private final RelationshipRules relationshipRules;
 
     @Override
     @Transactional
     public Result reportUser(Long reporterId, Long reportedId, String reason) {
-        if (reporterId.equals(reportedId)) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_REPORT_SELF_NOT_ALLOWED));
+        Result guard = BusinessRules.run(
+                () -> relationshipRules.notSelf(reporterId, reportedId, Messages.USER_REPORT_SELF_NOT_ALLOWED));
+        if (guard != null) {
+            return guard;
         }
 
-        User reporter = userDao.findByIdAndActiveTrue(reporterId).orElse(null);
-        if (reporter == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        DataResult<User> reporterResult = userRules.resolveActiveUser(reporterId);
+        if (!reporterResult.isSuccess()) {
+            return new ErrorResult(reporterResult.getMessage());
         }
-
-        User reported = userDao.findByIdAndActiveTrue(reportedId).orElse(null);
-        if (reported == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        DataResult<User> reportedResult = userRules.resolveActiveUser(reportedId);
+        if (!reportedResult.isSuccess()) {
+            return new ErrorResult(reportedResult.getMessage());
         }
+        User reporter = reporterResult.getData();
+        User reported = reportedResult.getData();
 
         UserReport report = new UserReport();
         report.setReporter(reporter);

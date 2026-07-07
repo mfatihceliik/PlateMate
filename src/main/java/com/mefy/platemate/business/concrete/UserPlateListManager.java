@@ -4,6 +4,7 @@ import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.abstracts.IUserPlateListService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.plate.ResolvedPlate;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -11,6 +12,7 @@ import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
+import com.mefy.platemate.business.utilities.mappers.UserPlateListMapper;
 import com.mefy.platemate.dataAccess.abstracts.IPlateAlarmDao;
 import com.mefy.platemate.dataAccess.abstracts.ISavedPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
@@ -37,17 +39,18 @@ public class UserPlateListManager implements IUserPlateListService {
     private final IPlateSearchService plateSearchService;
     private final IAppSettingsService appSettingsService;
     private final IMessageService messageService;
+    private final UserPlateListMapper userPlateListMapper;
 
     @Override
     @Transactional
     public Result savePlate(Long userId, String plateCode) {
         ResolvedPlate resolved = resolve(userId, plateCode);
-        if (resolved.error != null) return resolved.error;
+        if (resolved.hasError()) return resolved.getError();
 
-        if (!savedPlateDao.existsByUserIdAndPlateId(userId, resolved.plate.getId())) {
+        if (!savedPlateDao.existsByUserIdAndPlateId(userId, resolved.getPlate().getId())) {
             SavedPlate savedPlate = new SavedPlate();
-            savedPlate.setUser(resolved.user);
-            savedPlate.setPlate(resolved.plate);
+            savedPlate.setUser(resolved.getUser());
+            savedPlate.setPlate(resolved.getPlate());
             savedPlateDao.save(savedPlate);
         }
         return new SuccessResult(messageService.getMessage(Messages.PLATE_SAVED_SUCCESS));
@@ -57,9 +60,9 @@ public class UserPlateListManager implements IUserPlateListService {
     @Transactional
     public Result unsavePlate(Long userId, String plateCode) {
         ResolvedPlate resolved = resolve(userId, plateCode);
-        if (resolved.error != null) return resolved.error;
+        if (resolved.hasError()) return resolved.getError();
 
-        savedPlateDao.findByUserIdAndPlateId(userId, resolved.plate.getId())
+        savedPlateDao.findByUserIdAndPlateId(userId, resolved.getPlate().getId())
                 .ifPresent(savedPlateDao::delete);
         return new SuccessResult(messageService.getMessage(Messages.PLATE_UNSAVED_SUCCESS));
     }
@@ -68,20 +71,20 @@ public class UserPlateListManager implements IUserPlateListService {
     @Transactional
     public Result createAlarm(Long userId, String plateCode) {
         ResolvedPlate resolved = resolve(userId, plateCode);
-        if (resolved.error != null) return resolved.error;
+        if (resolved.hasError()) return resolved.getError();
 
-        if (plateAlarmDao.existsByUserIdAndPlateId(userId, resolved.plate.getId())) {
+        if (plateAlarmDao.existsByUserIdAndPlateId(userId, resolved.getPlate().getId())) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALARM_ALREADY_EXISTS));
         }
 
         int nonPremiumAlarmLimit = appSettingsService.getInt(AppSettingKey.NON_PREMIUM_PLATE_ALARM_LIMIT);
-        if (!resolved.user.isPremiumActive() && plateAlarmDao.countByUserId(userId) >= nonPremiumAlarmLimit) {
+        if (!resolved.getUser().isPremiumActive() && plateAlarmDao.countByUserId(userId) >= nonPremiumAlarmLimit) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALARM_LIMIT_REACHED, nonPremiumAlarmLimit));
         }
 
         PlateAlarm alarm = new PlateAlarm();
-        alarm.setUser(resolved.user);
-        alarm.setPlate(resolved.plate);
+        alarm.setUser(resolved.getUser());
+        alarm.setPlate(resolved.getPlate());
         plateAlarmDao.save(alarm);
         return new SuccessResult(messageService.getMessage(Messages.PLATE_ALARM_SUCCESS));
     }
@@ -90,9 +93,9 @@ public class UserPlateListManager implements IUserPlateListService {
     @Transactional
     public Result removeAlarm(Long userId, String plateCode) {
         ResolvedPlate resolved = resolve(userId, plateCode);
-        if (resolved.error != null) return resolved.error;
+        if (resolved.hasError()) return resolved.getError();
 
-        PlateAlarm alarm = plateAlarmDao.findByUserIdAndPlateId(userId, resolved.plate.getId()).orElse(null);
+        PlateAlarm alarm = plateAlarmDao.findByUserIdAndPlateId(userId, resolved.getPlate().getId()).orElse(null);
         if (alarm == null) {
             return new ErrorResult(messageService.getMessage(Messages.PLATE_ALARM_NOT_FOUND));
         }
@@ -103,24 +106,22 @@ public class UserPlateListManager implements IUserPlateListService {
     @Override
     public DataResult<MyPlateListsDto> getMyLists(Long userId) {
         List<PlateListItemDto> saved = savedPlateDao.findByUserIdWithPlate(userId).stream()
-                .map(item -> toItemDto(item.getPlate(), item.getCreatedAt()))
+                .map(item -> {
+                    PlateListItemDto dto = userPlateListMapper.entityToDto(item.getPlate());
+                    dto.setCreatedAt(item.getCreatedAt());
+                    return dto;
+                })
                 .toList();
         List<PlateListItemDto> alarms = plateAlarmDao.findByUserIdWithPlate(userId).stream()
-                .map(item -> toItemDto(item.getPlate(), item.getCreatedAt()))
+                .map(item -> {
+                    PlateListItemDto dto = userPlateListMapper.entityToDto(item.getPlate());
+                    dto.setCreatedAt(item.getCreatedAt());
+                    return dto;
+                })
                 .toList();
         return new SuccessDataResult<>(
                 new MyPlateListsDto(saved, alarms),
                 messageService.getMessage(Messages.PLATE_LISTS_FETCHED)
-        );
-    }
-
-    private PlateListItemDto toItemDto(Plate plate, java.time.LocalDateTime createdAt) {
-        return new PlateListItemDto(
-                plate.getPlateCode(),
-                plate.getCity() != null ? plate.getCity().getName() : null,
-                plate.getRatingAverage(),
-                plate.getReviewCount(),
-                createdAt
         );
     }
 
@@ -138,24 +139,6 @@ public class UserPlateListManager implements IUserPlateListService {
         Plate plate = plateSearchService.getOrCreatePlate(normalizedPlate);
         return ResolvedPlate.ok(user, plate);
     }
-
-    private static final class ResolvedPlate {
-        private final User user;
-        private final Plate plate;
-        private final Result error;
-
-        private ResolvedPlate(User user, Plate plate, Result error) {
-            this.user = user;
-            this.plate = plate;
-            this.error = error;
-        }
-
-        static ResolvedPlate ok(User user, Plate plate) {
-            return new ResolvedPlate(user, plate, null);
-        }
-
-        static ResolvedPlate error(Result error) {
-            return new ResolvedPlate(null, null, error);
-        }
-    }
 }
+
+

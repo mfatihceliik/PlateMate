@@ -5,7 +5,7 @@ import com.mefy.platemate.business.abstracts.IUserProfileService;
 import com.mefy.platemate.business.abstracts.IUserSettingsService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.UserProfileMapper;
+import com.mefy.platemate.business.utilities.mappers.UserProfileMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -300,3 +300,4 @@ public class UserProfileManager implements IUserProfileService {
         return value == null ? 0L : value;
     }
 }
+

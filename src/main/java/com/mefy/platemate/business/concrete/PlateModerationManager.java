@@ -35,7 +35,7 @@ public class PlateModerationManager implements IPlateModerationService {
             return contentModerationService.moderate(normalizedComment);
         }
 
-        return new ContentModerationResult(false, false, List.of("NON_PREMIUM_TEXT_COMMENT_NOT_ALLOWED"), normalizedComment);
+        return new ContentModerationResult(false, false, List.of(com.mefy.platemate.business.utilities.constants.ModerationConstants.NON_PREMIUM_TEXT_COMMENT_NOT_ALLOWED), normalizedComment);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class PlateModerationManager implements IPlateModerationService {
                 review.getStatusId(),
                 PlateReviewModerationActionType.REMOVED_BY_USER,
                 currentUserId,
-                "USER_REMOVED_REVIEW"
+                com.mefy.platemate.business.utilities.constants.ModerationConstants.USER_REMOVED_REVIEW
         );
     }
 

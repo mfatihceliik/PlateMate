@@ -3,6 +3,7 @@ package com.mefy.platemate.dataAccess.abstracts;
 import com.mefy.platemate.dataAccess.projections.PlateSearchAggregateProjection;
 import com.mefy.platemate.entities.concrete.PlateSearchEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,7 +14,9 @@ public interface IPlateSearchEventDao extends JpaRepository<PlateSearchEvent, Lo
 
     long countBySearchedAtGreaterThanEqualAndSearchedAtLessThan(LocalDateTime start, LocalDateTime end);
 
-    long deleteBySearchedAtBefore(LocalDateTime cutoff);
+    @Modifying
+    @Query("delete from PlateSearchEvent e where e.searchedAt < :cutoff")
+    int deleteBySearchedAtBefore(@Param("cutoff") LocalDateTime cutoff);
 
     long countByPlateIdAndSearchedAtGreaterThanEqualAndSearchedAtLessThan(
             Long plateId,

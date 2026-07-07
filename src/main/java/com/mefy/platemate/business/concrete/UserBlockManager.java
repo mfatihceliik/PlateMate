@@ -2,12 +2,15 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IUserBlockService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.rules.BusinessRules;
+import com.mefy.platemate.business.utilities.rules.RelationshipRules;
+import com.mefy.platemate.business.utilities.rules.UserRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
+import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IUserBlockDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserBlock;
 import jakarta.transaction.Transactional;
@@ -19,29 +22,32 @@ import org.springframework.stereotype.Service;
 public class UserBlockManager implements IUserBlockService {
 
     private final IUserBlockDao userBlockDao;
-    private final IUserDao userDao;
     private final IMessageService messageService;
+    private final UserRules userRules;
+    private final RelationshipRules relationshipRules;
 
     @Override
     @Transactional
     public Result blockUser(Long blockerId, Long blockedId) {
-        if (blockerId.equals(blockedId)) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_BLOCK_SELF_NOT_ALLOWED));
+        Result guard = BusinessRules.run(
+                () -> relationshipRules.notSelf(blockerId, blockedId, Messages.USER_BLOCK_SELF_NOT_ALLOWED),
+                () -> relationshipRules.notAlreadyExists(
+                        userBlockDao.existsByBlockerIdAndBlockedId(blockerId, blockedId),
+                        Messages.USER_BLOCK_ALREADY_EXISTS));
+        if (guard != null) {
+            return guard;
         }
 
-        if (userBlockDao.existsByBlockerIdAndBlockedId(blockerId, blockedId)) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_BLOCK_ALREADY_EXISTS));
+        DataResult<User> blockerResult = userRules.resolveActiveUser(blockerId);
+        if (!blockerResult.isSuccess()) {
+            return new ErrorResult(blockerResult.getMessage());
         }
-
-        User blocker = userDao.findByIdAndActiveTrue(blockerId).orElse(null);
-        if (blocker == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
+        DataResult<User> blockedResult = userRules.resolveActiveUser(blockedId);
+        if (!blockedResult.isSuccess()) {
+            return new ErrorResult(blockedResult.getMessage());
         }
-
-        User blocked = userDao.findByIdAndActiveTrue(blockedId).orElse(null);
-        if (blocked == null) {
-            return new ErrorResult(messageService.getMessage(Messages.USER_NOT_FOUND));
-        }
+        User blocker = blockerResult.getData();
+        User blocked = blockedResult.getData();
 
         UserBlock userBlock = new UserBlock();
         userBlock.setBlocker(blocker);

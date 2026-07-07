@@ -41,6 +41,12 @@ class PlateReportTypeManagerTest {
     private IPlateReportTypeTranslationDao translationDao;
     @Mock
     private IMessageService messageService;
+    @Mock
+    private com.mefy.platemate.business.utilities.i18n.LocalizedEnumService localizedEnumService;
+    @Mock
+    private com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver translationResolver;
+    @Mock
+    private com.mefy.platemate.business.utilities.mappers.PlateReportTypeAdminMapper plateReportTypeAdminMapper;
 
     private PlateReportTypeManager manager;
 
@@ -49,9 +55,11 @@ class PlateReportTypeManagerTest {
         manager = new PlateReportTypeManager(
                 plateReportDao,
                 plateReportTypeDao,
-                translationDao,
                 new PlateReportTypePolicyService(),
-                messageService
+                messageService,
+                localizedEnumService,
+                translationResolver,
+                plateReportTypeAdminMapper
         );
     }
 

@@ -2,10 +2,10 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.AppSettingKey;
@@ -46,15 +46,17 @@ class CommentReportManagerTest {
     @Mock
     private IPlateReviewDao plateReviewDao;
     @Mock
-    private IPlateDao plateDao;
-    @Mock
     private IUserDao userDao;
+    @Mock
+    private PlateStatisticsService plateStatisticsService;
     @Mock
     private PlateReviewModerationEventService moderationEventService;
     @Mock
     private IAppSettingsService appSettingsService;
     @Mock
     private IMessageService messageService;
+    @Mock
+    private com.mefy.platemate.business.utilities.mappers.CommentReportMapper commentReportMapper;
 
     private CommentReportManager manager;
 
@@ -63,10 +65,11 @@ class CommentReportManagerTest {
         manager = new CommentReportManager(
                 commentReportDao,
                 plateReviewDao,
-                plateDao,
                 userDao,
+                plateStatisticsService,
                 moderationEventService,
                 appSettingsService,
+                commentReportMapper,
                 messageService
         );
     }
@@ -105,8 +108,6 @@ class CommentReportManagerTest {
         when(userDao.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(new com.mefy.platemate.entities.concrete.User()));
         when(plateReviewDao.findById(12L)).thenReturn(Optional.of(review));
         when(commentReportDao.existsByCommentIdAndReporterUserId(12L, 7L)).thenReturn(false);
-        when(plateReviewDao.countByPlateIdAndStatusId(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(appSettingsService.getInt(AppSettingKey.COMMENT_REPORT_THRESHOLD)).thenReturn(3);
         when(messageService.getMessage("comment.report.created")).thenReturn("created");
 
@@ -125,7 +126,7 @@ class CommentReportManagerTest {
                 eq(7L),
                 eq("AUTO_PENDING_BY_REPORT_THRESHOLD")
         );
-        verify(plateDao).save(eq(plate));
+        verify(plateStatisticsService).refresh(eq(plate));
     }
 
     @Test
@@ -151,8 +152,6 @@ class CommentReportManagerTest {
         report.setUpdatedAt(LocalDateTime.now());
 
         when(commentReportDao.findById(21L)).thenReturn(Optional.of(report));
-        when(plateReviewDao.countByPlateIdAndStatusId(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(90L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("comment.report.reviewed")).thenReturn("reviewed");
 
         Result result = manager.reviewReport(
@@ -172,7 +171,7 @@ class CommentReportManagerTest {
                 eq(100L),
                 eq("REMOVED_BY_ACCEPTED_REPORT")
         );
-        verify(plateDao).save(eq(plate));
+        verify(plateStatisticsService).refresh(eq(plate));
     }
 }
 

@@ -13,6 +13,9 @@ import java.math.BigDecimal;
 public class PremiumPlanDto implements IDto {
     private Long id;
     private String period;
+    private String periodLabel;
+    private String title;
+    private String description;
     private BigDecimal amount;
     private String currency;
     private Integer discountPercent;

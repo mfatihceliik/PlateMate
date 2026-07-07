@@ -20,6 +20,7 @@ public class PlateReviewAdminDto implements IDto {
     private String comment;
     private Long statusId;
     private String statusCode;
+    private String statusLabel;
     private String moderationReason;
     private Integer reportCount;
     private List<String> reportTags;

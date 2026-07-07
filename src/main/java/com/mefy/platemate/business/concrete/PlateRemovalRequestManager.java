@@ -2,6 +2,8 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateRemovalRequestService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
+import com.mefy.platemate.business.utilities.mappers.PlateRemovalRequestMapper;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
@@ -27,6 +29,7 @@ import com.mefy.platemate.entities.dto.request.AddPlateRemovalRequestRequest;
 import com.mefy.platemate.entities.dto.request.ReviewPlateRemovalRequestRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,12 +41,15 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
 
-    private static final String AUTO_HIDE_MARKER = "AUTO_HIDE_BY_REMOVAL_REQUEST";
+    private static final String AUTO_HIDE_MARKER = com.mefy.platemate.business.utilities.constants.ModerationConstants.AUTO_HIDE_BY_REMOVAL_REQUEST;
 
     private final IPlateRemovalRequestDao plateRemovalRequestDao;
     private final IPlateDao plateDao;
     private final IUserDao userDao;
     private final IMessageService messageService;
+    private final PlateRemovalRequestMapper plateRemovalRequestMapper;
+
+
 
     @Value("${moderation.hide-plate-on-removal-request:true}")
     private boolean hidePlateOnRemovalRequest = true;
@@ -94,7 +100,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             plateDao.save(plate);
         }
 
-        return new SuccessDataResult<>(toDto(saved), messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_CREATED));
+        return new SuccessDataResult<>(plateRemovalRequestMapper.entityToDto(saved), messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_CREATED));
     }
 
     private Result checkIfReasonExists(PlateRemovalRequestReason reason) {
@@ -125,7 +131,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
                 paginationRequest.getSize(),
                 Sort.by("createdAt").descending()
         );
-        var page = plateRemovalRequestDao.findAll(pageable).map(this::toDto);
+        var page = plateRemovalRequestDao.findAll(pageable).map(plateRemovalRequestMapper::entityToDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
                 messageService.getMessage(Messages.PLATE_REMOVAL_REQUESTS_LISTED)
@@ -179,25 +185,5 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         return new SuccessResult(messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_REVIEWED));
     }
 
-    private PlateRemovalRequestDto toDto(PlateRemovalRequest request) {
-        String plateCode = request.getPlate() != null ? request.getPlate().getPlateCode() : null;
-        Long plateId = request.getPlate() != null ? request.getPlate().getId() : null;
-        return new PlateRemovalRequestDto(
-                request.getId(),
-                plateId,
-                plateCode,
-                request.getRequesterUserId(),
-                request.getRequesterEmail(),
-                request.getRequesterUsername(),
-                request.getReasonId(),
-                request.getReasonCode(),
-                request.getDescription(),
-                request.getStatusId(),
-                request.getStatusCode(),
-                request.getAdminNote(),
-                request.getCreatedAt(),
-                request.getReviewedAt(),
-                request.getReviewedBy()
-        );
-    }
+
 }

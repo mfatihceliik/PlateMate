@@ -3,6 +3,8 @@ package com.mefy.platemate.business.utilities.plate.concrete;
 import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Component
 public class TrPlateValidator implements IPlateValidator {
     // Regex Description:
@@ -17,7 +19,7 @@ public class TrPlateValidator implements IPlateValidator {
         if (plateCode == null) return false;
 
         // Remove spaces and convert to uppercase (Normalization)
-        String normalizedPlate = plateCode.replace(" ", "").toUpperCase();
+        String normalizedPlate = plateCode.replace(" ", "").toUpperCase(Locale.ROOT);
 
         return normalizedPlate.matches(TR_PLATE_REGEX);
     }

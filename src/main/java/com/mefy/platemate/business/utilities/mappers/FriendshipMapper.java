@@ -1,12 +1,20 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
 
+import com.mefy.platemate.core.utilities.mappers.IMapper;
+
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
 import com.mefy.platemate.entities.concrete.Friendship;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.FriendshipDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FriendshipMapper implements ModelMapperService<Friendship, FriendshipDto> {
+public class FriendshipMapper implements IMapper<Friendship, FriendshipDto> {
+
+    // Field-injected cross-cutting i18n helper: optional so no-arg unit constructions stay valid.
+    @Autowired(required = false)
+    private LocalizedEnumService localizedEnumService;
 
     /**
      * Converts Entity to DTO.
@@ -32,6 +40,9 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
         dto.setId(entity.getId());
         dto.setStatusId(entity.getStatusId());
         dto.setStatusCode(entity.getStatusCode());
+        if (localizedEnumService != null) {
+            dto.setStatusLabel(localizedEnumService.label("friendship_status", entity.getStatusCode()));
+        }
         java.time.LocalDateTime dateToUse = entity.getRespondedAt() != null ? entity.getRespondedAt() : entity.getCreatedAt();
         dto.setCreatedAt(dateToUse);
 
@@ -51,3 +62,5 @@ public class FriendshipMapper implements ModelMapperService<Friendship, Friendsh
         return null;
     }
 }
+
+

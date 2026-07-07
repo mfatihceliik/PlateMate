@@ -17,6 +17,7 @@ public class PlateReviewDto implements IDto {
     private String comment;
     private Long reviewStatusId;
     private String reviewStatusCode;
+    private String reviewStatusLabel;
     private Long userId;
     private String username;
     private LocalDateTime createdAt;

@@ -1,4 +1,4 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
 
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReview;
@@ -44,3 +44,4 @@ class PlateReviewMapperTest {
         assertEquals(17L, dto.getUserId());
     }
 }
+

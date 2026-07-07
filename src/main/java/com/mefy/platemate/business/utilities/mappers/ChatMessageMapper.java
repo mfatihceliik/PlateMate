@@ -1,11 +1,13 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
+
+import com.mefy.platemate.core.utilities.mappers.IMapper;
 
 import com.mefy.platemate.entities.concrete.ChatMessage;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ChatMessageMapper implements ModelMapperService<ChatMessage, ChatMessageDto> {
+public class ChatMessageMapper implements IMapper<ChatMessage, ChatMessageDto> {
     @Override
     public ChatMessageDto entityToDto(ChatMessage entity) {
         if (entity == null) return null;
@@ -33,3 +35,5 @@ public class ChatMessageMapper implements ModelMapperService<ChatMessage, ChatMe
         return null;
     }
 }
+
+

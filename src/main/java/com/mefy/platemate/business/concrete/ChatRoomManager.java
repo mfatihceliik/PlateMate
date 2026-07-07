@@ -4,7 +4,7 @@ import com.mefy.platemate.business.abstracts.IChatRoomService;
 import com.mefy.platemate.business.abstracts.IFriendshipService;
 import com.mefy.platemate.business.abstracts.IUserBlockService;
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.core.utilities.mappers.ChatRoomMapper;
+import com.mefy.platemate.business.utilities.mappers.ChatRoomMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -157,3 +157,4 @@ public class ChatRoomManager implements IChatRoomService {
         return chatRoomDao.findById(roomId).orElse(null);
     }
 }
+

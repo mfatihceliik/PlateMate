@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,15 +17,10 @@ public class AddPremiumFeatureRequest implements IDto {
     @NotBlank(message = "{validation.premium.icon.notblank}")
     private String iconKey;
 
-    @NotBlank(message = "{validation.premium.title.notblank}")
-    private String titleTr;
+    @NotNull(message = "{validation.premium.title.notblank}")
+    private Map<String, String> titles;
 
-    @NotBlank(message = "{validation.premium.title.notblank}")
-    private String titleEn;
-
-    private String subtitleTr;
-
-    private String subtitleEn;
+    private Map<String, String> subtitles;
 
     @NotNull(message = "{validation.premium.sort.notnull}")
     @Min(value = 0, message = "{validation.premium.sort.min}")

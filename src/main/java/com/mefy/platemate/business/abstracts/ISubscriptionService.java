@@ -4,6 +4,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.entities.dto.UserDto;
 import com.mefy.platemate.entities.dto.UserSubscriptionDto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ISubscriptionService {
@@ -12,4 +13,7 @@ public interface ISubscriptionService {
     DataResult<UserDto> getCurrentSubscription(Long currentUserId);
 
     DataResult<List<UserSubscriptionDto>> getMySubscriptionHistory(Long currentUserId);
+
+    /** Latest future expiry across the user's non-canceled subscriptions, or {@code null}. */
+    LocalDateTime resolvePremiumUntil(Long userId);
 }

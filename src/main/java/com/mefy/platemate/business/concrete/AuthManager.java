@@ -5,7 +5,7 @@ import com.mefy.platemate.business.abstracts.IRefreshTokenService;
 import com.mefy.platemate.business.abstracts.IUserService;
 import com.mefy.platemate.business.exceptions.RefreshTokenServiceException;
 import com.mefy.platemate.config.jwt.JwtTokenProvider;
-import com.mefy.platemate.core.utilities.mappers.UserMapper;
+import com.mefy.platemate.business.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -143,3 +143,4 @@ public class AuthManager implements IAuthService {
         );
     }
 }
+

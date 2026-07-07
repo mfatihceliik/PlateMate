@@ -4,7 +4,7 @@ import com.mefy.platemate.business.abstracts.IFriendshipService;
 import com.mefy.platemate.business.abstracts.INotificationService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.FriendshipMapper;
+import com.mefy.platemate.business.utilities.mappers.FriendshipMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
@@ -207,3 +207,4 @@ public class FriendshipManager implements IFriendshipService {
         return new SuccessResult();
     }
 }
+

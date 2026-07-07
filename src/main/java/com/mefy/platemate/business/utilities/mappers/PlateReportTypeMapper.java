@@ -1,16 +1,25 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
 
+import com.mefy.platemate.core.utilities.mappers.IMapper;
+
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.entities.concrete.PlateReportType;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
-public class PlateReportTypeMapper implements ModelMapperService<PlateReportType, PlateReportTypeDto> {
+public class PlateReportTypeMapper implements IMapper<PlateReportType, PlateReportTypeDto> {
 
     private final PlateReportTypePolicyService plateReportTypePolicyService;
+    private final LocalizedEnumService localizedEnumService;
+    private final ReportTypeTranslationResolver translationResolver;
 
     @Override
     public PlateReportTypeDto entityToDto(PlateReportType entity) {
@@ -23,9 +32,21 @@ public class PlateReportTypeMapper implements ModelMapperService<PlateReportType
         dto.setIconKey(entity.getIconKey());
         dto.setSeverityId(entity.getSeverityId());
         dto.setSeverityCode(entity.getSeverityCode());
+        if (localizedEnumService != null && entity.getSeverityCode() != null) {
+            dto.setSeverityLabel(localizedEnumService.label("report_severity", entity.getSeverityCode()));
+        }
         dto.setColorHex(entity.getColorHex());
         dto.setWeight(entity.getWeight());
         dto.setSortOrder(entity.getSortOrder());
+        return dto;
+    }
+
+    public PlateReportTypeDto entityToDto(PlateReportType entity, Map<Long, PlateReportTypeTranslation> translationMap) {
+        PlateReportTypeDto dto = entityToDto(entity);
+        if (dto != null) {
+            dto.setLabel(translationResolver.resolveLabel(entity, translationMap));
+            dto.setDescription(translationResolver.resolveDescription(entity, translationMap));
+        }
         return dto;
     }
 
@@ -34,3 +55,5 @@ public class PlateReportTypeMapper implements ModelMapperService<PlateReportType
         return null;
     }
 }
+
+

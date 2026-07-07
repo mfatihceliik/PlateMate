@@ -1,11 +1,13 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
+
+import com.mefy.platemate.core.utilities.mappers.IMapper;
 
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
 import com.mefy.platemate.entities.dto.SocialMediaLinkDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SocialMediaLinkMapper implements ModelMapperService<SocialMediaLink, SocialMediaLinkDto> {
+public class SocialMediaLinkMapper implements IMapper<SocialMediaLink, SocialMediaLinkDto> {
     @Override
     public SocialMediaLinkDto entityToDto(SocialMediaLink entity) {
         if (entity == null) return null;
@@ -22,3 +24,5 @@ public class SocialMediaLinkMapper implements ModelMapperService<SocialMediaLink
         return null;
     }
 }
+
+

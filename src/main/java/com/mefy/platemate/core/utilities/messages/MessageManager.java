@@ -20,4 +20,9 @@ public class MessageManager implements IMessageService {
     public String getMessage(String key, Object... args) {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
     }
+
+    @Override
+    public String getMessageOrDefault(String key, String defaultMessage) {
+        return messageSource.getMessage(key, null, defaultMessage, LocaleContextHolder.getLocale());
+    }
 }

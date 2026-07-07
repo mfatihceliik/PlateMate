@@ -15,6 +15,7 @@ public class PlateAdminDto implements IDto {
     private String plateCode;
     private Long statusId;
     private String statusCode;
+    private String statusLabel;
     private String hiddenReason;
     private Integer reviewCount;
     private Integer reportCount;

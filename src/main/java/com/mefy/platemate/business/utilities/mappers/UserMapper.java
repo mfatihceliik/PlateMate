@@ -1,11 +1,13 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
+
+import com.mefy.platemate.core.utilities.mappers.IMapper;
 
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.UserDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserMapper implements ModelMapperService<User, UserDto> {
+public class UserMapper implements IMapper<User, UserDto> {
     @Override
     public UserDto entityToDto(User entity) {
         if (entity == null) return null;
@@ -27,3 +29,5 @@ public class UserMapper implements ModelMapperService<User, UserDto> {
         return null;
     }
 }
+
+

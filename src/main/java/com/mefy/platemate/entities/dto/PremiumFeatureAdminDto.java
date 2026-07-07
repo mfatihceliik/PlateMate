@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -13,10 +14,8 @@ import java.time.LocalDateTime;
 public class PremiumFeatureAdminDto implements IDto {
     private Long id;
     private String iconKey;
-    private String titleTr;
-    private String titleEn;
-    private String subtitleTr;
-    private String subtitleEn;
+    private Map<String, String> titles;
+    private Map<String, String> subtitles;
     private Integer sortOrder;
     private boolean active;
     private LocalDateTime createdAt;

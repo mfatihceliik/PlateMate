@@ -7,11 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "premium_features")
@@ -26,17 +31,8 @@ public class PremiumFeature implements IEntity {
     @Column(name = "icon_key", nullable = false, length = 48)
     private String iconKey;
 
-    @Column(name = "title_tr", nullable = false, length = 160)
-    private String titleTr;
-
-    @Column(name = "title_en", nullable = false, length = 160)
-    private String titleEn;
-
-    @Column(name = "subtitle_tr", length = 300)
-    private String subtitleTr;
-
-    @Column(name = "subtitle_en", length = 300)
-    private String subtitleEn;
+    @OneToMany(mappedBy = "premiumFeature", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<PremiumFeatureTranslation> translations = new HashSet<>();
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;

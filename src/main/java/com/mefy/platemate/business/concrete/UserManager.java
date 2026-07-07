@@ -1,9 +1,11 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.ISubscriptionService;
 import com.mefy.platemate.business.abstracts.IUserService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.mappers.UserAdminMapper;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.UserMapper;
+import com.mefy.platemate.business.utilities.mappers.UserMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -13,12 +15,10 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IUserRoleDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserSubscriptionDao;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRole;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
-import com.mefy.platemate.entities.concrete.UserSubscriptionStatus;
 import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.UserDto;
 import com.mefy.platemate.entities.dto.request.RegisterRequest;
@@ -37,10 +37,11 @@ public class UserManager implements IUserService {
 
     private final IUserDao userDao;
     private final IUserRoleDao userRoleDao;
-    private final IUserSubscriptionDao userSubscriptionDao;
+    private final ISubscriptionService subscriptionService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IMessageService messageService;
+    private final UserAdminMapper userAdminMapper;
 
     @Override
     @Transactional
@@ -95,7 +96,7 @@ public class UserManager implements IUserService {
     @Override
     public DataResult<List<UserAdminDto>> getAllForAdmin() {
         List<UserAdminDto> userDtos = userDao.findAll().stream()
-                .map(this::toAdminDto)
+                .map(userAdminMapper::entityToDto)
                 .collect(Collectors.toList());
         return new SuccessDataResult<>(userDtos, messageService.getMessage(Messages.USERS_LISTED));
     }
@@ -121,7 +122,7 @@ public class UserManager implements IUserService {
             return new ErrorDataResult<>(result.getMessage());
         }
 
-        return new SuccessDataResult<>(toAdminDto(user), messageService.getMessage(Messages.USER_FOUND));
+        return new SuccessDataResult<>(userAdminMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
@@ -183,7 +184,7 @@ public class UserManager implements IUserService {
             return new ErrorDataResult<>(result.getMessage());
         }
 
-        return new SuccessDataResult<>(toAdminDto(user), messageService.getMessage(Messages.USER_FOUND));
+        return new SuccessDataResult<>(userAdminMapper.entityToDto(user), messageService.getMessage(Messages.USER_FOUND));
     }
 
     @Override
@@ -233,27 +234,6 @@ public class UserManager implements IUserService {
         return new SuccessResult();
     }
 
-    private UserAdminDto toAdminDto(User user) {
-        Long roleId = null;
-        String roleCode = null;
-        if (user.getRole() != null) {
-            roleId = user.getRole().getCodeId();
-            roleCode = user.getRole().getCodeValue();
-        }
-        return new UserAdminDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                roleId,
-                roleCode,
-                user.isPremiumActive(),
-                resolvePremiumUntil(user.getId()),
-                user.isActive(),
-                user.getCreatedAt(),
-                user.getDeletedAt()
-        );
-    }
-
     private Result checkEmailUpdate(String newEmail, User existingUser) {
         if (existingUser == null) return new SuccessResult();
         
@@ -263,19 +243,10 @@ public class UserManager implements IUserService {
         return new SuccessResult();
     }
 
-    private LocalDateTime resolvePremiumUntil(Long userId) {
-        LocalDateTime now = LocalDateTime.now();
-        return userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .filter(s -> s.getStatus() != UserSubscriptionStatus.CANCELED)
-                .map(s -> s.getExpiresAt())
-                .filter(expiresAt -> expiresAt != null && expiresAt.isAfter(now))
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
-    }
-
     private UserDto toUserDtoWithComputedPremium(User user) {
         UserDto dto = userMapper.entityToDto(user);
-        dto.setPremiumUntil(resolvePremiumUntil(user.getId()));
+        dto.setPremiumUntil(subscriptionService.resolvePremiumUntil(user.getId()));
         return dto;
     }
 }
+

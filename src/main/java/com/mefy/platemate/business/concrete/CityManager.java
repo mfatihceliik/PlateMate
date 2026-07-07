@@ -5,7 +5,7 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.*;
-import com.mefy.platemate.core.utilities.mappers.CityMapper;
+import com.mefy.platemate.business.utilities.mappers.CityMapper;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.entities.concrete.City;
 import com.mefy.platemate.entities.dto.CityDto;
@@ -47,3 +47,4 @@ public class CityManager implements ICityService {
         return new SuccessResult();
     }
 }
+

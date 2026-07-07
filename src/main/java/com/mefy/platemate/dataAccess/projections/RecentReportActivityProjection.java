@@ -13,5 +13,7 @@ public interface RecentReportActivityProjection {
 
     String getReportTypeLabel();
 
+    Long getReportTypeId();
+
     LocalDateTime getOccurredAt();
 }

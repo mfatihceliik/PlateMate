@@ -35,12 +35,7 @@ public class NotificationManager implements INotificationService {
 
     @Override
     public Result sendNotification(Long userId, String title, String content, String typeName, Long referenceId) {
-        NotificationType type;
-        try {
-            type = NotificationType.valueOf(typeName);
-        } catch (IllegalArgumentException e) {
-            type = NotificationType.SYSTEM; // Fallback
-        }
+        NotificationType type = NotificationType.fromNameOrDefault(typeName, NotificationType.SYSTEM);
 
         // 1. Check user preferences
         UserSettings settings = userSettingsDao.findByUserId(userId).orElse(null);

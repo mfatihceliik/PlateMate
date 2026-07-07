@@ -1,8 +1,10 @@
 package com.mefy.platemate.business.discovery;
 
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 import com.mefy.platemate.business.utilities.time.TimeWindow;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.DiscoveryActivityActionType;
 import com.mefy.platemate.entities.dto.DiscoveryRecentActivityDto;
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class DiscoveryActivityService {
 
     private final IPlateReviewDao plateReviewDao;
     private final IPlateReportDao plateReportDao;
+    private final ReportTypeTranslationResolver translationResolver;
 
     public List<DiscoveryRecentActivityDto> buildRecentActivities(int activityLimit) {
         return buildRecentActivities(activityLimit, null);
@@ -56,7 +60,11 @@ public class DiscoveryActivityService {
                 ? plateReportDao.getRecentReportActivitiesAndPlateStatus(PlateStatus.ACTIVE.getId(), pageable)
                 : plateReportDao.getRecentReportActivitiesByWindowAndPlateStatus(window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId(), pageable);
 
+        Map<Long, PlateReportTypeTranslation> translationMap = translationResolver.loadTranslations();
+
         recentReports.forEach(report -> {
+            com.mefy.platemate.entities.concrete.PlateReportTypeTranslation translation = translationMap.get(report.getReportTypeId());
+            String resolvedLabel = translation != null ? translation.getLabel() : report.getReportTypeLabel();
             activities.add(new DiscoveryRecentActivityDto(
                     report.getUsername(),
                     report.getPlateCode(),
@@ -65,7 +73,7 @@ public class DiscoveryActivityService {
                     null,
                     null,
                     report.getReportTypeCode(),
-                    report.getReportTypeLabel()
+                    resolvedLabel
             ));
         });
 

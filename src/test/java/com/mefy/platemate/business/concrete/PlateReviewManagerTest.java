@@ -6,7 +6,7 @@ import com.mefy.platemate.business.abstracts.IPlateModerationService;
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
 
-import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
+import com.mefy.platemate.business.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
@@ -628,6 +628,7 @@ class PlateReviewManagerTest {
         return user;
     }
 }
+
 
 
 

@@ -7,11 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "social_platforms")
@@ -26,8 +31,8 @@ public class SocialPlatformLookup implements IEntity {
     @Column(nullable = false, unique = true, length = 64)
     private String code;
 
-    @Column(nullable = false, length = 128)
-    private String label;
+    @OneToMany(mappedBy = "socialPlatform", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<SocialPlatformTranslation> translations = new HashSet<>();
 
     @Column(name = "icon_url", length = 500)
     private String iconUrl;

@@ -2,6 +2,7 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.mappers.AppSettingsMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
@@ -12,9 +13,12 @@ import com.mefy.platemate.entities.concrete.AppSetting;
 import com.mefy.platemate.entities.concrete.AppSettingKey;
 import com.mefy.platemate.entities.dto.AppSettingsDto;
 import com.mefy.platemate.entities.dto.request.UpdateAppSettingsRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.env.Environment;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -26,19 +30,9 @@ public class AppSettingsManager implements IAppSettingsService {
 
     private final IAppSettingDao appSettingDao;
     private final IMessageService messageService;
-
-    // Compile-time defaults stay in application.properties; the DB overrides them at runtime.
-    @Value("${platemate.follow.non-premium-plate-limit:5}")
-    private int nonPremiumPlateFollowLimitDefault;
-
-    @Value("${platemate.alarm.non-premium-plate-limit:3}")
-    private int nonPremiumPlateAlarmLimitDefault;
-
-    @Value("${platemate.messaging.pre-approval-message-limit:3}")
-    private int preApprovalMessageLimitDefault;
-
-    @Value("${moderation.comment-report-threshold:3}")
-    private int commentReportThresholdDefault;
+    private final AppSettingsMapper appSettingsMapper;
+    private final Environment environment;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final Map<String, Integer> cache = new ConcurrentHashMap<>();
 
@@ -48,6 +42,7 @@ public class AppSettingsManager implements IAppSettingsService {
     }
 
     @Override
+    @Transactional
     public void setInt(AppSettingKey key, int value) {
         appSettingDao.save(new AppSetting(key.getKey(), Integer.toString(value)));
         cache.put(key.getKey(), value);
@@ -64,45 +59,30 @@ public class AppSettingsManager implements IAppSettingsService {
 
     @Override
     public DataResult<AppSettingsDto> getSettings() {
-        AppSettingsDto dto = new AppSettingsDto(
-                getInt(AppSettingKey.NON_PREMIUM_PLATE_FOLLOW_LIMIT),
-                getInt(AppSettingKey.NON_PREMIUM_PLATE_ALARM_LIMIT),
-                getInt(AppSettingKey.PRE_APPROVAL_MESSAGE_LIMIT),
-                getInt(AppSettingKey.COMMENT_REPORT_THRESHOLD)
-        );
+        AppSettingsDto dto = appSettingsMapper.entityToDto(getAll());
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.SETTINGS_FOUND));
     }
 
     @Override
+    @Transactional
     public Result updateSettings(UpdateAppSettingsRequest request) {
-        if (request.getNonPremiumPlateFollowLimit() != null) {
-            setInt(AppSettingKey.NON_PREMIUM_PLATE_FOLLOW_LIMIT, request.getNonPremiumPlateFollowLimit());
+        Map<String, Object> requestMap = objectMapper.convertValue(request, new TypeReference<>() {});
+        
+        for (AppSettingKey key : AppSettingKey.values()) {
+            Object value = requestMap.get(key.getDtoFieldName());
+            if (value != null && value instanceof Integer intValue) {
+                setInt(key, intValue);
+            }
         }
-        if (request.getNonPremiumPlateAlarmLimit() != null) {
-            setInt(AppSettingKey.NON_PREMIUM_PLATE_ALARM_LIMIT, request.getNonPremiumPlateAlarmLimit());
-        }
-        if (request.getPreApprovalMessageLimit() != null) {
-            setInt(AppSettingKey.PRE_APPROVAL_MESSAGE_LIMIT, request.getPreApprovalMessageLimit());
-        }
-        if (request.getCommentReportThreshold() != null) {
-            setInt(AppSettingKey.COMMENT_REPORT_THRESHOLD, request.getCommentReportThreshold());
-        }
+        
         return new SuccessResult(messageService.getMessage(Messages.SETTINGS_UPDATED));
     }
 
     private int loadFromStore(AppSettingKey key) {
+        int fallback = environment.getProperty(key.getKey(), Integer.class, key.getDefaultValue());
         return appSettingDao.findById(key.getKey())
-                .map(setting -> parseOrDefault(setting.getValue(), defaultFor(key)))
-                .orElse(defaultFor(key));
-    }
-
-    private int defaultFor(AppSettingKey key) {
-        return switch (key) {
-            case NON_PREMIUM_PLATE_FOLLOW_LIMIT -> nonPremiumPlateFollowLimitDefault;
-            case NON_PREMIUM_PLATE_ALARM_LIMIT -> nonPremiumPlateAlarmLimitDefault;
-            case PRE_APPROVAL_MESSAGE_LIMIT -> preApprovalMessageLimitDefault;
-            case COMMENT_REPORT_THRESHOLD -> commentReportThresholdDefault;
-        };
+                .map(setting -> parseOrDefault(setting.getValue(), fallback))
+                .orElse(fallback);
     }
 
     private int parseOrDefault(String value, int fallback) {

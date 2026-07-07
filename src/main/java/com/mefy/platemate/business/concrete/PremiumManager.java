@@ -2,6 +2,10 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPremiumService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.mappers.PremiumFeatureAdminMapper;
+import com.mefy.platemate.business.utilities.mappers.PremiumFeatureMapper;
+import com.mefy.platemate.business.utilities.mappers.PremiumPlanAdminMapper;
+import com.mefy.platemate.business.utilities.mappers.PremiumPlanMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -12,7 +16,9 @@ import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPremiumFeatureDao;
 import com.mefy.platemate.dataAccess.abstracts.IPremiumPlanDao;
 import com.mefy.platemate.entities.concrete.PremiumFeature;
+import com.mefy.platemate.entities.concrete.PremiumFeatureTranslation;
 import com.mefy.platemate.entities.concrete.PremiumPlan;
+import com.mefy.platemate.entities.concrete.PremiumPlanTranslation;
 import com.mefy.platemate.entities.dto.PremiumCatalogDto;
 import com.mefy.platemate.entities.dto.PremiumFeatureAdminDto;
 import com.mefy.platemate.entities.dto.PremiumFeatureDto;
@@ -28,6 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,16 +43,20 @@ public class PremiumManager implements IPremiumService {
     private final IPremiumPlanDao premiumPlanDao;
     private final IPremiumFeatureDao premiumFeatureDao;
     private final IMessageService messageService;
+    private final PremiumPlanMapper premiumPlanMapper;
+    private final PremiumPlanAdminMapper premiumPlanAdminMapper;
+    private final PremiumFeatureMapper premiumFeatureMapper;
+    private final PremiumFeatureAdminMapper premiumFeatureAdminMapper;
 
     // ---- Public ----
 
     @Override
     public DataResult<PremiumCatalogDto> getCatalog() {
         List<PremiumPlanDto> plans = premiumPlanDao.findByActiveTrueOrderBySortOrderAsc().stream()
-                .map(this::toPlanDto)
+                .map(premiumPlanMapper::entityToDto)
                 .toList();
         List<PremiumFeatureDto> features = premiumFeatureDao.findByActiveTrueOrderBySortOrderAsc().stream()
-                .map(this::toFeatureDto)
+                .map(premiumFeatureMapper::entityToDto)
                 .toList();
         PremiumCatalogDto catalog = new PremiumCatalogDto(plans, features);
         return new SuccessDataResult<>(catalog, messageService.getMessage(Messages.PREMIUM_CATALOG_LOADED));
@@ -55,7 +67,7 @@ public class PremiumManager implements IPremiumService {
     @Override
     public DataResult<List<PremiumPlanAdminDto>> getAllPlans() {
         List<PremiumPlanAdminDto> data = premiumPlanDao.findAllByOrderBySortOrderAsc().stream()
-                .map(this::toPlanAdminDto)
+                .map(premiumPlanAdminMapper::entityToDto)
                 .toList();
         return new SuccessDataResult<>(data, messageService.getMessage(Messages.PREMIUM_PLANS_LISTED));
     }
@@ -73,9 +85,11 @@ public class PremiumManager implements IPremiumService {
         existing.setDiscountPercent(request.getDiscountPercent());
         existing.setSortOrder(request.getSortOrder());
         existing.setUpdatedAt(LocalDateTime.now());
+        
+        applyPlanTranslations(existing, request.getTitles(), request.getDescriptions());
 
         PremiumPlan updated = premiumPlanDao.save(existing);
-        return new SuccessDataResult<>(toPlanAdminDto(updated), messageService.getMessage(Messages.PREMIUM_PLAN_UPDATED));
+        return new SuccessDataResult<>(premiumPlanAdminMapper.entityToDto(updated), messageService.getMessage(Messages.PREMIUM_PLAN_UPDATED));
     }
 
     @Override
@@ -96,7 +110,7 @@ public class PremiumManager implements IPremiumService {
     @Override
     public DataResult<List<PremiumFeatureAdminDto>> getAllFeatures() {
         List<PremiumFeatureAdminDto> data = premiumFeatureDao.findAllByOrderBySortOrderAsc().stream()
-                .map(this::toFeatureAdminDto)
+                .map(premiumFeatureAdminMapper::entityToDto)
                 .toList();
         return new SuccessDataResult<>(data, messageService.getMessage(Messages.PREMIUM_FEATURES_LISTED));
     }
@@ -106,14 +120,16 @@ public class PremiumManager implements IPremiumService {
     public DataResult<PremiumFeatureAdminDto> addFeature(AddPremiumFeatureRequest request) {
         LocalDateTime now = LocalDateTime.now();
         PremiumFeature feature = new PremiumFeature();
-        applyFeatureFields(feature, request.getIconKey(), request.getTitleTr(), request.getTitleEn(),
-                request.getSubtitleTr(), request.getSubtitleEn(), request.getSortOrder());
+        feature.setIconKey(request.getIconKey().trim().toLowerCase(Locale.ROOT));
+        feature.setSortOrder(request.getSortOrder());
         feature.setActive(true);
         feature.setCreatedAt(now);
         feature.setUpdatedAt(now);
+        
+        applyFeatureTranslations(feature, request.getTitles(), request.getSubtitles());
 
         PremiumFeature saved = premiumFeatureDao.save(feature);
-        return new SuccessDataResult<>(toFeatureAdminDto(saved), messageService.getMessage(Messages.PREMIUM_FEATURE_ADDED));
+        return new SuccessDataResult<>(premiumFeatureAdminMapper.entityToDto(saved), messageService.getMessage(Messages.PREMIUM_FEATURE_ADDED));
     }
 
     @Override
@@ -123,12 +139,14 @@ public class PremiumManager implements IPremiumService {
         if (existing == null) {
             return new ErrorDataResult<>(messageService.getMessage(Messages.PREMIUM_FEATURE_NOT_FOUND));
         }
-        applyFeatureFields(existing, request.getIconKey(), request.getTitleTr(), request.getTitleEn(),
-                request.getSubtitleTr(), request.getSubtitleEn(), request.getSortOrder());
+        existing.setIconKey(request.getIconKey().trim().toLowerCase(Locale.ROOT));
+        existing.setSortOrder(request.getSortOrder());
         existing.setUpdatedAt(LocalDateTime.now());
+        
+        applyFeatureTranslations(existing, request.getTitles(), request.getSubtitles());
 
         PremiumFeature updated = premiumFeatureDao.save(existing);
-        return new SuccessDataResult<>(toFeatureAdminDto(updated), messageService.getMessage(Messages.PREMIUM_FEATURE_UPDATED));
+        return new SuccessDataResult<>(premiumFeatureAdminMapper.entityToDto(updated), messageService.getMessage(Messages.PREMIUM_FEATURE_UPDATED));
     }
 
     @Override
@@ -146,21 +164,60 @@ public class PremiumManager implements IPremiumService {
 
     // ---- Mapping / helpers ----
 
-    private void applyFeatureFields(
-            PremiumFeature feature,
-            String iconKey,
-            String titleTr,
-            String titleEn,
-            String subtitleTr,
-            String subtitleEn,
-            Integer sortOrder
-    ) {
-        feature.setIconKey(iconKey.trim().toLowerCase(Locale.ROOT));
-        feature.setTitleTr(titleTr.trim());
-        feature.setTitleEn(titleEn.trim());
-        feature.setSubtitleTr(blankToNull(subtitleTr));
-        feature.setSubtitleEn(blankToNull(subtitleEn));
-        feature.setSortOrder(sortOrder);
+    private void applyFeatureTranslations(PremiumFeature feature, Map<String, String> titles, Map<String, String> subtitles) {
+        if (titles == null) return;
+        
+        for (Map.Entry<String, String> entry : titles.entrySet()) {
+            String locale = entry.getKey().toLowerCase(Locale.ROOT);
+            String title = entry.getValue().trim();
+            String subtitle = subtitles != null && subtitles.containsKey(locale) ? blankToNull(subtitles.get(locale)) : null;
+
+            Optional<PremiumFeatureTranslation> existingOpt = feature.getTranslations().stream()
+                    .filter(t -> t.getLocale().equals(locale))
+                    .findFirst();
+
+            if (existingOpt.isPresent()) {
+                PremiumFeatureTranslation existing = existingOpt.get();
+                existing.setTitle(title);
+                existing.setSubtitle(subtitle);
+                existing.setUpdatedAt(LocalDateTime.now());
+            } else {
+                PremiumFeatureTranslation newTranslation = new PremiumFeatureTranslation();
+                newTranslation.setPremiumFeature(feature);
+                newTranslation.setLocale(locale);
+                newTranslation.setTitle(title);
+                newTranslation.setSubtitle(subtitle);
+                feature.getTranslations().add(newTranslation);
+            }
+        }
+    }
+
+    private void applyPlanTranslations(PremiumPlan plan, Map<String, String> titles, Map<String, String> descriptions) {
+        if (titles == null) return;
+
+        for (Map.Entry<String, String> entry : titles.entrySet()) {
+            String locale = entry.getKey().toLowerCase(Locale.ROOT);
+            String title = entry.getValue().trim();
+            String description = descriptions != null && descriptions.containsKey(locale) ? blankToNull(descriptions.get(locale)) : null;
+
+            Optional<PremiumPlanTranslation> existingOpt = plan.getTranslations().stream()
+                    .filter(t -> t.getLocale().equals(locale))
+                    .findFirst();
+
+            if (existingOpt.isPresent()) {
+                PremiumPlanTranslation existing = existingOpt.get();
+                existing.setTitle(title);
+                existing.setDescription(description);
+                existing.setUpdatedAt(LocalDateTime.now());
+            } else {
+                PremiumPlanTranslation newTranslation = new PremiumPlanTranslation();
+                newTranslation.setPremiumPlan(plan);
+                newTranslation.setLocale(locale);
+                newTranslation.setTitle(title);
+                newTranslation.setDescription(description);
+                plan.getTranslations().add(newTranslation);
+            }
+        }
     }
 
     private String blankToNull(String value) {
@@ -171,55 +228,4 @@ public class PremiumManager implements IPremiumService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private PremiumPlanDto toPlanDto(PremiumPlan plan) {
-        return new PremiumPlanDto(
-                plan.getId(),
-                plan.getPeriod(),
-                plan.getAmount(),
-                plan.getCurrency(),
-                plan.getDiscountPercent(),
-                plan.getSortOrder()
-        );
-    }
-
-    private PremiumPlanAdminDto toPlanAdminDto(PremiumPlan plan) {
-        return new PremiumPlanAdminDto(
-                plan.getId(),
-                plan.getPeriod(),
-                plan.getAmount(),
-                plan.getCurrency(),
-                plan.getDiscountPercent(),
-                plan.getSortOrder(),
-                plan.getActive(),
-                plan.getCreatedAt(),
-                plan.getUpdatedAt()
-        );
-    }
-
-    private PremiumFeatureDto toFeatureDto(PremiumFeature feature) {
-        return new PremiumFeatureDto(
-                feature.getId(),
-                feature.getIconKey(),
-                feature.getTitleTr(),
-                feature.getTitleEn(),
-                feature.getSubtitleTr(),
-                feature.getSubtitleEn(),
-                feature.getSortOrder()
-        );
-    }
-
-    private PremiumFeatureAdminDto toFeatureAdminDto(PremiumFeature feature) {
-        return new PremiumFeatureAdminDto(
-                feature.getId(),
-                feature.getIconKey(),
-                feature.getTitleTr(),
-                feature.getTitleEn(),
-                feature.getSubtitleTr(),
-                feature.getSubtitleEn(),
-                feature.getSortOrder(),
-                feature.getActive(),
-                feature.getCreatedAt(),
-                feature.getUpdatedAt()
-        );
-    }
 }

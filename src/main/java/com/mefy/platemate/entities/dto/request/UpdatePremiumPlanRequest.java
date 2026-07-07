@@ -12,11 +12,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdatePremiumPlanRequest implements IDto {
+    @NotNull(message = "{validation.premium.title.notblank}")
+    private Map<String, String> titles;
+
+    private Map<String, String> descriptions;
+
     @NotNull(message = "{validation.premium.amount.notnull}")
     @DecimalMin(value = "0.0", message = "{validation.premium.amount.min}")
     private BigDecimal amount;

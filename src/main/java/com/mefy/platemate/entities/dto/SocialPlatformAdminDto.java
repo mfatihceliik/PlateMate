@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 public class SocialPlatformAdminDto implements IDto {
     private Long id;
     private String code;
-    private String label;
+    private Map<String, String> labels;
     private String iconUrl;
     private String baseUrl;
     private String backgroundColorHex;

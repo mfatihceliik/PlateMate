@@ -58,7 +58,7 @@ class PlateSearchManagerTest {
     @Mock
     private IPlateFollowDao plateFollowDao;
     @Mock
-    private IPlateReportTypeTranslationDao translationDao;
+    private com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver translationResolver;
     @Mock
     private IPlateValidator plateValidator;
     @Mock
@@ -77,10 +77,12 @@ class PlateSearchManagerTest {
                 cityDao,
                 plateReportDao,
                 plateFollowDao,
-                translationDao,
                 plateValidator,
                 plateCityResolver,
-                messageService
+                messageService,
+                translationResolver,
+                new com.mefy.platemate.business.utilities.mappers.PlateDetailMapper(),
+                new com.mefy.platemate.business.utilities.mappers.PlateDetailReviewMapper()
         );
     }
 

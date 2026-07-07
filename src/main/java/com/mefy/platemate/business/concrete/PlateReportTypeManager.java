@@ -2,6 +2,9 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateReportTypeService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
+import com.mefy.platemate.business.utilities.mappers.PlateReportTypeAdminMapper;
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 import com.mefy.platemate.business.utilities.plate.concrete.PlateReportTypePolicyService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -37,9 +40,11 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
 
     private final IPlateReportDao plateReportDao;
     private final IPlateReportTypeDao plateReportTypeDao;
-    private final IPlateReportTypeTranslationDao translationDao;
     private final PlateReportTypePolicyService plateReportTypePolicyService;
     private final IMessageService messageService;
+    private final LocalizedEnumService localizedEnumService;
+    private final ReportTypeTranslationResolver translationResolver;
+    private final PlateReportTypeAdminMapper plateReportTypeAdminMapper;
 
     @Override
     public DataResult<List<PlateReportTypeDto>> getActiveReportTypes() {
@@ -53,7 +58,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     @Override
     public DataResult<List<PlateReportTypeAdminDto>> getAllReportTypes() {
         List<PlateReportTypeAdminDto> data = plateReportTypeDao.findAllByOrderBySortOrderAsc().stream()
-                .map(this::toAdminDto)
+                .map(plateReportTypeAdminMapper::entityToDto)
                 .toList();
         return new SuccessDataResult<>(data, messageService.getMessage(Messages.PLATE_REPORT_TYPES_LISTED));
     }
@@ -79,7 +84,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
         type.setUpdatedAt(now);
 
         PlateReportType saved = plateReportTypeDao.save(type);
-        return new SuccessDataResult<>(toAdminDto(saved), messageService.getMessage(Messages.PLATE_REPORT_TYPE_ADDED));
+        return new SuccessDataResult<>(plateReportTypeAdminMapper.entityToDto(saved), messageService.getMessage(Messages.PLATE_REPORT_TYPE_ADDED));
     }
 
     @Override
@@ -105,7 +110,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
         existing.setUpdatedAt(LocalDateTime.now());
 
         PlateReportType updated = plateReportTypeDao.save(existing);
-        return new SuccessDataResult<>(toAdminDto(updated), messageService.getMessage(Messages.PLATE_REPORT_TYPE_UPDATED));
+        return new SuccessDataResult<>(plateReportTypeAdminMapper.entityToDto(updated), messageService.getMessage(Messages.PLATE_REPORT_TYPE_UPDATED));
     }
 
     @Override
@@ -152,13 +157,8 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
 
     private PlateReportTypeDto toPublicDto(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
         String code = type.getCode();
-        PlateReportTypeTranslation translation = translationMap.get(type.getId());
-        String label = translation != null
-                ? translation.getLabel()
-                : plateReportTypePolicyService.neutralLabel(code, type.getLabel());
-        String description = translation != null && translation.getDescription() != null
-                ? translation.getDescription()
-                : plateReportTypePolicyService.neutralDescription(code, type.getDescription());
+        String label = translationResolver.resolveLabel(type, translationMap);
+        String description = translationResolver.resolveDescription(type, translationMap);
         return new PlateReportTypeDto(
                 code,
                 label,
@@ -166,6 +166,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
                 type.getIconKey(),
                 type.getSeverityId(),
                 type.getSeverityCode(),
+                localizedEnumService != null ? localizedEnumService.label("report_severity", type.getSeverityCode()) : null,
                 type.getColorHex(),
                 type.getWeight(),
                 type.getSortOrder()
@@ -173,26 +174,7 @@ public class PlateReportTypeManager implements IPlateReportTypeService {
     }
 
     private Map<Long, PlateReportTypeTranslation> loadTranslations() {
-        String locale = LocaleContextHolder.getLocale().getLanguage();
-        return translationDao.findByLocale(locale).stream()
-                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t));
+        return translationResolver.loadTranslations();
     }
 
-    private PlateReportTypeAdminDto toAdminDto(PlateReportType type) {
-        return new PlateReportTypeAdminDto(
-                type.getId(),
-                type.getCode(),
-                type.getLabel(),
-                type.getDescription(),
-                type.getIconKey(),
-                type.getSeverityId(),
-                type.getSeverityCode(),
-                type.getColorHex(),
-                type.getWeight(),
-                type.getSortOrder(),
-                type.isActive(),
-                type.getCreatedAt(),
-                type.getUpdatedAt()
-        );
-    }
 }

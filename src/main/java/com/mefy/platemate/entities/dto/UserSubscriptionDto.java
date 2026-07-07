@@ -15,6 +15,7 @@ public class UserSubscriptionDto implements IDto {
     private Integer purchasedDays;
     private Long statusId;
     private String statusCode;
+    private String statusLabel;
     private LocalDateTime startedAt;
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;

@@ -16,6 +16,7 @@ public class PlateReportTypeDto implements IDto {
     private String iconKey;
     private Long severityId;
     private String severityCode;
+    private String severityLabel;
     private String colorHex;
     private Integer weight;
     private Integer sortOrder;

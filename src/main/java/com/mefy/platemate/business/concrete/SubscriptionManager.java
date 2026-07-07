@@ -2,7 +2,9 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.ISubscriptionService;
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.core.utilities.mappers.UserMapper;
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
+import com.mefy.platemate.business.utilities.mappers.UserMapper;
+import com.mefy.platemate.business.utilities.mappers.SubscriptionMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorDataResult;
@@ -19,6 +21,7 @@ import com.mefy.platemate.entities.dto.UserDto;
 import com.mefy.platemate.entities.dto.UserSubscriptionDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,7 +37,12 @@ public class SubscriptionManager implements ISubscriptionService {
     private final IUserRoleDao userRoleDao;
     private final IUserSubscriptionDao userSubscriptionDao;
     private final UserMapper userMapper;
+    private final SubscriptionMapper subscriptionMapper;
     private final IMessageService messageService;
+
+    // Field-injected cross-cutting i18n helper: optional so unit constructions without it stay valid.
+    @Autowired(required = false)
+    private LocalizedEnumService localizedEnumService;
 
     @Override
     @Transactional
@@ -115,10 +123,16 @@ public class SubscriptionManager implements ISubscriptionService {
         syncSubscriptionStatuses(user.getId(), now);
 
         List<UserSubscriptionDto> history = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(currentUserId).stream()
-                .map(this::mapToDto)
+                .map(subscriptionMapper::entityToDto)
                 .toList();
 
         return new SuccessDataResult<>(history, messageService.getMessage(Messages.SUBSCRIPTION_HISTORY_LISTED));
+    }
+
+    @Override
+    public LocalDateTime resolvePremiumUntil(Long userId) {
+        List<UserSubscription> subscriptions = userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId);
+        return resolveLatestFutureExpiry(subscriptions, LocalDateTime.now());
     }
 
     private LocalDateTime resolveBaseStart(Long userId, LocalDateTime now) {
@@ -208,6 +222,9 @@ public class SubscriptionManager implements ISubscriptionService {
             dto.setCurrentSubscriptionPurchasedDays(currentSubscription.getPurchasedDays());
             dto.setCurrentSubscriptionStatusId(currentSubscription.getStatusId());
             dto.setCurrentSubscriptionStatusCode(currentSubscription.getStatusCode());
+            if (localizedEnumService != null && currentSubscription.getStatusCode() != null) {
+                dto.setCurrentSubscriptionStatusLabel(localizedEnumService.label("subscription_status", currentSubscription.getStatusCode()));
+            }
         }
 
         return dto;
@@ -224,17 +241,6 @@ public class SubscriptionManager implements ISubscriptionService {
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
     }
-
-    private UserSubscriptionDto mapToDto(UserSubscription subscription) {
-        UserSubscriptionDto dto = new UserSubscriptionDto();
-        dto.setId(subscription.getId());
-        dto.setPurchasedDays(subscription.getPurchasedDays());
-        dto.setStatusId(subscription.getStatusId());
-        dto.setStatusCode(subscription.getStatusCode());
-        dto.setStartedAt(subscription.getStartedAt());
-        dto.setExpiresAt(subscription.getExpiresAt());
-        dto.setCreatedAt(subscription.getCreatedAt());
-        dto.setUpdatedAt(subscription.getUpdatedAt());
-        return dto;
-    }
 }
+
+

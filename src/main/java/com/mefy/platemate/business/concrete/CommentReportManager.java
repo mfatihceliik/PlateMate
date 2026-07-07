@@ -3,8 +3,12 @@ package com.mefy.platemate.business.concrete;
 import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.abstracts.ICommentReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
+import com.mefy.platemate.business.utilities.mappers.CommentReportMapper;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsService;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
+import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
@@ -14,14 +18,12 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.AppSettingKey;
 import com.mefy.platemate.entities.concrete.CommentReport;
 import com.mefy.platemate.entities.concrete.CommentReportReason;
 import com.mefy.platemate.entities.concrete.CommentReportStatus;
-import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
@@ -41,11 +43,14 @@ public class CommentReportManager implements ICommentReportService {
 
     private final ICommentReportDao commentReportDao;
     private final IPlateReviewDao plateReviewDao;
-    private final IPlateDao plateDao;
     private final IUserDao userDao;
+    private final PlateStatisticsService plateStatisticsService;
     private final PlateReviewModerationEventService moderationEventService;
     private final IAppSettingsService appSettingsService;
-    private final com.mefy.platemate.core.utilities.messages.IMessageService messageService;
+    private final CommentReportMapper commentReportMapper;
+    private final IMessageService messageService;
+
+
 
     @Override
     @Transactional
@@ -80,7 +85,7 @@ public class CommentReportManager implements ICommentReportService {
                 paginationRequest.getSize(),
                 Sort.by("createdAt").descending()
         );
-        var page = commentReportDao.findAll(pageable).map(this::toDto);
+        var page = commentReportDao.findAll(pageable).map(commentReportMapper::entityToDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
                 messageService.getMessage(Messages.COMMENT_REPORTS_LISTED)
@@ -144,7 +149,7 @@ public class CommentReportManager implements ICommentReportService {
             PlateReviewStatus previousStatus = comment.getStatus();
             comment.setStatus(PlateReviewStatus.PENDING_REVIEW);
             String existing = comment.getModerationReason();
-            String appended = "AUTO_PENDING_BY_REPORT_THRESHOLD";
+            String appended = com.mefy.platemate.business.utilities.constants.ModerationConstants.AUTO_PENDING_BY_REPORT_THRESHOLD;
             comment.setModerationReason(existing == null || existing.isBlank() ? appended : existing + "," + appended);
             moderationEventService.logEvent(
                     comment,
@@ -154,7 +159,7 @@ public class CommentReportManager implements ICommentReportService {
                     reporterUserId,
                     appended
             );
-            refreshPlateStatistics(comment.getPlate());
+            plateStatisticsService.refresh(comment.getPlate());
         }
         plateReviewDao.save(comment);
     }
@@ -186,7 +191,7 @@ public class CommentReportManager implements ICommentReportService {
         comment.setStatus(PlateReviewStatus.REMOVED_BY_MODERATOR);
         comment.setDeletedAt(now);
         String existing = comment.getModerationReason();
-        String appended = "REMOVED_BY_ACCEPTED_REPORT";
+        String appended = com.mefy.platemate.business.utilities.constants.ModerationConstants.REMOVED_BY_ACCEPTED_REPORT;
         comment.setModerationReason(existing == null || existing.isBlank() ? appended : existing + "," + appended);
         comment.setUpdatedAt(now);
         plateReviewDao.save(comment);
@@ -198,47 +203,6 @@ public class CommentReportManager implements ICommentReportService {
                 reviewerUserId,
                 appended
         );
-        refreshPlateStatistics(comment.getPlate());
-    }
-
-    private CommentReportDto toDto(CommentReport report) {
-        String plateCode = null;
-        if (report.getComment() != null
-                && report.getComment().getPlate() != null) {
-            plateCode = report.getComment().getPlate().getPlateCode();
-        }
-        return new CommentReportDto(
-                report.getId(),
-                report.getComment() != null ? report.getComment().getId() : null,
-                report.getReporterUserId(),
-                plateCode,
-                report.getReasonId(),
-                report.getReasonCode(),
-                report.getDescription(),
-                report.getStatusId(),
-                report.getStatusCode(),
-                report.getAdminNote(),
-                report.getCreatedAt(),
-                report.getReviewedAt(),
-                report.getReviewedBy()
-        );
-    }
-
-    private void refreshPlateStatistics(Plate plate) {
-        if (plate == null || plate.getId() == null) return;
-
-        long reviewCountLong = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), PlateReviewStatus.APPROVED.getId());
-        int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
-        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED.getId()));
-
-        plate.setReviewCount(reviewCount);
-        plate.setTotalRatingSum(totalRatingSum);
-        plate.setRatingAverage(reviewCount > 0 ? (double) totalRatingSum / reviewCount : 0.0);
-        plate.setUpdatedAt(LocalDateTime.now());
-        plateDao.save(plate);
-    }
-
-    private long safeLong(Long value) {
-        return value == null ? 0L : value;
+        plateStatisticsService.refresh(comment.getPlate());
     }
 }

@@ -7,7 +7,7 @@ import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.abstracts.IPlateModerationService;
 import com.mefy.platemate.business.utilities.moderation.ContentModerationResult;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
-import com.mefy.platemate.core.utilities.mappers.PlateReviewMapper;
+import com.mefy.platemate.business.utilities.mappers.PlateReviewMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
@@ -169,7 +169,7 @@ public class PlateReviewManager implements IPlateReviewService {
                 review,
                 previousStatus == null ? null : previousStatus.getId(),
                 currentUserId,
-                "USER_UPDATED_REVIEW"
+                com.mefy.platemate.business.utilities.constants.ModerationConstants.USER_UPDATED_REVIEW
         );
         refreshPlateStatistics(review.getPlate());
 
@@ -372,7 +372,7 @@ public class PlateReviewManager implements IPlateReviewService {
                 existingReview,
                 previousStatus == null ? null : previousStatus.getId(),
                 currentUserId,
-                "USER_RESUBMITTED_REJECTED_REVIEW"
+                com.mefy.platemate.business.utilities.constants.ModerationConstants.USER_RESUBMITTED_REJECTED_REVIEW
         );
         refreshPlateStatistics(plate);
         return existingReview;
@@ -402,7 +402,7 @@ public class PlateReviewManager implements IPlateReviewService {
                 persistedReview,
                 null,
                 currentUserId,
-                "USER_SUBMITTED_REVIEW"
+                com.mefy.platemate.business.utilities.constants.ModerationConstants.USER_SUBMITTED_REVIEW
         );
         refreshPlateStatistics(plate);
         return persistedReview;
@@ -435,3 +435,4 @@ public class PlateReviewManager implements IPlateReviewService {
         return dto;
     }
 }
+

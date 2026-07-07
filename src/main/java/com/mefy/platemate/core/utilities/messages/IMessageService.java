@@ -4,4 +4,6 @@ public interface IMessageService {
     String getMessage(String key);
 
     String getMessage(String key, Object... args);
+
+    String getMessageOrDefault(String key, String defaultMessage);
 }

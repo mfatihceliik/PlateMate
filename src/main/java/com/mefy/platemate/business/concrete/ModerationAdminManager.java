@@ -4,6 +4,9 @@ import com.mefy.platemate.business.abstracts.IModerationAdminService;
 import com.mefy.platemate.business.abstracts.IPlateFollowService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsService;
+import com.mefy.platemate.business.utilities.mappers.PlateReviewAdminMapper;
+import com.mefy.platemate.business.utilities.mappers.PlateAdminMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationMapper;
@@ -14,12 +17,8 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.entities.concrete.Plate;
-import com.mefy.platemate.entities.concrete.PlateReportType;
-import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateReviewModerationActionType;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
@@ -28,15 +27,13 @@ import com.mefy.platemate.entities.dto.PlateAdminDto;
 import com.mefy.platemate.entities.dto.PlateReviewAdminDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,11 +41,12 @@ public class ModerationAdminManager implements IModerationAdminService {
 
     private final IPlateReviewDao plateReviewDao;
     private final IPlateDao plateDao;
-    private final IPlateReportDao plateReportDao;
-    private final IPlateReportTypeTranslationDao translationDao;
     private final PlateReviewModerationEventService moderationEventService;
     private final IMessageService messageService;
     private final IPlateFollowService plateFollowService;
+    private final PlateStatisticsService plateStatisticsService;
+    private final PlateReviewAdminMapper plateReviewAdminMapper;
+    private final PlateAdminMapper plateAdminMapper;
 
     @Override
     public DataResult<PagedData<PlateReviewAdminDto>> getPendingComments(PaginationRequest paginationRequest) {
@@ -59,7 +57,7 @@ public class ModerationAdminManager implements IModerationAdminService {
         );
         var page = plateReviewDao
                 .findByStatusIdOrderByCreatedAtDesc(PlateReviewStatus.PENDING_REVIEW.getId(), pageable)
-                .map(this::toAdminDto);
+                .map(plateReviewAdminMapper::entityToDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
                 messageService.getMessage(Messages.ADMIN_COMMENTS_PENDING_LISTED)
@@ -75,7 +73,7 @@ public class ModerationAdminManager implements IModerationAdminService {
 
         PlateReviewStatus previousStatus = review.getStatus();
         applyApproveMutation(review);
-        logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.APPROVED_BY_ADMIN, adminUserId, "APPROVED_BY_ADMIN");
+        logModerationEventAndRefresh(review, previousStatus, PlateReviewModerationActionType.APPROVED_BY_ADMIN, adminUserId, com.mefy.platemate.business.utilities.constants.ModerationConstants.APPROVED_BY_ADMIN);
 
         if (previousStatus != PlateReviewStatus.APPROVED) {
             plateFollowService.notifyReviewApproved(review);
@@ -121,7 +119,7 @@ public class ModerationAdminManager implements IModerationAdminService {
 
     private void applyApproveMutation(PlateReview review) {
         review.setStatus(PlateReviewStatus.APPROVED);
-        review.setModerationReason("APPROVED_BY_ADMIN");
+        review.setModerationReason(com.mefy.platemate.business.utilities.constants.ModerationConstants.APPROVED_BY_ADMIN);
         review.setDeletedAt(null);
         review.setUpdatedAt(LocalDateTime.now());
         plateReviewDao.save(review);
@@ -129,14 +127,14 @@ public class ModerationAdminManager implements IModerationAdminService {
 
     private void applyRejectMutation(PlateReview review, String reason) {
         review.setStatus(PlateReviewStatus.REJECTED);
-        review.setModerationReason(resolveReason("REJECTED_BY_ADMIN", reason));
+        review.setModerationReason(resolveReason(com.mefy.platemate.business.utilities.constants.ModerationConstants.REJECTED_BY_ADMIN, reason));
         review.setUpdatedAt(LocalDateTime.now());
         plateReviewDao.save(review);
     }
 
     private void applyRemoveMutation(PlateReview review, String reason) {
         review.setStatus(PlateReviewStatus.REMOVED_BY_MODERATOR);
-        review.setModerationReason(resolveReason("REMOVED_BY_MODERATOR", reason));
+        review.setModerationReason(resolveReason(com.mefy.platemate.business.utilities.constants.ModerationConstants.REMOVED_BY_MODERATOR, reason));
         review.setDeletedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
         plateReviewDao.save(review);
@@ -157,7 +155,7 @@ public class ModerationAdminManager implements IModerationAdminService {
                 adminUserId,
                 details
         );
-        refreshPlateStatistics(review.getPlate());
+        plateStatisticsService.refresh(review.getPlate());
     }
 
     @Override
@@ -172,7 +170,7 @@ public class ModerationAdminManager implements IModerationAdminService {
                 PlateStatus.BLOCKED,
                 PlateStatus.DELETED
         );
-        var page = plateDao.findByStatusIn(statuses, pageable).map(this::toPlateAdminDto);
+        var page = plateDao.findByStatusIn(statuses, pageable).map(plateAdminMapper::entityToDto);
         return new SuccessDataResult<>(
                 PaginationMapper.fromPage(page),
                 messageService.getMessage(Messages.ADMIN_PLATES_HIDDEN_LISTED)
@@ -210,93 +208,8 @@ public class ModerationAdminManager implements IModerationAdminService {
         return new SuccessResult(messageService.getMessage(Messages.ADMIN_PLATE_RESTORED));
     }
 
-    private PlateReviewAdminDto toAdminDto(PlateReview review) {
-        return new PlateReviewAdminDto(
-                review.getId(),
-                review.getPlate() == null ? null : review.getPlate().getPlateCode(),
-                review.getUser() == null ? null : review.getUser().getId(),
-                review.getUser() == null ? null : review.getUser().getUsername(),
-                review.getRating(),
-                review.getComment(),
-                review.getStatusId(),
-                review.getStatusCode(),
-                review.getModerationReason(),
-                review.getReportCount(),
-                resolveReportTags(review),
-                review.getUserAcceptedResponsibility(),
-                review.getResponsibilityPolicyVersion(),
-                review.getCreatedAt(),
-                review.getUpdatedAt(),
-                review.getDeletedAt()
-        );
-    }
-
-    private List<String> resolveReportTags(PlateReview review) {
-        if (review.getPlate() == null || review.getPlate().getId() == null
-                || review.getUser() == null || review.getUser().getId() == null) {
-            return List.of();
-        }
-        Map<Long, PlateReportTypeTranslation> translations = loadTranslations();
-        return plateReportDao
-                .findByPlateIdAndUserIdAndActiveTrue(review.getPlate().getId(), review.getUser().getId())
-                .stream()
-                .map(report -> resolveLabel(report.getReportType(), translations))
-                .toList();
-    }
-
-    private Map<Long, PlateReportTypeTranslation> loadTranslations() {
-        String locale = LocaleContextHolder.getLocale().getLanguage();
-        return translationDao.findByLocale(locale).stream()
-                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t, (a, b) -> a));
-    }
-
-    private String resolveLabel(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
-        PlateReportTypeTranslation translation = translationMap.get(type.getId());
-        return translation != null ? translation.getLabel() : type.getLabel();
-    }
-
-    private PlateAdminDto toPlateAdminDto(Plate plate) {
-        int reportCount = plate == null || plate.getId() == null
-                ? 0
-                : toSafeInt(plateReportDao.countByPlateIdAndActiveTrue(plate.getId()));
-        return new PlateAdminDto(
-                plate.getId(),
-                plate.getPlateCode(),
-                plate.getStatusId(),
-                plate.getStatusCode(),
-                plate.getHiddenReason(),
-                plate.getReviewCount(),
-                reportCount,
-                plate.getCreatedAt(),
-                plate.getUpdatedAt(),
-                plate.getDeletedAt()
-        );
-    }
-
     private String resolveReason(String base, String reason) {
         if (reason == null || reason.isBlank()) return base;
         return base + ":" + reason.trim();
-    }
-
-    private void refreshPlateStatistics(Plate plate) {
-        if (plate == null || plate.getId() == null) return;
-
-        long reviewCountLong = plateReviewDao.countByPlateIdAndStatusId(plate.getId(), PlateReviewStatus.APPROVED.getId());
-        int reviewCount = reviewCountLong > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) reviewCountLong;
-        long totalRatingSum = safeLong(plateReviewDao.sumRatingByPlateIdAndStatus(plate.getId(), PlateReviewStatus.APPROVED.getId()));
-
-        plate.setReviewCount(reviewCount);
-        plate.setTotalRatingSum(totalRatingSum);
-        plate.setRatingAverage(reviewCount > 0 ? (double) totalRatingSum / reviewCount : 0.0);
-        plate.setUpdatedAt(LocalDateTime.now());
-        plateDao.save(plate);
-    }
-
-    private long safeLong(Long value) {
-        return value == null ? 0L : value;
-    }
-
-    private int toSafeInt(long value) {
-        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
     }
 }

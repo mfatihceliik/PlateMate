@@ -1,4 +1,6 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
+
+import com.mefy.platemate.core.utilities.mappers.IMapper;
 
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.UserProfileDto;
@@ -9,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class UserProfileMapper implements ModelMapperService<UserProfile, UserProfileDto> {
+public class UserProfileMapper implements IMapper<UserProfile, UserProfileDto> {
 
     private final SocialMediaLinkMapper socialMediaLinkMapper;
 
@@ -40,3 +42,5 @@ public class UserProfileMapper implements ModelMapperService<UserProfile, UserPr
         return null;
     }
 }
+
+

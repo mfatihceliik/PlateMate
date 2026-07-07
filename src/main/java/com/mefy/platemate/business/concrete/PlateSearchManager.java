@@ -2,6 +2,8 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateSearchService;
 import com.mefy.platemate.business.utilities.constants.Messages;
+import com.mefy.platemate.business.utilities.mappers.PlateDetailMapper;
+import com.mefy.platemate.business.utilities.mappers.PlateDetailReviewMapper;
 import com.mefy.platemate.business.utilities.plate.abstracts.IPlateValidator;
 import com.mefy.platemate.business.utilities.plate.concrete.TrPlateCityResolver;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
@@ -16,7 +18,6 @@ import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateFollowDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
-import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeTranslationDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
 import com.mefy.platemate.entities.concrete.Plate;
@@ -33,13 +34,11 @@ import com.mefy.platemate.entities.dto.PlateTagSummaryDto;
 import com.mefy.platemate.entities.dto.RatingDistributionDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 
 @Service
 @RequiredArgsConstructor
@@ -59,10 +59,12 @@ public class PlateSearchManager implements IPlateSearchService {
     private final ICityDao cityDao;
     private final IPlateReportDao plateReportDao;
     private final IPlateFollowDao plateFollowDao;
-    private final IPlateReportTypeTranslationDao translationDao;
     private final IPlateValidator plateValidator;
     private final TrPlateCityResolver plateCityResolver;
     private final IMessageService messageService;
+    private final ReportTypeTranslationResolver translationResolver;
+    private final PlateDetailMapper plateDetailMapper;
+    private final PlateDetailReviewMapper plateDetailReviewMapper;
 
     @Override
     @Transactional
@@ -145,19 +147,12 @@ public class PlateSearchManager implements IPlateSearchService {
     }
 
     private PlateDetailDto buildPlateDetailDto(Plate plate, String normalizedPlate, Long currentUserId) {
-        PlateDetailDto dto = new PlateDetailDto();
-        dto.setId(plate.getId());
+        PlateDetailDto dto = plateDetailMapper.entityToDto(plate);
         dto.setFollowing(currentUserId != null && plate.getId() != null
                 && plateFollowDao.existsByUserIdAndPlateId(currentUserId, plate.getId()));
-        dto.setPlateCode(plate.getPlateCode());
-        dto.setCityName(
-                plate.getCity() != null
-                        ? plate.getCity().getName()
-                        : plateCityResolver.resolveCityName(normalizedPlate).orElse(null)
-        );
-        dto.setRatingAverage(plate.getRatingAverage() == null ? 0.0 : plate.getRatingAverage());
-        dto.setReviewCount(plate.getReviewCount() == null ? 0 : plate.getReviewCount());
-        dto.setTotalRatingSum(plate.getTotalRatingSum() == null ? 0L : plate.getTotalRatingSum());
+        if (dto.getCityName() == null) {
+            dto.setCityName(plateCityResolver.resolveCityName(normalizedPlate).orElse(null));
+        }
 
         Long approvedStatusId = PlateReviewStatus.APPROVED.getId();
 
@@ -230,30 +225,17 @@ public class PlateSearchManager implements IPlateSearchService {
     }
 
     private String resolveLabel(PlateReportType type, Map<Long, PlateReportTypeTranslation> translationMap) {
-        PlateReportTypeTranslation translation = translationMap.get(type.getId());
-        return translation != null ? translation.getLabel() : type.getLabel();
+        return translationResolver.resolveLabel(type, translationMap);
     }
 
     private Map<Long, PlateReportTypeTranslation> loadTranslations() {
-        String locale = LocaleContextHolder.getLocale().getLanguage();
-        return translationDao.findByLocale(locale).stream()
-                .collect(Collectors.toMap(PlateReportTypeTranslation::getReportTypeId, t -> t));
+        return translationResolver.loadTranslations();
     }
 
     private PlateDetailReviewDto toDetailReviewDto(PlateReview review, Map<Long, List<String>> userTagMap) {
-        PlateDetailReviewDto dto = new PlateDetailReviewDto();
-        dto.setId(review.getId());
-        dto.setRating(review.getRating());
-        dto.setComment(review.getComment());
-        dto.setCreatedAt(review.getCreatedAt());
+        PlateDetailReviewDto dto = plateDetailReviewMapper.entityToDto(review);
 
         if (review.getUser() != null) {
-            dto.setUserId(review.getUser().getId());
-            dto.setUsername(review.getUser().getUsername());
-            if (review.getUser().getProfile() != null) {
-                dto.setDisplayName(review.getUser().getProfile().getDisplayName());
-                dto.setProfilePhotoUrl(review.getUser().getProfile().getProfilePhotoUrl());
-            }
             dto.setReportTags(userTagMap.getOrDefault(review.getUser().getId(), Collections.emptyList()));
         }
 

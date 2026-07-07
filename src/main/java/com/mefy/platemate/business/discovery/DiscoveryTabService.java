@@ -2,14 +2,16 @@ package com.mefy.platemate.business.discovery;
 
 import com.mefy.platemate.business.discovery.model.PlateDailyMetrics;
 import com.mefy.platemate.business.discovery.model.ScoredDiscoveryPlate;
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 import com.mefy.platemate.business.utilities.time.TimeWindow;
 import com.mefy.platemate.business.utilities.time.TimeWindowService;
 import com.mefy.platemate.dataAccess.projections.PlateReportAggregateProjection;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
-import com.mefy.platemate.core.utilities.mappers.PlateReportTypeMapper;
+import com.mefy.platemate.business.utilities.mappers.PlateReportTypeMapper;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateReport;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
 import com.mefy.platemate.entities.dto.DiscoveryTabsDto;
@@ -34,12 +36,14 @@ public class DiscoveryTabService {
 
     private static final int MIN_GOOD_DRIVER_REVIEW_COUNT = 3;
     private static final int GOOD_DRIVER_CANDIDATE_LIMIT = 200;
+    private static final int NEW_TAB_CANDIDATE_MULTIPLIER = 5;
 
     private final IPlateDao plateDao;
     private final IPlateReportDao plateReportDao;
     private final DiscoveryAggregationService discoveryAggregationService;
     private final TimeWindowService timeWindowService;
     private final PlateReportTypeMapper plateReportTypeMapper;
+    private final ReportTypeTranslationResolver translationResolver;
 
     public DiscoveryTabsDto buildTabs(int limit) {
         List<ScoredDiscoveryPlate> trendScored = buildTrendTabScored(limit, timeWindowService.lastDaysWindow(7));
@@ -71,12 +75,14 @@ public class DiscoveryTabService {
         Map<Long, Map<Long, Long>> reportFrequencyByPlate = new HashMap<>();
         Map<Long, PlateReportTypeDto> dtoCache = new HashMap<>();
 
+        Map<Long, PlateReportTypeTranslation> translationMap = translationResolver.loadTranslations();
+
         for (PlateReport report : activeReports) {
             Long plateId = report.getPlate().getId();
             Long typeId = report.getReportType().getId();
             reportFrequencyByPlate.computeIfAbsent(plateId, k -> new HashMap<>())
                     .merge(typeId, 1L, Long::sum);
-            dtoCache.putIfAbsent(typeId, plateReportTypeMapper.entityToDto(report.getReportType()));
+            dtoCache.putIfAbsent(typeId, plateReportTypeMapper.entityToDto(report.getReportType(), translationMap));
         }
 
         for (Map.Entry<Long, Map<Long, Long>> entry : reportFrequencyByPlate.entrySet()) {
@@ -195,7 +201,9 @@ public class DiscoveryTabService {
     }
 
     private List<ScoredDiscoveryPlate> buildNewTabScored(int limit) {
-        List<Plate> newest = plateDao.findAll(PageRequest.of(0, limit, Sort.by("createdAt").descending())).getContent();
+        // Over-fetch candidates so filtering out non-ACTIVE plates does not short the tab below `limit`.
+        int candidateSize = Math.max(limit * NEW_TAB_CANDIDATE_MULTIPLIER, limit);
+        List<Plate> newest = plateDao.findAll(PageRequest.of(0, candidateSize, Sort.by("createdAt").descending())).getContent();
         List<ScoredDiscoveryPlate> data = new ArrayList<>();
 
         for (Plate plate : newest) {
@@ -207,6 +215,9 @@ public class DiscoveryTabService {
             double score = plate.getCreatedAt() == null ? 0.0
                     : plate.getCreatedAt().atZone(TimeWindowService.TURKEY_ZONE).toEpochSecond();
             data.add(new ScoredDiscoveryPlate(plate, metrics, score));
+            if (data.size() >= limit) {
+                break;
+            }
         }
 
         return data;
@@ -242,3 +253,4 @@ public class DiscoveryTabService {
         return value == null ? 0.0 : value;
     }
 }
+

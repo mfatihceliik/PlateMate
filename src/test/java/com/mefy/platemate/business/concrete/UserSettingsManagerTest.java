@@ -1,22 +1,20 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.core.utilities.mappers.SocialMediaLinkMapper;
-import com.mefy.platemate.core.utilities.mappers.UserSettingsMapper;
+import com.mefy.platemate.business.utilities.mappers.SocialMediaLinkMapper;
+import com.mefy.platemate.business.utilities.mappers.UserSettingsMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.business.abstracts.ISubscriptionService;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserProfileDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserSettingsDao;
-import com.mefy.platemate.dataAccess.abstracts.IUserSubscriptionDao;
 import com.mefy.platemate.entities.concrete.SocialMediaLink;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRole;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
 import com.mefy.platemate.entities.concrete.UserSettings;
-import com.mefy.platemate.entities.concrete.UserSubscription;
-import com.mefy.platemate.entities.concrete.UserSubscriptionStatus;
 import com.mefy.platemate.entities.dto.UserSettingsOverviewDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +45,7 @@ class UserSettingsManagerTest {
     @Mock
     private IUserProfileDao userProfileDao;
     @Mock
-    private IUserSubscriptionDao userSubscriptionDao;
+    private ISubscriptionService subscriptionService;
     @Mock
     private IMessageService messageService;
 
@@ -59,7 +57,7 @@ class UserSettingsManagerTest {
                 userSettingsDao,
                 userDao,
                 userProfileDao,
-                userSubscriptionDao,
+                subscriptionService,
                 new UserSettingsMapper(),
                 new SocialMediaLinkMapper(),
                 messageService
@@ -89,8 +87,7 @@ class UserSettingsManagerTest {
         when(userDao.findById(userId)).thenReturn(Optional.of(user));
         when(userSettingsDao.findByUserId(userId)).thenReturn(Optional.of(settings));
         when(userProfileDao.findByIdWithSocialMediaLinks(userId)).thenReturn(Optional.of(profile));
-        when(userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId))
-                .thenReturn(List.of(buildActiveSubscription(user)));
+        when(subscriptionService.resolvePremiumUntil(userId)).thenReturn(LocalDateTime.now().plusDays(10));
         when(messageService.getMessage(Messages.SETTINGS_FOUND)).thenReturn("settings-found");
 
         DataResult<UserSettingsOverviewDto> result = userSettingsManager.getOverviewByUserId(userId);
@@ -117,8 +114,7 @@ class UserSettingsManagerTest {
         when(userSettingsDao.findByUserId(userId)).thenReturn(Optional.empty());
         when(userSettingsDao.save(any(UserSettings.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userProfileDao.findByIdWithSocialMediaLinks(userId)).thenReturn(Optional.empty());
-        when(userSubscriptionDao.findByUserIdOrderByCreatedAtDesc(userId))
-                .thenReturn(List.of(buildActiveSubscription(user)));
+        when(subscriptionService.resolvePremiumUntil(userId)).thenReturn(LocalDateTime.now().plusDays(10));
         when(messageService.getMessage(Messages.SETTINGS_FOUND)).thenReturn("settings-found");
 
         DataResult<UserSettingsOverviewDto> result = userSettingsManager.getOverviewByUserId(userId);
@@ -157,14 +153,5 @@ class UserSettingsManagerTest {
         user.setRole(role);
         return user;
     }
-
-    private UserSubscription buildActiveSubscription(User user) {
-        UserSubscription subscription = new UserSubscription();
-        subscription.setUser(user);
-        subscription.setStatus(UserSubscriptionStatus.ACTIVE);
-        subscription.setStartedAt(LocalDateTime.now().minusDays(1));
-        subscription.setExpiresAt(LocalDateTime.now().plusDays(10));
-        subscription.setPurchasedDays(30);
-        return subscription;
-    }
 }
+

@@ -7,7 +7,7 @@ import com.mefy.platemate.business.abstracts.ISocketPushService;
 import com.mefy.platemate.business.abstracts.IUserBlockService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.constants.SocketEvents;
-import com.mefy.platemate.core.utilities.mappers.ChatMessageMapper;
+import com.mefy.platemate.business.utilities.mappers.ChatMessageMapper;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.*;
 import com.mefy.platemate.dataAccess.abstracts.IChatMessageDao;
@@ -363,3 +363,4 @@ public class ChatMessageManager implements IChatMessageService {
                 .orElse(new SuccessResult());
     }
 }
+

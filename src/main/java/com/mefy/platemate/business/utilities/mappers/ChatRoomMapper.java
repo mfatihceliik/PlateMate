@@ -1,4 +1,6 @@
-package com.mefy.platemate.core.utilities.mappers;
+package com.mefy.platemate.business.utilities.mappers;
+
+import com.mefy.platemate.core.utilities.mappers.IMapper;
 
 import com.mefy.platemate.entities.concrete.ChatRoom;
 import com.mefy.platemate.entities.concrete.Participant;
@@ -6,7 +8,7 @@ import com.mefy.platemate.entities.dto.ChatRoomDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ChatRoomMapper implements ModelMapperService<ChatRoom, ChatRoomDto> {
+public class ChatRoomMapper implements IMapper<ChatRoom, ChatRoomDto> {
     @Override
     public ChatRoomDto entityToDto(ChatRoom entity) {
         if (entity == null) return null;
@@ -59,3 +61,5 @@ public class ChatRoomMapper implements ModelMapperService<ChatRoom, ChatRoomDto>
         return null;
     }
 }
+
+

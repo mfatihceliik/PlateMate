@@ -2,6 +2,7 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IPlateFollowService;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
+import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsService;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
@@ -43,15 +44,17 @@ class ModerationAdminManagerTest {
     @Mock
     private IPlateDao plateDao;
     @Mock
-    private IPlateReportDao plateReportDao;
-    @Mock
-    private IPlateReportTypeTranslationDao translationDao;
-    @Mock
     private PlateReviewModerationEventService moderationEventService;
     @Mock
     private IMessageService messageService;
     @Mock
     private IPlateFollowService plateFollowService;
+    @Mock
+    private PlateStatisticsService plateStatisticsService;
+    @Mock
+    private com.mefy.platemate.business.utilities.mappers.PlateReviewAdminMapper plateReviewAdminMapper;
+    @Mock
+    private com.mefy.platemate.business.utilities.mappers.PlateAdminMapper plateAdminMapper;
 
     private ModerationAdminManager manager;
 
@@ -60,11 +63,12 @@ class ModerationAdminManagerTest {
         manager = new ModerationAdminManager(
                 plateReviewDao,
                 plateDao,
-                plateReportDao,
-                translationDao,
                 moderationEventService,
                 messageService,
-                plateFollowService
+                plateFollowService,
+                plateStatisticsService,
+                plateReviewAdminMapper,
+                plateAdminMapper
         );
     }
 
@@ -80,8 +84,6 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(90L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(1L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(5L);
         when(messageService.getMessage("admin.comment.approved")).thenReturn("approved");
 
         Result result = manager.approveComment(90L, 7L);
@@ -115,8 +117,6 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(91L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("admin.comment.rejected")).thenReturn("rejected");
 
         Result result = manager.rejectComment(91L, 8L, "icerik kurali");
@@ -146,8 +146,6 @@ class ModerationAdminManagerTest {
         review.setStatus(PlateReviewStatus.PENDING_REVIEW);
 
         when(plateReviewDao.findById(92L)).thenReturn(Optional.of(review));
-        when(plateReviewDao.countByPlateIdAndStatusId(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
-        when(plateReviewDao.sumRatingByPlateIdAndStatus(10L, PlateReviewStatus.APPROVED.getId())).thenReturn(0L);
         when(messageService.getMessage("admin.comment.removed")).thenReturn("removed");
 
         Result result = manager.removeComment(92L, 9L, "hakaret");
@@ -174,7 +172,11 @@ class ModerationAdminManagerTest {
 
         when(plateDao.findByStatusIn(any(), any()))
                 .thenReturn(new PageImpl<>(List.of(plate), PageRequest.of(0, 20), 1));
-        when(plateReportDao.countByPlateIdAndActiveTrue(101L)).thenReturn(3L);
+        
+        PlateAdminDto mockDto = new PlateAdminDto();
+        mockDto.setReportCount(3);
+        when(plateAdminMapper.entityToDto(plate)).thenReturn(mockDto);
+        
         when(messageService.getMessage("admin.plates.hidden.listed")).thenReturn("listed");
 
         DataResult<com.mefy.platemate.core.utilities.pagination.PagedData<PlateAdminDto>> result =
