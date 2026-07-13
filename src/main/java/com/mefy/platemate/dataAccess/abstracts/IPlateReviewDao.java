@@ -65,6 +65,8 @@ public interface IPlateReviewDao extends JpaRepository<PlateReview, Long> {
 
     long countByPlateId(Long plateId);
 
+    long countByStatusId(Long statusId);
+
     long countByPlateIdAndStatusId(Long plateId, Long statusId);
 
     default long countByPlateIdAndStatus(Long plateId, PlateReviewStatus status) {

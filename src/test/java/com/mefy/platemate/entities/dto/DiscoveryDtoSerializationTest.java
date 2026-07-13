@@ -25,7 +25,7 @@ class DiscoveryDtoSerializationTest {
     }
 
     @Test
-    void discoveryPlateCardSerializesTrendPlatesField() throws Exception {
+    void discoveryPlateCardSerializesTopReportTypesField() throws Exception {
         PlateReportTypeDto reportType = new PlateReportTypeDto(
                 "TRAFFIC_RULE_VIOLATION",
                 "Trafik Kurali Ihlali",
@@ -53,8 +53,8 @@ class DiscoveryDtoSerializationTest {
 
         String json = objectMapper.writeValueAsString(card);
 
-        assertTrue(json.contains("\"trendPlates\""));
-        assertFalse(json.contains("\"topReportTypes\""));
+        assertTrue(json.contains("\"topReportTypes\""));
+        assertFalse(json.contains("\"trendPlates\""));
     }
 
     @Test
@@ -64,7 +64,10 @@ class DiscoveryDtoSerializationTest {
                 new DiscoveryTabsDto(List.of(), List.of(), List.of(), List.of()),
                 List.of(new DiscoveryCityStatDto(34, "Istanbul", 10L)),
                 List.of(new CityPlateActivityDto("34ABC123", 5L, 1L, LocalDateTime.now(), 4.7, 25)),
-                List.of()
+                List.of(),
+                DiscoveryFeedType.FREE.name(),
+                new DiscoveryExtendedStatsDto(0L, 1L, 2L, 100.0, 100.0, 50.0, List.of()),
+                null
         );
 
         String json = objectMapper.writeValueAsString(home);

@@ -22,6 +22,8 @@ public interface ICommentReportDao extends JpaRepository<CommentReport, Long> {
 
     Page<CommentReport> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    long countByStatusId(Long statusId);
+
     @Modifying
     @Query("""
             delete from CommentReport cr

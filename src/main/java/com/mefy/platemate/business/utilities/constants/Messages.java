@@ -104,10 +104,30 @@ public final class Messages {
     // Comment Report Messages
     public static final String COMMENT_REPORT_CREATED = "comment.report.created";
     public static final String COMMENT_REPORTS_LISTED = "comment.reports.listed";
+    public static final String COMMENT_REPORT_REASONS_LISTED = "comment.report.reasons.listed";
+    public static final String COMMENT_REPORT_REASON_ADDED = "comment.report.reason.added";
+    public static final String COMMENT_REPORT_REASON_UPDATED = "comment.report.reason.updated";
+    public static final String COMMENT_REPORT_REASON_STATUS_UPDATED = "comment.report.reason.status.updated";
+    public static final String COMMENT_REPORT_REASON_ALREADY_EXISTS = "comment.report.reason.already.exists";
+    public static final String COMMENT_REPORT_REASON_NOT_FOUND = "comment.report.reason.not.found";
     public static final String COMMENT_REPORT_REVIEWED = "comment.report.reviewed";
     public static final String COMMENT_REPORT_DUPLICATE = "comment.report.duplicate";
     public static final String COMMENT_REPORT_NOT_FOUND = "comment.report.not.found";
     public static final String COMMENT_REPORT_REVIEW_INVALID_STATUS = "comment.report.review.invalid.status";
+
+    // Admin Menu Messages
+    public static final String ADMIN_MENU_LISTED = "admin.menu.listed";
+    public static final String ADMIN_MENU_PENDING_COMMENTS = "admin.menu.pending.comments";
+    public static final String ADMIN_MENU_COMMENT_REPORTS = "admin.menu.comment.reports";
+    public static final String ADMIN_MENU_PLATE_REMOVAL = "admin.menu.plate.removal";
+    public static final String ADMIN_MENU_HIDDEN_PLATES = "admin.menu.hidden.plates";
+    public static final String ADMIN_MENU_REPORT_TYPES = "admin.menu.report.types";
+    public static final String ADMIN_MENU_COMMENT_REASONS = "admin.menu.comment.reasons";
+    public static final String ADMIN_MENU_SOCIAL_PLATFORMS = "admin.menu.social.platforms";
+    public static final String ADMIN_MENU_PREMIUM_PLANS = "admin.menu.premium.plans";
+    public static final String ADMIN_MENU_PREMIUM_FEATURES = "admin.menu.premium.features";
+    public static final String ADMIN_MENU_THEME_COLORS = "admin.menu.theme.colors";
+    public static final String ADMIN_MENU_APP_SETTINGS = "admin.menu.app.settings";
 
     // Moderation Admin Messages
     public static final String ADMIN_COMMENTS_PENDING_LISTED = "admin.comments.pending.listed";
@@ -121,6 +141,9 @@ public final class Messages {
     public static final String DISCOVERY_HOME_FOUND = "discovery.home.found";
     public static final String DISCOVERY_TAB_LISTED = "discovery.tab.listed";
     public static final String DISCOVERY_CITY_PLATES_LISTED = "discovery.city.plates.listed";
+    public static final String DISCOVERY_TAB_INVALID = "discovery.tab.invalid";
+    public static final String DISCOVERY_FILTER_INVALID = "discovery.filter.invalid";
+    public static final String DISCOVERY_FILTER_PREMIUM_REQUIRED = "discovery.filter.premium.required";
     // Chat & Message Messages
     public static final String CHAT_ROOM_FOUND = "chat.room.found";
     public static final String CHAT_ROOM_CREATED = "chat.room.created";

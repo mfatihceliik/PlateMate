@@ -16,4 +16,7 @@ public class DiscoveryHomeDto implements IDto {
     private List<DiscoveryCityStatDto> cityStats;
     private List<CityPlateActivityDto> topCityPlates;
     private List<DiscoveryRecentActivityDto> recentActivities;
+    private String feedType;
+    private DiscoveryExtendedStatsDto extendedStats;
+    private DiscoveryForYouDto forYou;
 }

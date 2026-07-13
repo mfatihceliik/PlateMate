@@ -1,16 +1,22 @@
 package com.mefy.platemate.business.discovery;
 
 import com.mefy.platemate.business.discovery.model.PlateDailyMetrics;
+import com.mefy.platemate.business.utilities.plate.ReportTypeTranslationResolver;
 import com.mefy.platemate.business.utilities.time.TimeWindow;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReportDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateReportTypeDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateSearchEventDao;
+import com.mefy.platemate.dataAccess.projections.ReportTypeCountProjection;
 import com.mefy.platemate.entities.concrete.Plate;
+import com.mefy.platemate.entities.concrete.PlateReportType;
+import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryCityStatDto;
 import com.mefy.platemate.entities.dto.DiscoveryDailyStatsDto;
+import com.mefy.platemate.entities.dto.DiscoveryReportTypeCountDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
@@ -29,6 +35,8 @@ public class DiscoveryAggregationService {
     private final IPlateReviewDao plateReviewDao;
     private final IPlateReportDao plateReportDao;
     private final IPlateSearchEventDao plateSearchEventDao;
+    private final IPlateReportTypeDao plateReportTypeDao;
+    private final ReportTypeTranslationResolver translationResolver;
 
     public DiscoveryDailyStatsDto getDailyStats(TimeWindow window) {
         return new DiscoveryDailyStatsDto(
@@ -80,6 +88,35 @@ public class DiscoveryAggregationService {
         });
 
         return metricsByPlateId;
+    }
+
+    public List<DiscoveryReportTypeCountDto> getTopReportTypeCounts(TimeWindow window, int limit) {
+        List<ReportTypeCountProjection> projections = plateReportDao.getReportTypeCountsByWindowAndPlateStatus(
+                window.getStart(), window.getEnd(), PlateStatus.ACTIVE.getId(), PageRequest.of(0, limit)
+        );
+        if (projections.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> typeIds = projections.stream().map(ReportTypeCountProjection::getReportTypeId).toList();
+        Map<Long, PlateReportType> typeById = plateReportTypeDao.findAllById(typeIds).stream()
+                .collect(Collectors.toMap(PlateReportType::getId, type -> type));
+        Map<Long, PlateReportTypeTranslation> translations = translationResolver.loadTranslations();
+
+        List<DiscoveryReportTypeCountDto> rows = new ArrayList<>();
+        for (ReportTypeCountProjection projection : projections) {
+            PlateReportType type = typeById.get(projection.getReportTypeId());
+            if (type == null) continue;
+
+            rows.add(new DiscoveryReportTypeCountDto(
+                    type.getCode(),
+                    translationResolver.resolveLabel(type, translations),
+                    type.getColorHex(),
+                    type.getIconKey(),
+                    safeLong(projection.getReportCount())
+            ));
+        }
+        return rows;
     }
 
     public List<DiscoveryCityStatDto> getTopCityStats(TimeWindow window, int cityLimit) {

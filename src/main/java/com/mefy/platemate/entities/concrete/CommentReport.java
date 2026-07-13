@@ -50,6 +50,10 @@ public class CommentReport implements IEntity {
     @Column(name = "reason_id", nullable = false)
     private Long reasonId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reason_id", insertable = false, updatable = false)
+    private CommentReportReason reason;
+
     @Column(length = 1000)
     private String description;
 
@@ -72,17 +76,7 @@ public class CommentReport implements IEntity {
     private Long reviewedBy;
 
     @Transient
-    public CommentReportReason getReason() {
-        return CommentReportReason.fromId(reasonId);
-    }
-
-    public void setReason(CommentReportReason reason) {
-        this.reasonId = reason == null ? null : reason.getId();
-    }
-
-    @Transient
     public String getReasonCode() {
-        CommentReportReason reason = CommentReportReason.fromId(reasonId);
         return reason == null ? null : reason.getCode();
     }
 

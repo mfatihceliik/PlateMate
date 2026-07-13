@@ -21,5 +21,5 @@ public class DiscoveryPlateCardDto implements IDto {
     private Long todayWeightedReportScore;
     private Double score;
     private LocalDateTime lastActivityAt;
-    private java.util.List<PlateReportTypeDto> trendPlates;
+    private java.util.List<PlateReportTypeDto> topReportTypes;
 }

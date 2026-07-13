@@ -23,6 +23,17 @@ public class LocalizedEnumService {
         if (code == null) {
             return null;
         }
-        return messageService.getMessageOrDefault("enum." + category + "." + code, code);
+        return label(category, code, code);
+    }
+
+    /**
+     * Same lookup with an explicit fallback (e.g. an admin-entered catalog label)
+     * instead of echoing the raw code.
+     */
+    public String label(String category, String code, String fallback) {
+        if (code == null) {
+            return fallback;
+        }
+        return messageService.getMessageOrDefault("enum." + category + "." + code, fallback);
     }
 }

@@ -18,4 +18,7 @@ public interface IPlateFollowDao extends JpaRepository<PlateFollow, Long> {
 
     @Query("SELECT pf.user.id FROM PlateFollow pf WHERE pf.plate.id = :plateId")
     List<Long> findFollowerUserIdsByPlateId(@Param("plateId") Long plateId);
+
+    @Query("SELECT pf FROM PlateFollow pf JOIN FETCH pf.plate p LEFT JOIN FETCH p.city WHERE pf.user.id = :userId ORDER BY pf.createdAt DESC")
+    List<PlateFollow> findByUserIdWithPlate(@Param("userId") Long userId);
 }

@@ -382,14 +382,23 @@ veya
   - Tum metrikler `Europe/Istanbul` gun penceresiyle hesaplanir.
   - `dailyStats`: `todaySearchCount`, `todayReviewCount`, `todayReportCount`
   - `tabs`: `trendPlates`, `attentionPlates`, `goodDriverPlates`, `newPlates`
-  - Kart alanlari: `trendPlates` (eski `topReportTypes`) en cok one cikan 2 report type bilgisini icerir
+  - Kart alanlari: `topReportTypes` en cok one cikan 2 report type bilgisini icerir
   - `cityStats`: bugunun en cok yorum alan sehirleri
   - `recentActivities`: `REVIEW_ADDED`, `RATING_GIVEN`, `REPORT_SUBMITTED`
+  - `feedType`: `FREE` | `PREMIUM` (token kullanicisinin aktif premium durumuna gore)
+  - `extendedStats`: `yesterdaySearchCount`, `yesterdayReviewCount`, `yesterdayReportCount`, `searchDeltaPercent`, `reviewDeltaPercent`, `reportDeltaPercent`, `topReportTypesToday` (`code`, `label`, `colorHex`, `iconKey`, `count` — en fazla 3)
+  - `forYou` (yalnizca PREMIUM, degilse `null`): `followedPlates` + `savedPlates` (en fazla 10'ar `DiscoveryPlateCardDto`), `followedPlateActivities` (en fazla 10), `premiumStats` (`weeklySearchCount`, `weeklyReviewCount`, `weeklyReportCount` + onceki 7 gune gore `weekly*DeltaPercent`)
 
-### Discovery Single Tab
+### Discovery Tab Feed (paged + filters)
 - **Method**: `GET`
-- **URL**: `/api/discovery/tabs/{tabType}?limit=8`
+- **URL**: `/api/discovery/tabs/{tabType}/plates?page=0&size=20&cityIds=&cityIds=&reportTypeCode=&minRating=&windowDays=`
 - **Path `tabType`**: `TREND`, `DANGEROUS`, `GOOD_DRIVER`, `NEW`
+- **Not**:
+  - Paged response doner: `PagedData<DiscoveryPlateCardDto>`.
+  - Free filtreler: `cityIds` (coklu; tekrar eden query param, bos/eksik = tum sehirler), `minRating` (0-5).
+  - Premium filtreler: `reportTypeCode`, `windowDays` (7|30). Free kullanici gonderirse `discovery.filter.premium.required` hatasi doner.
+  - Gecersiz `tabType` -> `discovery.tab.invalid`; gecersiz filtre degerleri -> `discovery.filter.invalid`.
+  - Filtreleme/sayfalama in-memory yapilir (aday tavani 500).
 
 ### Discovery City Plates
 - **Method**: `GET`

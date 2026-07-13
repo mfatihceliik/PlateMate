@@ -3,6 +3,7 @@ package com.mefy.platemate.dataAccess.abstracts;
 import com.mefy.platemate.dataAccess.projections.PlateReportAggregateProjection;
 import com.mefy.platemate.dataAccess.projections.PlateWeightedScoreProjection;
 import com.mefy.platemate.dataAccess.projections.RecentReportActivityProjection;
+import com.mefy.platemate.dataAccess.projections.ReportTypeCountProjection;
 import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import org.springframework.data.domain.Pageable;
@@ -192,6 +193,26 @@ public interface IPlateReportDao extends JpaRepository<PlateReport, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             @Param("plateStatusId") Long plateStatusId
+    );
+
+
+
+    @Query("""
+            select r.reportType.id as reportTypeId,
+                   count(r.id) as reportCount
+            from PlateReport r
+            where r.active = true
+              and r.lastReportedAt >= :start
+              and r.lastReportedAt < :end
+              and r.plate.statusId = :plateStatusId
+            group by r.reportType.id
+            order by count(r.id) desc
+            """)
+    List<ReportTypeCountProjection> getReportTypeCountsByWindowAndPlateStatus(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("plateStatusId") Long plateStatusId,
+            Pageable pageable
     );
 
 

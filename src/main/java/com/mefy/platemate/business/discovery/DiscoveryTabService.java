@@ -14,6 +14,7 @@ import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateReportTypeTranslation;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
+import com.mefy.platemate.entities.dto.DiscoveryTabType;
 import com.mefy.platemate.entities.dto.DiscoveryTabsDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
 import lombok.RequiredArgsConstructor;
@@ -57,17 +58,31 @@ public class DiscoveryTabService {
         goodDriverScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
         newScored.forEach(p -> allPlateIds.add(p.getPlate().getId()));
 
-        Map<Long, List<PlateReportTypeDto>> trendPlatesMap = buildTrendPlatesMap(allPlateIds);
+        Map<Long, List<PlateReportTypeDto>> topReportTypesMap = buildTopReportTypesMap(allPlateIds);
 
         return new DiscoveryTabsDto(
-                trendScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
-                attentionScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
-                goodDriverScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList(),
-                newScored.stream().map(s -> toPlateCard(s, trendPlatesMap)).toList()
+                trendScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
+                attentionScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
+                goodDriverScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList(),
+                newScored.stream().map(s -> toPlateCard(s, topReportTypesMap)).toList()
         );
     }
 
-    private Map<Long, List<PlateReportTypeDto>> buildTrendPlatesMap(Set<Long> plateIds) {
+    /**
+     * Tek bir sekmenin skorlanmis aday listesini doner (feed sayfalama icin).
+     * TREND ve DANGEROUS icin {@code window} aktivite penceresi, GOOD_DRIVER icin ceza penceresidir;
+     * NEW sekmesi pencereyi kullanmaz.
+     */
+    public List<ScoredDiscoveryPlate> buildTabScored(DiscoveryTabType tabType, int limit, TimeWindow window) {
+        return switch (tabType) {
+            case TREND -> buildTrendTabScored(limit, window);
+            case DANGEROUS -> buildDangerousTabScored(limit, window);
+            case GOOD_DRIVER -> buildGoodDriverTabScored(limit, window);
+            case NEW -> buildNewTabScored(limit);
+        };
+    }
+
+    public Map<Long, List<PlateReportTypeDto>> buildTopReportTypesMap(Set<Long> plateIds) {
         Map<Long, List<PlateReportTypeDto>> map = new HashMap<>();
         if (plateIds.isEmpty()) return map;
 
@@ -223,7 +238,7 @@ public class DiscoveryTabService {
         return data;
     }
 
-    private DiscoveryPlateCardDto toPlateCard(ScoredDiscoveryPlate scored, Map<Long, List<PlateReportTypeDto>> trendPlatesMap) {
+    public DiscoveryPlateCardDto toPlateCard(ScoredDiscoveryPlate scored, Map<Long, List<PlateReportTypeDto>> topReportTypesMap) {
         Plate plate = scored.getPlate();
         PlateDailyMetrics metrics = scored.getMetrics();
         return new DiscoveryPlateCardDto(
@@ -237,7 +252,7 @@ public class DiscoveryTabService {
                 metrics.getTodayWeightedReportScore(),
                 scored.getScore(),
                 metrics.getLastActivityAt(),
-                trendPlatesMap.getOrDefault(plate.getId(), List.of())
+                topReportTypesMap.getOrDefault(plate.getId(), List.of())
         );
     }
 

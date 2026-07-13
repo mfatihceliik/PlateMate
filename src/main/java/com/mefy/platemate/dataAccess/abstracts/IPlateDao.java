@@ -21,6 +21,8 @@ public interface IPlateDao extends JpaRepository<Plate, Long> {
 
     List<Plate> findByReviewCountGreaterThanEqual(int reviewCount, Pageable pageable);
 
+    long countByStatusIdIn(Collection<Long> statusIds);
+
     default Optional<Plate> findByPlateCodeAndStatus(String plateCode, PlateStatus status) {
         return findByPlateCodeAndStatusId(plateCode, status == null ? null : status.getId());
     }

@@ -17,6 +17,8 @@ public interface IPlateRemovalRequestDao extends JpaRepository<PlateRemovalReque
 
     Page<PlateRemovalRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    long countByStatusId(Long statusId);
+
     @Modifying
     @Query("""
             delete from PlateRemovalRequest pr

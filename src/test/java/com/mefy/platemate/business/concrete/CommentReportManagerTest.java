@@ -6,6 +6,7 @@ import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsServi
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
+import com.mefy.platemate.dataAccess.abstracts.ICommentReportReasonDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.AppSettingKey;
@@ -57,6 +58,8 @@ class CommentReportManagerTest {
     private IMessageService messageService;
     @Mock
     private com.mefy.platemate.business.utilities.mappers.CommentReportMapper commentReportMapper;
+    @Mock
+    private ICommentReportReasonDao commentReportReasonDao;
 
     private CommentReportManager manager;
 
@@ -70,8 +73,19 @@ class CommentReportManagerTest {
                 moderationEventService,
                 appSettingsService,
                 commentReportMapper,
-                messageService
+                messageService,
+                commentReportReasonDao
         );
+    }
+
+    private CommentReportReason reason(Long id, String code, boolean active) {
+        CommentReportReason reason = new CommentReportReason();
+        reason.setId(id);
+        reason.setCode(code);
+        reason.setLabel(code);
+        reason.setSortOrder(1);
+        reason.setActive(active);
+        return reason;
     }
 
     @Test
@@ -79,15 +93,32 @@ class CommentReportManagerTest {
         PlateReview review = new PlateReview();
         review.setId(11L);
 
+        when(commentReportReasonDao.findByCode("SPAM")).thenReturn(Optional.of(reason(6L, "SPAM", true)));
         when(userDao.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(new com.mefy.platemate.entities.concrete.User()));
         when(plateReviewDao.findById(11L)).thenReturn(Optional.of(review));
         when(commentReportDao.existsByCommentIdAndReporterUserId(11L, 5L)).thenReturn(true);
         when(messageService.getMessage("comment.report.duplicate")).thenReturn("duplicate");
 
-        Result result = manager.addReport(11L, 5L, new AddCommentReportRequest(CommentReportReason.SPAM, "x"));
+        Result result = manager.addReport(11L, 5L, new AddCommentReportRequest(null, "SPAM", "x"));
 
         assertFalse(result.isSuccess());
         assertEquals("duplicate", result.getMessage());
+        verify(commentReportDao, never()).save(any());
+    }
+
+    @Test
+    void addReportRejectsInactiveReason() {
+        PlateReview review = new PlateReview();
+        review.setId(11L);
+
+        when(commentReportReasonDao.findByCode("SPAM")).thenReturn(Optional.of(reason(6L, "SPAM", false)));
+        when(plateReviewDao.findById(11L)).thenReturn(Optional.of(review));
+        when(messageService.getMessage("report.type.invalid")).thenReturn("invalid");
+
+        Result result = manager.addReport(11L, 5L, new AddCommentReportRequest(null, "SPAM", "x"));
+
+        assertFalse(result.isSuccess());
+        assertEquals("invalid", result.getMessage());
         verify(commentReportDao, never()).save(any());
     }
 
@@ -105,15 +136,19 @@ class CommentReportManagerTest {
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
 
+        when(commentReportReasonDao.findByCode("INSULT")).thenReturn(Optional.of(reason(2L, "INSULT", true)));
         when(userDao.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(new com.mefy.platemate.entities.concrete.User()));
         when(plateReviewDao.findById(12L)).thenReturn(Optional.of(review));
         when(commentReportDao.existsByCommentIdAndReporterUserId(12L, 7L)).thenReturn(false);
         when(appSettingsService.getInt(AppSettingKey.COMMENT_REPORT_THRESHOLD)).thenReturn(3);
         when(messageService.getMessage("comment.report.created")).thenReturn("created");
 
-        Result result = manager.addReport(12L, 7L, new AddCommentReportRequest(CommentReportReason.INSULT, "x"));
+        Result result = manager.addReport(12L, 7L, new AddCommentReportRequest(null, "INSULT", "x"));
 
         assertTrue(result.isSuccess());
+        ArgumentCaptor<CommentReport> reportCaptor = ArgumentCaptor.forClass(CommentReport.class);
+        verify(commentReportDao).save(reportCaptor.capture());
+        assertEquals(2L, reportCaptor.getValue().getReasonId());
         ArgumentCaptor<PlateReview> reviewCaptor = ArgumentCaptor.forClass(PlateReview.class);
         verify(plateReviewDao).save(reviewCaptor.capture());
         assertEquals(3, reviewCaptor.getValue().getReportCount());
@@ -146,7 +181,7 @@ class CommentReportManagerTest {
         report.setId(21L);
         report.setComment(comment);
         report.setReporterUserId(7L);
-        report.setReason(CommentReportReason.SPAM);
+        report.setReasonId(6L);
         report.setStatus(CommentReportStatus.OPEN);
         report.setCreatedAt(LocalDateTime.now());
         report.setUpdatedAt(LocalDateTime.now());
@@ -174,7 +209,3 @@ class CommentReportManagerTest {
         verify(plateStatisticsService).refresh(eq(plate));
     }
 }
-
-
-
-

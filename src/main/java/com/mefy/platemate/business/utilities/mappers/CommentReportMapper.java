@@ -37,7 +37,8 @@ public class CommentReportMapper implements IMapper<CommentReport, CommentReport
         dto.setReviewedAt(entity.getReviewedAt());
         dto.setReviewedBy(entity.getReviewedBy());
         if (localizedEnumService != null) {
-            dto.setReasonLabel(localizedEnumService.label("comment_report_reason", entity.getReasonCode()));
+            String reasonFallback = entity.getReason() == null ? entity.getReasonCode() : entity.getReason().getLabel();
+            dto.setReasonLabel(localizedEnumService.label("comment_report_reason", entity.getReasonCode(), reasonFallback));
             dto.setStatusLabel(localizedEnumService.label("comment_report_status", entity.getStatusCode()));
         }
         return dto;

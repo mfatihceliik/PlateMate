@@ -28,6 +28,17 @@ public class TimeWindowService {
     }
 
     /**
+     * Dünün zaman penceresini döner: dün 00:00:00 → bugün 00:00:00
+     * (Türkiye saatiyle dün boyunca gerçekleşen tüm olayları kapsar.)
+     */
+    public TimeWindow previousDayWindow() {
+        LocalDate today = LocalDate.now(TURKEY_ZONE);
+        LocalDateTime end = today.atStartOfDay();
+        LocalDateTime start = end.minusDays(1);
+        return new TimeWindow(start, end);
+    }
+
+    /**
      * Son N günün zaman penceresini döner.
      *
      * @param dayCount geriye gidilecek gün sayısı
@@ -35,6 +46,17 @@ public class TimeWindowService {
     public TimeWindow lastDaysWindow(int dayCount) {
         LocalDate today = LocalDate.now(TURKEY_ZONE);
         LocalDateTime end = today.plusDays(1).atStartOfDay();
+        LocalDateTime start = end.minusDays(dayCount);
+        return new TimeWindow(start, end);
+    }
+
+    /**
+     * Son N günün hemen öncesindeki N günlük pencereyi döner
+     * (haftalık delta karşılaştırmaları için).
+     */
+    public TimeWindow previousDaysWindow(int dayCount) {
+        LocalDate today = LocalDate.now(TURKEY_ZONE);
+        LocalDateTime end = today.plusDays(1).atStartOfDay().minusDays(dayCount);
         LocalDateTime start = end.minusDays(dayCount);
         return new TimeWindow(start, end);
     }

@@ -3,7 +3,6 @@ package com.mefy.platemate.business.concrete;
 import com.mefy.platemate.business.abstracts.IAppSettingsService;
 import com.mefy.platemate.business.abstracts.ICommentReportService;
 import com.mefy.platemate.business.utilities.constants.Messages;
-import com.mefy.platemate.business.utilities.i18n.LocalizedEnumService;
 import com.mefy.platemate.business.utilities.mappers.CommentReportMapper;
 import com.mefy.platemate.business.utilities.moderation.PlateReviewModerationEventService;
 import com.mefy.platemate.business.utilities.plate.concrete.PlateStatisticsService;
@@ -18,6 +17,7 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.ICommentReportDao;
+import com.mefy.platemate.dataAccess.abstracts.ICommentReportReasonDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateReviewDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.AppSettingKey;
@@ -49,13 +49,14 @@ public class CommentReportManager implements ICommentReportService {
     private final IAppSettingsService appSettingsService;
     private final CommentReportMapper commentReportMapper;
     private final IMessageService messageService;
+    private final ICommentReportReasonDao commentReportReasonDao;
 
 
 
     @Override
     @Transactional
     public Result addReport(Long commentId, Long reporterUserId, AddCommentReportRequest request) {
-        CommentReportReason reason = request == null ? null : CommentReportReason.resolve(request.getReasonId(), request.getReasonCode());
+        CommentReportReason reason = resolveActiveReason(request);
         PlateReview comment = plateReviewDao.findById(commentId).orElse(null);
 
         Result validationResult = BusinessRules.run(
@@ -71,6 +72,23 @@ public class CommentReportManager implements ICommentReportService {
         return new SuccessResult(messageService.getMessage(Messages.COMMENT_REPORT_CREATED));
     }
 
+    private CommentReportReason resolveActiveReason(AddCommentReportRequest request) {
+        if (request == null) {
+            return null;
+        }
+        if (request.getReasonId() != null) {
+            return commentReportReasonDao.findById(request.getReasonId())
+                    .filter(CommentReportReason::isActive)
+                    .orElse(null);
+        }
+        if (request.getReasonCode() != null) {
+            return commentReportReasonDao.findByCode(request.getReasonCode())
+                    .filter(CommentReportReason::isActive)
+                    .orElse(null);
+        }
+        return null;
+    }
+
     private Result checkCommentExists(PlateReview comment) {
         if (comment == null) {
             return new ErrorResult(messageService.getMessage(Messages.REVIEW_NOT_FOUND));
@@ -79,6 +97,7 @@ public class CommentReportManager implements ICommentReportService {
     }
 
     @Override
+    @Transactional
     public DataResult<PagedData<CommentReportDto>> getReports(PaginationRequest paginationRequest) {
         var pageable = PageRequest.of(
                 paginationRequest.getPage(),
@@ -132,7 +151,7 @@ public class CommentReportManager implements ICommentReportService {
         CommentReport report = new CommentReport();
         report.setComment(comment);
         report.setReporterUserId(reporterUserId);
-        report.setReason(reason);
+        report.setReasonId(reason.getId());
         report.setDescription(description == null ? null : description.trim());
         report.setStatus(CommentReportStatus.OPEN);
         report.setCreatedAt(now);
