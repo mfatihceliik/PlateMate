@@ -21,6 +21,7 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.dataAccess.abstracts.ICityDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.User;
+import com.mefy.platemate.entities.concrete.UserRoleCode;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryCityStatDto;
 import com.mefy.platemate.entities.dto.DiscoveryDailyStatsDto;
@@ -55,7 +56,9 @@ public class DiscoveryManager implements IDiscoveryService {
     private static final int MAX_FEED_CANDIDATES = 500;
     private static final int DEFAULT_ACTIVITY_WINDOW_DAYS = 7;
     private static final int GOOD_DRIVER_PENALTY_WINDOW_DAYS = 30;
-    private static final Set<Integer> ALLOWED_WINDOW_DAYS = Set.of(7, 30);
+    // Zaman araligi override'i icin gecerli aralik; whitelist yerine 1..MAX araligi
+    // (client hem hazir preset hem serbest gun girisi gonderebilir).
+    private static final int MAX_WINDOW_DAYS = 365;
 
     private static final Comparator<CityPlateActivityDto> BY_LAST_ACTIVITY_DESC =
             Comparator.comparing(CityPlateActivityDto::getLastActivityAt,
@@ -95,7 +98,11 @@ public class DiscoveryManager implements IDiscoveryService {
 
     private DiscoveryFeedType resolveFeedType(Long userId) {
         User user = userDao.findByIdAndActiveTrue(userId).orElse(null);
-        return user != null && user.isPremiumActive() ? DiscoveryFeedType.PREMIUM : DiscoveryFeedType.FREE;
+        // Admin de premium sayilir: rol tekildir (bir admin ayni anda PREMIUM rolu tutamaz),
+        // bu yuzden premium ozelliklerini/filtreleri admin de kullanabilsin diye burada acilir.
+        // Client tarafi (AuthSession.isPremium) da admin'i premium kabul eder -> tutarli.
+        boolean premium = user != null && (user.isPremiumActive() || user.hasRole(UserRoleCode.ADMIN));
+        return premium ? DiscoveryFeedType.PREMIUM : DiscoveryFeedType.FREE;
     }
 
     private DiscoveryExtendedStatsDto buildExtendedStats(DiscoveryDailyStatsDto todayStats, TimeWindow today) {
@@ -190,7 +197,8 @@ public class DiscoveryManager implements IDiscoveryService {
     }
 
     private boolean isFilterValid(DiscoveryTabFeedRequest filter) {
-        if (filter.getWindowDays() != null && !ALLOWED_WINDOW_DAYS.contains(filter.getWindowDays())) {
+        Integer windowDays = filter.getWindowDays();
+        if (windowDays != null && (windowDays < 1 || windowDays > MAX_WINDOW_DAYS)) {
             return false;
         }
         Double minRating = filter.getMinRating();

@@ -305,7 +305,7 @@ class DiscoveryManagerTest {
         when(messageService.getMessage(Messages.DISCOVERY_FILTER_INVALID)).thenReturn("invalid-filter");
 
         DataResult<PagedData<DiscoveryPlateCardDto>> result = discoveryManager.getTabPlates(
-                USER_ID, "TREND", new DiscoveryTabFeedRequest(null, null, null, 14), PaginationRequest.of(0, 20));
+                USER_ID, "TREND", new DiscoveryTabFeedRequest(null, null, null, 400), PaginationRequest.of(0, 20));
 
         assertFalse(result.isSuccess());
         assertEquals("invalid-filter", result.getMessage());
