@@ -21,6 +21,8 @@ public class UserProfileDto implements IDto {
     private Integer followerCount;
     private Integer followingCount;
     private Boolean isFollowing;
+    private String friendshipStatus;
+    private Long friendshipId;
     private Integer totalFriendCounts;
     private Double averageGivenRating;
     private Integer reviewCount;

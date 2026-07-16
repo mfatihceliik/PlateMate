@@ -176,6 +176,15 @@ public class UserManager implements IUserService {
     }
 
     @Override
+    public DataResult<List<UserDto>> searchByUsername(String query) {
+        List<User> users = userDao.findByUsernameContainingIgnoreCaseAndActiveTrue(query);
+        List<UserDto> userDtos = users.stream()
+                .map(this::toUserDtoWithComputedPremium)
+                .collect(Collectors.toList());
+        return new SuccessDataResult<>(userDtos, messageService.getMessage(Messages.USERS_LISTED));
+    }
+
+    @Override
     public DataResult<UserAdminDto> getByUsernameForAdmin(String username) {
         User user = userDao.findByUsername(username).orElse(null);
 

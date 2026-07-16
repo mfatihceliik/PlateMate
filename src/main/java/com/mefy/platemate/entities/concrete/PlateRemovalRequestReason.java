@@ -1,51 +1,49 @@
 package com.mefy.platemate.entities.concrete;
 
-import java.util.Arrays;
+import com.mefy.platemate.entities.abstracts.IEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public enum PlateRemovalRequestReason {
-    PLATE_BELONGS_TO_ME(1L, "PLATE_BELONGS_TO_ME"),
-    FALSE_INFORMATION(2L, "FALSE_INFORMATION"),
-    PRIVACY_REQUEST(3L, "PRIVACY_REQUEST"),
-    HARASSMENT(4L, "HARASSMENT"),
-    LEGAL_REQUEST(5L, "LEGAL_REQUEST"),
-    OTHER(6L, "OTHER");
+import java.time.LocalDateTime;
 
-    private final Long id;
-    private final String code;
+@Entity
+@Table(name = "plate_removal_reasons", indexes = {
+        @Index(name = "idx_plate_removal_reasons_active_sort", columnList = "active,sort_order")
+})
+@Getter
+@Setter
+@NoArgsConstructor
+public class PlateRemovalRequestReason implements IEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    PlateRemovalRequestReason(Long id, String code) {
-        this.id = id;
-        this.code = code;
-    }
+    @Column(nullable = false, unique = true, length = 64)
+    private String code;
 
-    public Long getId() {
-        return id;
-    }
+    @Column(nullable = false, length = 128)
+    private String label;
 
-    public String getCode() {
-        return code;
-    }
+    @Column(name = "requires_description", nullable = false)
+    private boolean requiresDescription;
 
-    public static PlateRemovalRequestReason fromId(Long id) {
-        if (id == null) return null;
-        return Arrays.stream(values())
-                .filter(value -> value.id.equals(id))
-                .findFirst()
-                .orElse(null);
-    }
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder;
 
-    public static PlateRemovalRequestReason fromCode(String code) {
-        if (code == null) return null;
-        return Arrays.stream(values())
-                .filter(value -> value.code.equals(code))
-                .findFirst()
-                .orElse(null);
-    }
+    @Column(nullable = false)
+    private boolean active = true;
 
-    public static PlateRemovalRequestReason resolve(Long id, String code) {
-        if (id != null) {
-            return fromId(id);
-        }
-        return fromCode(code);
-    }
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
 }

@@ -11,6 +11,8 @@ import com.mefy.platemate.entities.dto.request.UpdatePlateReviewRequest;
 
 public interface IPlateReviewService {
     DataResult<PagedData<PlateReviewDto>> getReviewsByPlateCode(String plateCode, PaginationRequest paginationRequest);
+    DataResult<PlateReviewDto> getReviewById(Long reviewId);
+    DataResult<PagedData<PlateReviewDto>> getMyReviews(Long userId, String statusCode, String query, PaginationRequest paginationRequest);
     DataResult<ReviewResponseDto> addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request);
     Result updateReview(Long reviewId, Long currentUserId, UpdatePlateReviewRequest request);
     Result deleteReview(Long reviewId, Long currentUserId);

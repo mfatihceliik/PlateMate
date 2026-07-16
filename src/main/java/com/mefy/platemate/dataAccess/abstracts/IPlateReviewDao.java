@@ -53,6 +53,18 @@ public interface IPlateReviewDao extends JpaRepository<PlateReview, Long> {
         return findByUserIdAndStatusId(userId, status == null ? null : status.getId(), pageable);
     }
 
+    @Query("SELECT r FROM PlateReview r JOIN r.plate p WHERE r.user.id = :userId " +
+            "AND (:statusId IS NULL OR r.statusId = :statusId) " +
+            "AND (:search IS NULL OR LOWER(p.plateCode) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(r.comment) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) " +
+            "ORDER BY r.createdAt DESC")
+    Page<PlateReview> searchByUserId(
+            @Param("userId") Long userId,
+            @Param("statusId") Long statusId,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
     Page<PlateReview> findByStatusIdOrderByCreatedAtDesc(Long statusId, Pageable pageable);
 
     default Page<PlateReview> findByStatusOrderByCreatedAtDesc(PlateReviewStatus status, Pageable pageable) {

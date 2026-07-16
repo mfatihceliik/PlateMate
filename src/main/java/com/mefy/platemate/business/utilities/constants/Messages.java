@@ -72,6 +72,12 @@ public final class Messages {
     public static final String PLATE_REMOVAL_REQUESTS_LISTED = "plate.removal.requests.listed";
     public static final String PLATE_REMOVAL_REQUEST_NOT_FOUND = "plate.removal.request.not.found";
     public static final String PLATE_REMOVAL_REQUEST_REVIEWED = "plate.removal.request.reviewed";
+    public static final String PLATE_REMOVAL_REASONS_LISTED = "plate.removal.reasons.listed";
+    public static final String PLATE_REMOVAL_REASON_ADDED = "plate.removal.reason.added";
+    public static final String PLATE_REMOVAL_REASON_UPDATED = "plate.removal.reason.updated";
+    public static final String PLATE_REMOVAL_REASON_STATUS_UPDATED = "plate.removal.reason.status.updated";
+    public static final String PLATE_REMOVAL_REASON_ALREADY_EXISTS = "plate.removal.reason.already.exists";
+    public static final String PLATE_REMOVAL_REASON_NOT_FOUND = "plate.removal.reason.not.found";
     public static final String VALIDATION_PLATE_REMOVAL_REASON_NOTNULL = "validation.plate.removal.reason.notnull";
     public static final String VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL = "validation.plate.removal.status.notnull";
     public static final String VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL = "validation.report.type.severity.notnull";
@@ -237,6 +243,7 @@ public final class Messages {
     public static final String FRIENDSHIP_SELF_REQUEST = "friendship.self.request";
     public static final String FRIENDS_LISTED = "friends.listed";
     public static final String PENDING_REQUESTS_LISTED = "pending.requests.listed";
+    public static final String SENT_REQUESTS_LISTED = "sent.requests.listed";
     // Settings Messages
     public static final String SETTINGS_UPDATED = "settings.updated";
     public static final String SETTINGS_FOUND = "settings.found";

@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddPlateRemovalRequestRequest implements IDto {
-    private Long reasonId;
-
+    @NotBlank(message = "{validation.plate.removal.reason.notnull}")
     private String reasonCode;
 
     @NotBlank(message = "{validation.plate.removal.description.notblank}")
@@ -22,11 +21,4 @@ public class AddPlateRemovalRequestRequest implements IDto {
 
     @Size(max = 255, message = "{validation.plate.removal.requester.email.max}")
     private String requesterEmail;
-
-    public AddPlateRemovalRequestRequest(PlateRemovalRequestReason reason, String description, String requesterEmail) {
-        this.reasonId = reason == null ? null : reason.getId();
-        this.reasonCode = reason == null ? null : reason.getCode();
-        this.description = description;
-        this.requesterEmail = requesterEmail;
-    }
 }

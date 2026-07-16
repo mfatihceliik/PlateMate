@@ -44,4 +44,9 @@ public interface IFriendshipController {
     ResponseEntity<DataResult<List<FriendshipDto>>> getPendingRequests(
             @RequestAttribute("userId") Long currentUserId
     );
+
+    @GetMapping("/pending/sent")
+    ResponseEntity<DataResult<List<FriendshipDto>>> getSentPendingRequests(
+            @RequestAttribute("userId") Long currentUserId
+    );
 }

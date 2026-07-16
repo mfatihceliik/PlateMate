@@ -80,4 +80,11 @@ public class FriendshipController implements IFriendshipController {
     ) {
         return ResponseEntity.ok(friendshipService.getPendingRequests(currentUserId));
     }
+
+    @Override
+    public ResponseEntity<DataResult<List<FriendshipDto>>> getSentPendingRequests(
+            @RequestAttribute("userId") Long currentUserId
+    ) {
+        return ResponseEntity.ok(friendshipService.getSentPendingRequests(currentUserId));
+    }
 }

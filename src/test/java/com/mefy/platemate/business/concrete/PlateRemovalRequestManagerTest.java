@@ -7,7 +7,7 @@ import com.mefy.platemate.dataAccess.abstracts.IPlateRemovalRequestDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequest;
-import com.mefy.platemate.entities.concrete.PlateRemovalRequestReason;
+import com.mefy.platemate.entities.concrete.PlateRemovalRequest;
 import com.mefy.platemate.entities.concrete.PlateStatus;
 import com.mefy.platemate.entities.dto.PlateRemovalRequestDto;
 import com.mefy.platemate.entities.dto.request.AddPlateRemovalRequestRequest;
@@ -44,6 +44,9 @@ class PlateRemovalRequestManagerTest {
     @Mock
     private com.mefy.platemate.business.utilities.mappers.PlateRemovalRequestMapper plateRemovalRequestMapper;
 
+    @Mock
+    private com.mefy.platemate.dataAccess.abstracts.IPlateRemovalRequestReasonDao plateRemovalRequestReasonDao;
+
     private PlateRemovalRequestManager manager;
 
     @BeforeEach
@@ -52,6 +55,7 @@ class PlateRemovalRequestManagerTest {
                 plateRemovalRequestDao,
                 plateDao,
                 userDao,
+                plateRemovalRequestReasonDao,
                 messageService,
                 plateRemovalRequestMapper
         );
@@ -70,7 +74,7 @@ class PlateRemovalRequestManagerTest {
         PlateRemovalRequest saved = new PlateRemovalRequest();
         saved.setId(99L);
         saved.setPlate(plate);
-        saved.setReason(PlateRemovalRequestReason.PRIVACY_REQUEST);
+        saved.setReasonCode("PRIVACY_REQUEST");
         saved.setDescription("privacy");
         saved.setCreatedAt(LocalDateTime.now());
         saved.setUpdatedAt(LocalDateTime.now());
@@ -80,11 +84,13 @@ class PlateRemovalRequestManagerTest {
         when(plateRemovalRequestDao.save(any(PlateRemovalRequest.class))).thenReturn(saved);
         when(messageService.getMessage("plate.removal.request.created")).thenReturn("created");
 
+        when(plateRemovalRequestReasonDao.existsByCode("PRIVACY_REQUEST")).thenReturn(true);
+
         DataResult<PlateRemovalRequestDto> result = manager.addRequest(
                 30L,
                 8L,
                 new AddPlateRemovalRequestRequest(
-                        PlateRemovalRequestReason.PRIVACY_REQUEST,
+                        "PRIVACY_REQUEST",
                         "privacy request",
                         "owner@example.com"
                 )

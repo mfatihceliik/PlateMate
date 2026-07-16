@@ -38,6 +38,8 @@ public interface IFriendshipDao extends JpaRepository<Friendship, Long> {
 
     List<Friendship> findByAddresseeIdAndStatusId(Long addresseeId, Long statusId);
 
+    List<Friendship> findByRequesterIdAndStatusId(Long requesterId, Long statusId);
+
     @Query("""
             select count(f)
             from Friendship f

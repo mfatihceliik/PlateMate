@@ -55,6 +55,33 @@ public class PlateController implements IPlateController {
     }
 
     @Override
+    public ResponseEntity<DataResult<PlateReviewDto>> getReviewById(
+            @PathVariable Long id
+    ) {
+        DataResult<PlateReviewDto> result = plateReviewService.getReviewById(id);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<DataResult<PagedData<PlateReviewDto>>> getMyReviews(
+            @RequestAttribute("userId") Long currentUserId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        PaginationRequest paginationRequest = PaginationRequest.of(page, size);
+        DataResult<PagedData<PlateReviewDto>> result = plateReviewService.getMyReviews(currentUserId, status, query, paginationRequest);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
     public ResponseEntity<DataResult<ReviewResponseDto>> addReview(
             @PathVariable String plateCode,
             @RequestAttribute("userId") Long currentUserId,

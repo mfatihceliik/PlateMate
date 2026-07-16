@@ -53,15 +53,10 @@ public class UserController implements IUserController {
     }
 
     @Override
-    public ResponseEntity<DataResult<UserAdminDto>> getByUsername(
-            @RequestParam String username,
-            @RequestAttribute("userId") Long currentUserId
+    public ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserDto>>> searchUsers(
+            @RequestParam String username
     ) {
-        Result authResult = adminAccessService.checkAdmin(currentUserId);
-        if (!authResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorDataResult<>(authResult.getMessage()));
-        }
-        DataResult<UserAdminDto> result = userService.getByUsernameForAdmin(username);
+        DataResult<List<com.mefy.platemate.entities.dto.UserDto>> result = userService.searchByUsername(username);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

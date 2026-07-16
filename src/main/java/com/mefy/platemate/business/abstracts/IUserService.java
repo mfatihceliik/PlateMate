@@ -28,6 +28,8 @@ public interface IUserService {
 
     DataResult<UserDto> getByUsername(String username);
 
+    DataResult<List<UserDto>> searchByUsername(String query);
+
     DataResult<UserAdminDto> getByUsernameForAdmin(String username);
 
     DataResult<User> getByUsernameOrEmailForAuth(String identifier);

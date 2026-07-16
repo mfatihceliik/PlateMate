@@ -37,8 +37,8 @@ public class PlateRemovalRequest implements IEntity {
     @Column(name = "requester_username", length = 255)
     private String requesterUsername;
 
-    @Column(name = "reason_id", nullable = false)
-    private Long reasonId;
+    @Column(name = "reason_code", nullable = false, length = 64)
+    private String reasonCode;
 
     @Column(nullable = false, length = 1000)
     private String description;
@@ -60,21 +60,6 @@ public class PlateRemovalRequest implements IEntity {
 
     @Column(name = "reviewed_by")
     private Long reviewedBy;
-
-    @Transient
-    public PlateRemovalRequestReason getReason() {
-        return PlateRemovalRequestReason.fromId(reasonId);
-    }
-
-    public void setReason(PlateRemovalRequestReason reason) {
-        this.reasonId = reason == null ? null : reason.getId();
-    }
-
-    @Transient
-    public String getReasonCode() {
-        PlateRemovalRequestReason reason = PlateRemovalRequestReason.fromId(reasonId);
-        return reason == null ? null : reason.getCode();
-    }
 
     @Transient
     public PlateRemovalRequestStatus getStatus() {

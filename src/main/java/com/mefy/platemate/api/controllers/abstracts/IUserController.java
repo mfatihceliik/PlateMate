@@ -23,9 +23,8 @@ public interface IUserController {
     );
 
     @GetMapping("/search")
-    ResponseEntity<DataResult<UserAdminDto>> getByUsername(
-            @RequestParam String username,
-            @RequestAttribute("userId") Long currentUserId
+    ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserDto>>> searchUsers(
+            @RequestParam String username
     );
 
     @PutMapping("/{userId}")

@@ -17,6 +17,7 @@ import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IPlateDao;
 import com.mefy.platemate.dataAccess.abstracts.IPlateRemovalRequestDao;
+import com.mefy.platemate.dataAccess.abstracts.IPlateRemovalRequestReasonDao;
 import com.mefy.platemate.dataAccess.abstracts.IUserDao;
 import com.mefy.platemate.entities.concrete.Plate;
 import com.mefy.platemate.entities.concrete.PlateRemovalRequest;
@@ -46,6 +47,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
     private final IPlateRemovalRequestDao plateRemovalRequestDao;
     private final IPlateDao plateDao;
     private final IUserDao userDao;
+    private final IPlateRemovalRequestReasonDao plateRemovalRequestReasonDao;
     private final IMessageService messageService;
     private final PlateRemovalRequestMapper plateRemovalRequestMapper;
 
@@ -61,13 +63,13 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
             Long requesterUserId,
             AddPlateRemovalRequestRequest request
     ) {
-        PlateRemovalRequestReason reason = request == null
-                ? null
-                : PlateRemovalRequestReason.resolve(request.getReasonId(), request.getReasonCode());
+        String reasonCode = request == null || request.getReasonCode() == null 
+                ? null 
+                : request.getReasonCode().trim().toUpperCase(java.util.Locale.ROOT).replace(' ', '_');
         Plate plate = plateDao.findById(plateId).orElse(null);
 
         Result validationResult = BusinessRules.run(
-                checkIfReasonExists(reason),
+                checkIfReasonExists(reasonCode),
                 checkIfPlateExists(plate),
                 checkIfUserExists(requesterUserId)
         );
@@ -86,7 +88,7 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
                 ? (requester == null ? null : requester.getEmail())
                 : request.getRequesterEmail().trim();
         removalRequest.setRequesterEmail(requesterEmail);
-        removalRequest.setReason(reason);
+        removalRequest.setReasonCode(reasonCode);
         removalRequest.setDescription(request.getDescription().trim());
         removalRequest.setStatus(PlateRemovalRequestStatus.OPEN);
         removalRequest.setCreatedAt(now);
@@ -103,9 +105,12 @@ public class PlateRemovalRequestManager implements IPlateRemovalRequestService {
         return new SuccessDataResult<>(plateRemovalRequestMapper.entityToDto(saved), messageService.getMessage(Messages.PLATE_REMOVAL_REQUEST_CREATED));
     }
 
-    private Result checkIfReasonExists(PlateRemovalRequestReason reason) {
-        if (reason == null) {
+    private Result checkIfReasonExists(String reasonCode) {
+        if (reasonCode == null || reasonCode.isBlank()) {
             return new ErrorResult(messageService.getMessage(Messages.VALIDATION_PLATE_REMOVAL_REASON_NOTNULL));
+        }
+        if (!plateRemovalRequestReasonDao.existsByCode(reasonCode)) {
+            return new ErrorResult(messageService.getMessage(Messages.PLATE_REMOVAL_REASON_NOT_FOUND));
         }
         return new SuccessResult();
     }

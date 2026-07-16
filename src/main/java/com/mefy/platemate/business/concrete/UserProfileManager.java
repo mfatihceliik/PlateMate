@@ -94,6 +94,7 @@ public class UserProfileManager implements IUserProfileService {
         dto.setAverageGivenRating(averageGivenRating);
 
         populateFollowData(dto, userId, requesterUserId);
+        populateFriendshipData(dto, userId, requesterUserId);
         populateProfileDetails(dto, profile, userId, selfViewer);
 
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PROFILE_FOUND));
@@ -216,6 +217,32 @@ public class UserProfileManager implements IUserProfileService {
         dto.setFollowerCount(toSafeInt(followService.countFollowers(profileUserId)));
         dto.setFollowingCount(toSafeInt(followService.countFollowing(profileUserId)));
         dto.setIsFollowing(followService.isFollowing(requesterUserId, profileUserId));
+    }
+
+    private void populateFriendshipData(UserProfileDto dto, Long profileUserId, Long requesterUserId) {
+        if (requesterUserId == null || requesterUserId.equals(profileUserId)) {
+            dto.setFriendshipStatus("NONE");
+            return;
+        }
+        
+        java.util.Optional<Friendship> friendshipOpt = friendshipDao.findLatestActiveBetweenUsers(
+                requesterUserId, profileUserId, FriendshipRequestStatusCodes.ACTIVE_IDS);
+        
+        if (friendshipOpt.isPresent()) {
+            Friendship f = friendshipOpt.get();
+            dto.setFriendshipId(f.getId());
+            if (f.getStatusId().equals(FriendshipRequestStatusCodes.ACCEPTED_ID)) {
+                dto.setFriendshipStatus("FRIENDS");
+            } else if (f.getStatusId().equals(FriendshipRequestStatusCodes.REQUESTED_ID)) {
+                if (f.getRequester().getId().equals(requesterUserId)) {
+                    dto.setFriendshipStatus("PENDING_SENT");
+                } else {
+                    dto.setFriendshipStatus("PENDING_RECEIVED");
+                }
+            }
+        } else {
+            dto.setFriendshipStatus("NONE");
+        }
     }
 
     private void populateProfileDetails(UserProfileDto dto, UserProfile profile, Long userId, boolean selfViewer) {

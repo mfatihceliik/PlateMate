@@ -23,6 +23,9 @@ public class ChatRoomMapper implements IMapper<ChatRoom, ChatRoomDto> {
         // For the preview of the last message (if messages are loaded)
         if (entity.getMessages() != null && !entity.getMessages().isEmpty()) {
             dto.setLastMessageContent(entity.getMessages().get(entity.getMessages().size() - 1).getContent());
+            if (entity.getMessages().get(entity.getMessages().size() - 1).getSender() != null) {
+                dto.setLastMessageSenderId(entity.getMessages().get(entity.getMessages().size() - 1).getSender().getId());
+            }
         }
 
         // In 1-1 chats, show the other person's name

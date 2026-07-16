@@ -21,4 +21,5 @@ public class ChatRoomDto implements IDto {
     private String requestStatus; // PENDING / ACCEPTED / DECLINED (message-request flow)
     private Long initiatorId; // Who started the conversation (must wait for approval)
     private int unreadCount; // Messages in this room not sent by me and not yet READ
+    private Long lastMessageSenderId; // Sender of the last message in the room
 }

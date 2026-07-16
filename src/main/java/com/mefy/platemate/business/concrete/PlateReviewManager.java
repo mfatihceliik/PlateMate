@@ -92,6 +92,43 @@ public class PlateReviewManager implements IPlateReviewService {
     }
 
     @Override
+    public DataResult<PagedData<PlateReviewDto>> getMyReviews(
+            Long userId,
+            String statusCode,
+            String query,
+            PaginationRequest paginationRequest
+    ) {
+        PlateReviewStatus status = PlateReviewStatus.fromCode(statusCode);
+        if (statusCode != null && status == null) {
+            return new ErrorDataResult<>(messageService.getMessage(Messages.INVALID_REQUEST_PARAM));
+        }
+
+        String search = (query == null || query.isBlank()) ? null : query.trim();
+        Pageable pageable = PageRequest.of(paginationRequest.getPage(), paginationRequest.getSize());
+        var page = plateReviewDao.searchByUserId(
+                        userId,
+                        status == null ? null : status.getId(),
+                        search,
+                        pageable
+                )
+                .map(plateReviewMapper::entityToDto);
+        PagedData<PlateReviewDto> reviews = PaginationMapper.fromPage(page);
+
+        return new SuccessDataResult<>(reviews, messageService.getMessage(Messages.REVIEWS_LISTED));
+    }
+
+    @Override
+    public DataResult<PlateReviewDto> getReviewById(Long reviewId) {
+        PlateReview review = plateReviewDao.findById(reviewId).orElse(null);
+        Result existsResult = checkIfReviewExists(review);
+        if (!existsResult.isSuccess()) {
+            return new ErrorDataResult<>(existsResult.getMessage());
+        }
+
+        return new SuccessDataResult<>(plateReviewMapper.entityToDto(review), messageService.getMessage(Messages.REVIEWS_LISTED));
+    }
+
+    @Override
     @Transactional
     public DataResult<ReviewResponseDto> addReview(String plateCode, Long currentUserId, AddPlateReviewRequest request) {
         String normalizedPlate = plateSearchService.normalizePlate(plateCode);

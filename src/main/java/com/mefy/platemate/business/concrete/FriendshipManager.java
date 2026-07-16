@@ -137,6 +137,15 @@ public class FriendshipManager implements IFriendshipService {
     }
 
     @Override
+    public DataResult<List<FriendshipDto>> getSentPendingRequests(Long userId) {
+        List<Friendship> sent = friendshipDao.findByRequesterIdAndStatusId(userId, FriendshipRequestStatusCodes.REQUESTED_ID);
+        List<FriendshipDto> dtos = sent.stream()
+                .map(f -> friendshipMapper.entityToDto(f, userId))
+                .collect(Collectors.toList());
+        return new SuccessDataResult<>(dtos, messageService.getMessage(Messages.SENT_REQUESTS_LISTED));
+    }
+
+    @Override
     public boolean areFriends(Long userId1, Long userId2) {
         if (userId1 == null || userId2 == null || userId1.equals(userId2)) {
             return false;

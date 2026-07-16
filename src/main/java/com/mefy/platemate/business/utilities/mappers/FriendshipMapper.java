@@ -43,8 +43,8 @@ public class FriendshipMapper implements IMapper<Friendship, FriendshipDto> {
         if (localizedEnumService != null) {
             dto.setStatusLabel(localizedEnumService.label("friendship_status", entity.getStatusCode()));
         }
-        java.time.LocalDateTime dateToUse = entity.getRespondedAt() != null ? entity.getRespondedAt() : entity.getCreatedAt();
-        dto.setCreatedAt(dateToUse);
+        dto.setRequestedAt(entity.getCreatedAt());
+        dto.setRespondedAt(entity.getRespondedAt());
 
         // Determine the other party
         User friend = entity.getRequester().getId().equals(currentUserId)

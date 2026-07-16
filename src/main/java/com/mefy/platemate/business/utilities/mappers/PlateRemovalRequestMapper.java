@@ -27,7 +27,6 @@ public class PlateRemovalRequestMapper implements IMapper<PlateRemovalRequest, P
         dto.setRequesterUserId(entity.getRequesterUserId());
         dto.setRequesterEmail(entity.getRequesterEmail());
         dto.setRequesterUsername(entity.getRequesterUsername());
-        dto.setReasonId(entity.getReasonId());
         dto.setReasonCode(entity.getReasonCode());
         dto.setDescription(entity.getDescription());
         dto.setStatusId(entity.getStatusId());
@@ -37,7 +36,7 @@ public class PlateRemovalRequestMapper implements IMapper<PlateRemovalRequest, P
         dto.setReviewedAt(entity.getReviewedAt());
         dto.setReviewedBy(entity.getReviewedBy());
         if (localizedEnumService != null) {
-            dto.setReasonLabel(localizedEnumService.label("removal_reason", entity.getReasonCode()));
+            dto.setReasonLabel(localizedEnumService.label("plate_removal_request_reason", entity.getReasonCode()));
             dto.setStatusLabel(localizedEnumService.label("removal_status", entity.getStatusCode()));
         }
         return dto;

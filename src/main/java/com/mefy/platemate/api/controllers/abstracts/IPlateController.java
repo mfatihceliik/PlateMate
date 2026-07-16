@@ -44,6 +44,20 @@ public interface IPlateController {
             @Valid @RequestBody AddPlateReviewRequest request
     );
 
+    @GetMapping("/reviews/{id}")
+    ResponseEntity<DataResult<PlateReviewDto>> getReviewById(
+            @PathVariable Long id
+    );
+
+    @GetMapping("/reviews/mine")
+    ResponseEntity<DataResult<PagedData<PlateReviewDto>>> getMyReviews(
+            @RequestAttribute("userId") Long currentUserId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    );
+
     @PutMapping("/reviews/{id}")
     ResponseEntity<Result> updateReview(
             @PathVariable Long id,

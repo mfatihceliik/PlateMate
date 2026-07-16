@@ -17,5 +17,6 @@ public class FriendshipDto implements IDto {
     private Long statusId;
     private String statusCode;
     private String statusLabel;
-    private LocalDateTime createdAt;
+    private LocalDateTime requestedAt;
+    private LocalDateTime respondedAt;
 }
