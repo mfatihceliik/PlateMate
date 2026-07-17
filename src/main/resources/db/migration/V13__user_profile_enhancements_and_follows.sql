@@ -1,4 +1,8 @@
 -- User profile enhancements: bio, profile photo, verified badge
+CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id BIGINT PRIMARY KEY REFERENCES users(id)
+);
+
 ALTER TABLE user_profiles ADD COLUMN bio VARCHAR(300);
 ALTER TABLE user_profiles ADD COLUMN profile_photo_url VARCHAR(500);
 ALTER TABLE user_profiles ADD COLUMN verified BOOLEAN NOT NULL DEFAULT FALSE;
