@@ -2,12 +2,14 @@ package com.mefy.platemate.api.controllers.concrete;
 
 import com.mefy.platemate.api.controllers.abstracts.IDiscoveryController;
 import com.mefy.platemate.business.abstracts.IDiscoveryService;
+import com.mefy.platemate.business.abstracts.IDiscoveryTabOptionService;
 import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryHomeDto;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
+import com.mefy.platemate.entities.dto.DiscoveryTabOptionDto;
 import com.mefy.platemate.entities.dto.request.DiscoveryTabFeedRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +18,23 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class DiscoveryController implements IDiscoveryController {
 
     private final IDiscoveryService discoveryService;
+    private final IDiscoveryTabOptionService discoveryTabOptionService;
+
+    @Override
+    public ResponseEntity<DataResult<List<DiscoveryTabOptionDto>>> getTabOptions() {
+        DataResult<List<DiscoveryTabOptionDto>> result = discoveryTabOptionService.getActiveTabOptions();
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
 
     @Override
     public ResponseEntity<DataResult<DiscoveryHomeDto>> getHome(

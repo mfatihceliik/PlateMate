@@ -65,7 +65,14 @@ public final class Messages {
     public static final String PLATE_REPORT_TYPE_ADDED = "plate.report.type.added";
     public static final String PLATE_REPORT_TYPE_UPDATED = "plate.report.type.updated";
     public static final String PLATE_REPORT_TYPE_STATUS_UPDATED = "plate.report.type.status.updated";
-    
+    // Discovery Tab Option Messages
+    public static final String DISCOVERY_TAB_OPTIONS_LISTED = "discovery.tab.options.listed";
+    public static final String DISCOVERY_TAB_OPTION_ADDED = "discovery.tab.option.added";
+    public static final String DISCOVERY_TAB_OPTION_UPDATED = "discovery.tab.option.updated";
+    public static final String DISCOVERY_TAB_OPTION_STATUS_UPDATED = "discovery.tab.option.status.updated";
+    public static final String DISCOVERY_TAB_OPTION_ALREADY_EXISTS = "discovery.tab.option.already.exists";
+    public static final String DISCOVERY_TAB_OPTION_NOT_FOUND = "discovery.tab.option.not.found";
+
     // Plate Removal Request Messages
     public static final String PLATE_REMOVAL_REQUEST_CREATED = "plate.removal.request.created";
     public static final String PLATE_REMOVAL_PLATE_NOT_FOUND = "plate.removal.plate.not.found";
@@ -81,6 +88,7 @@ public final class Messages {
     public static final String VALIDATION_PLATE_REMOVAL_REASON_NOTNULL = "validation.plate.removal.reason.notnull";
     public static final String VALIDATION_PLATE_REMOVAL_STATUS_NOTNULL = "validation.plate.removal.status.notnull";
     public static final String VALIDATION_REPORT_TYPE_SEVERITY_NOTNULL = "validation.report.type.severity.notnull";
+    public static final String VALIDATION_DISCOVERY_TAB_OPTION_CODE_INVALID = "validation.discovery.tab.option.code.invalid";
     public static final String VALIDATION_SOCIAL_PLATFORM_NOTNULL = "validation.social.platform.notnull";
     public static final String VALIDATION_SOCIAL_PLATFORM_CODE_NOTBLANK = "validation.social.platform.code.notblank";
     public static final String VALIDATION_SOCIAL_PLATFORM_LABEL_NOTBLANK = "validation.social.platform.label.notblank";

@@ -5,6 +5,7 @@ import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.entities.dto.CityPlateActivityDto;
 import com.mefy.platemate.entities.dto.DiscoveryHomeDto;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
+import com.mefy.platemate.entities.dto.DiscoveryTabOptionDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,8 +13,13 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @RequestMapping("/api/discovery")
 public interface IDiscoveryController {
+
+    @GetMapping("/tabs")
+    ResponseEntity<DataResult<List<DiscoveryTabOptionDto>>> getTabOptions();
 
     @GetMapping("/home")
     ResponseEntity<DataResult<DiscoveryHomeDto>> getHome(
