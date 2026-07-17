@@ -1,3 +1,23 @@
+-- plate_report_types predates Flyway on some environments and was never created by a
+-- migration; V11/V12 guard against its absence, so it must reach its post-V12 shape here.
+CREATE TABLE IF NOT EXISTS plate_report_types (
+    id          BIGSERIAL    PRIMARY KEY,
+    code        VARCHAR(64)  NOT NULL UNIQUE,
+    label       VARCHAR(120) NOT NULL,
+    description VARCHAR(400) NOT NULL,
+    icon_key    VARCHAR(64)  NOT NULL,
+    severity_id BIGINT       NOT NULL REFERENCES plate_report_severities(id),
+    color_hex   VARCHAR(16)  NOT NULL,
+    weight      INTEGER      NOT NULL,
+    sort_order  INTEGER      NOT NULL,
+    active      BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_plate_report_types_severity_id ON plate_report_types(severity_id);
+CREATE INDEX IF NOT EXISTS idx_plate_report_types_active_sort ON plate_report_types(active, sort_order);
+
 CREATE TABLE plate_report_type_translations (
     id          BIGSERIAL    PRIMARY KEY,
     report_type_id BIGINT    NOT NULL REFERENCES plate_report_types(id) ON DELETE CASCADE,

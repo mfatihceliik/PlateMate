@@ -1,3 +1,22 @@
+-- chat_rooms/chat_messages predate Flyway on some environments and were never created
+-- by a migration; recreate their pre-this-migration shape here.
+CREATE TABLE IF NOT EXISTS chat_rooms (
+    id              BIGSERIAL PRIMARY KEY,
+    room_name       VARCHAR(255),
+    is_group        BOOLEAN   NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_message_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id           BIGSERIAL PRIMARY KEY,
+    chat_room_id BIGINT REFERENCES chat_rooms(id),
+    sender_id    BIGINT REFERENCES users(id),
+    content      TEXT      NOT NULL,
+    is_read      BOOLEAN   NOT NULL DEFAULT FALSE,
+    sent_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- Message delivery/read status (single tick / double tick / read), server-authoritative
 ALTER TABLE chat_messages ADD COLUMN message_status VARCHAR(20) NOT NULL DEFAULT 'SENT';
 ALTER TABLE chat_messages ADD COLUMN delivered_at TIMESTAMP;
