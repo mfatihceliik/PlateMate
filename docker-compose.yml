@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: ghcr.io/mfatihceliik/platemate-backend:latest
     container_name: platemate-backend
     ports:
       - "8080:8080" # Spring Boot varsayılan portu
