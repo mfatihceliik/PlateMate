@@ -54,6 +54,15 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/platemate-backend:latest
       
+      - name: Sync docker-compose.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "~/PlateMate"
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
