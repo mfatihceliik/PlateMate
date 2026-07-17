@@ -1,6 +1,10 @@
-.gradle
+#.gradle
+#.idea
+#build
+#!build/libs/*.jar
+#*.iml
+#.vscode
+
 .idea
-build
-!build/libs/*.jar
-*.iml
 .vscode
+*.iml
