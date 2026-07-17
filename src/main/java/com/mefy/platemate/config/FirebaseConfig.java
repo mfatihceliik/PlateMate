@@ -14,6 +14,9 @@ import java.io.IOException;
 @Slf4j
 public class FirebaseConfig {
 
+    //String firebaseKeyPath = System.getenv("FIREBASE_SERVICE_ACCOUNT");
+    // "serviceAccountKey.json"
+
     @Bean
     public FirebaseApp firebaseApp() {
         try {
