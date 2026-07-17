@@ -17,6 +17,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Debug
+        run: |
+          pwd
+          ls -la
+          echo "===== Dockerfile ====="
+          cat Dockerfile
+          echo "===== .dockerignore ====="
+          cat .dockerignore
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
