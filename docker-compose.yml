@@ -12,6 +12,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-local-dev-password}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - JWT_SECRET=${JWT_SECRET:-platemate-local-dev-jwt-secret-key-2026-minimum-32-chars}
+    volumes:
+      - ./serviceAccountKey.json:/app/secrets/serviceAccountKey.json:ro
     depends_on:
       db:
         condition: service_healthy # db konteyneri tamamen hazır olmadan app ayağa kalkmaz

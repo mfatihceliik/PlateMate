@@ -4,18 +4,19 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 
 @Configuration
 @Slf4j
 public class FirebaseConfig {
 
-    //String firebaseKeyPath = System.getenv("FIREBASE_SERVICE_ACCOUNT");
-    // "serviceAccountKey.json"
+    @Value("${firebase.service-account-path:/app/secrets/serviceAccountKey.json}")
+    private String serviceAccountPath;
 
     @Bean
     public FirebaseApp firebaseApp() {
@@ -25,13 +26,13 @@ public class FirebaseConfig {
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource("serviceAccountKey.json").getInputStream()))
+                    .setCredentials(GoogleCredentials.fromStream(new FileInputStream(serviceAccountPath)))
                     .build();
 
-            log.info("Firebase Application is initializing from 'config' package...");
+            log.info("Firebase Application is initializing from '{}'...", serviceAccountPath);
             return FirebaseApp.initializeApp(options);
         } catch (IOException e) {
-            log.error("Firebase initialization error: {}. Make sure 'src/main/resources/serviceAccountKey.json' exists.", e.getMessage());
+            log.error("Firebase initialization error: {}. Make sure the service account file is mounted at '{}'.", e.getMessage(), serviceAccountPath);
             return null;
         }
     }
