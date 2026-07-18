@@ -44,6 +44,9 @@ public class ChatMessage implements IEntity {
 
     private LocalDateTime sentAt = LocalDateTime.now();
 
+    @Column(name = "client_message_id", length = 64)
+    private String clientMessageId;
+
     @PrePersist
     private void onCreate() {
         // Server is the source of truth for the send time; never trust the client clock.

@@ -16,4 +16,8 @@ public class SendMessageRequest implements IDto {
 
     @NotBlank(message = "{validation.chat.content.notblank}")
     private String content;
+
+    // Client-generated correlation id (UUID) so the sender can reconcile its optimistic local
+    // row against the persisted server row via the send ack. Nullable for backward compat.
+    private String clientMessageId;
 }

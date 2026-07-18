@@ -71,4 +71,10 @@ public interface IChatController {
             @PathVariable Long roomId,
             @RequestAttribute("userId") Long currentUserId
     );
+
+    @DeleteMapping("/messages/{messageId}")
+    ResponseEntity<Result> deleteMessage(
+            @PathVariable Long messageId,
+            @RequestAttribute("userId") Long currentUserId
+    );
 }

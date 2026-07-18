@@ -21,4 +21,5 @@ public class ChatMessageDto implements IDto {
     private String status; // SENT / DELIVERED / READ (for tick states)
     private LocalDateTime deliveredAt;
     private LocalDateTime readAt;
+    private String clientMessageId; // Echoed back so the sender can reconcile its optimistic local row
 }

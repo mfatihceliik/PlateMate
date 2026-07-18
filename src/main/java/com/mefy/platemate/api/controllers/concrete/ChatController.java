@@ -140,4 +140,16 @@ public class ChatController implements IChatController {
         }
         return ResponseEntity.ok(result);
     }
+
+    @Override
+    public ResponseEntity<Result> deleteMessage(
+            @PathVariable Long messageId,
+            @RequestAttribute("userId") Long currentUserId
+    ) {
+        Result result = chatMessageService.deleteMessage(messageId, currentUserId);
+        if (!result.isSuccess()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
 }

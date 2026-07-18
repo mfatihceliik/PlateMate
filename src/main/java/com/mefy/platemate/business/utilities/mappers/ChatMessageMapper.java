@@ -22,6 +22,7 @@ public class ChatMessageMapper implements IMapper<ChatMessage, ChatMessageDto> {
         dto.setStatus(entity.getStatus() == null ? null : entity.getStatus().name());
         dto.setDeliveredAt(entity.getDeliveredAt());
         dto.setReadAt(entity.getReadAt());
+        dto.setClientMessageId(entity.getClientMessageId());
 
         if (entity.getSender() != null) {
             dto.setSenderUserId(entity.getSender().getId());

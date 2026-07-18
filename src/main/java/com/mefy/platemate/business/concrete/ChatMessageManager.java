@@ -23,6 +23,7 @@ import com.mefy.platemate.entities.concrete.NotificationType;
 import com.mefy.platemate.entities.concrete.Participant;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.ChatMessageDto;
+import com.mefy.platemate.entities.dto.MessageDeletedDto;
 import com.mefy.platemate.entities.dto.MessageStatusSignalDto;
 import com.mefy.platemate.entities.dto.request.SendMessageRequest;
 import jakarta.transaction.Transactional;
@@ -62,6 +63,19 @@ public class ChatMessageManager implements IChatMessageService {
             return new ErrorDataResult<>(validationResult.getMessage());
         }
 
+        // Idempotency guard: if this exact (sender, clientMessageId) already committed, the
+        // client is retrying after losing the ack, not sending a new message — return the
+        // existing row instead of persisting a duplicate.
+        if (request.getClientMessageId() != null && !request.getClientMessageId().isBlank()) {
+            Optional<ChatMessage> existing = chatMessageDao.findFirstBySenderIdAndClientMessageId(
+                    currentUserId, request.getClientMessageId());
+            if (existing.isPresent()) {
+                return new SuccessDataResult<>(
+                        chatMessageMapper.entityToDto(existing.get()),
+                        messageService.getMessage(Messages.MESSAGE_SENT));
+            }
+        }
+
         User sender = new User();
         sender.setId(currentUserId);
 
@@ -70,6 +84,7 @@ public class ChatMessageManager implements IChatMessageService {
         message.setChatRoom(room);
         message.setContent(request.getContent());
         message.setStatus(MessageStatus.SENT);
+        message.setClientMessageId(request.getClientMessageId());
 
         persistMessageAndTouchRoom(message, room);
         acceptRequestIfApproverReplied(room, currentUserId);
@@ -158,9 +173,12 @@ public class ChatMessageManager implements IChatMessageService {
         }
     }
 
-    // Push the new message to every participant's own user room (joined on connect + every
-    // reconnect), the sender included so they receive their own echo. Targeting user rooms — not
-    // the chat room — removes the join_room race and reaches members who never joined the room.
+    // Push the new message to every OTHER participant's own user room (joined on connect + every
+    // reconnect). Targeting user rooms — not the chat room — removes the join_room race and
+    // reaches members who never joined the room. The sender is excluded: they now learn about
+    // their own message deterministically via the send ack (which carries the real id +
+    // clientMessageId for reconciliation), so the echo would just be a redundant second writer
+    // racing the ack-driven reconcile on the sender's own device.
     private void broadcastNewMessage(ChatRoom room, ChatMessageDto dto) {
         if (room == null || room.getParticipants() == null) {
             return;
@@ -168,6 +186,7 @@ public class ChatMessageManager implements IChatMessageService {
         room.getParticipants().stream()
                 .map(p -> p.getUser().getId())
                 .distinct()
+                .filter(userId -> !userId.equals(dto.getSenderUserId()))
                 .forEach(userId -> socketPushService.sendToUser(userId, SocketEvents.NEW_MESSAGE, dto));
     }
 
@@ -329,6 +348,45 @@ public class ChatMessageManager implements IChatMessageService {
         ));
     }
 
+
+    @Override
+    @Transactional
+    public Result deleteMessage(Long messageId, Long currentUserId) {
+        ChatMessage message = chatMessageDao.findById(messageId).orElse(null);
+        if (message == null) {
+            return new ErrorResult(messageService.getMessage(Messages.MESSAGE_NOT_FOUND));
+        }
+        if (message.getSender() == null || !message.getSender().getId().equals(currentUserId)) {
+            return new ErrorResult(messageService.getMessage(Messages.MESSAGE_DELETE_UNAUTHORIZED));
+        }
+
+        message.setStatus(MessageStatus.DELETED);
+        message.setContent("");
+        chatMessageDao.save(message);
+
+        try {
+            broadcastMessageDeleted(message);
+        } catch (Exception e) {
+            log.error("Failed to broadcast deletion of message {}: {}", messageId, e.getMessage());
+        }
+
+        return new SuccessResult(messageService.getMessage(Messages.MESSAGE_DELETED));
+    }
+
+    // Unlike broadcastNewMessage, the sender IS included here — their other sessions need the
+    // live tombstone too, and (unlike send) there's no ack-driven reconcile on this device to
+    // race against since delete is a plain REST call, not a socket emit.
+    private void broadcastMessageDeleted(ChatMessage message) {
+        ChatRoom room = message.getChatRoom();
+        if (room == null || room.getParticipants() == null) {
+            return;
+        }
+        MessageDeletedDto dto = new MessageDeletedDto(room.getId(), message.getId());
+        room.getParticipants().stream()
+                .map(p -> p.getUser().getId())
+                .distinct()
+                .forEach(userId -> socketPushService.sendToUser(userId, SocketEvents.MESSAGE_DELETED, dto));
+    }
 
     private ChatRoom findRoom(Long roomId) {
         if (roomId == null) {

@@ -12,4 +12,5 @@ public interface IChatMessageService {
     DataResult<List<ChatMessageDto>> getMessagesByRoomId(Long roomId, Long currentUserId);
     Result markAsRead(Long roomId, Long currentUserId); // Mark messages as read
     void markPendingDelivered(Long userId); // On (re)connect: mark incoming SENT messages as DELIVERED
+    Result deleteMessage(Long messageId, Long currentUserId); // Soft-delete for everyone (sender only)
 }

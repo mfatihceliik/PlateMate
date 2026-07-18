@@ -172,6 +172,9 @@ public final class Messages {
     public static final String MESSAGE_REQUEST_ACCEPTED = "message.request.accepted";
     public static final String MESSAGE_REQUEST_DECLINED_OK = "message.request.declined.ok";
     public static final String MESSAGE_REQUEST_RESPOND_UNAUTHORIZED = "message.request.respond.unauthorized";
+    public static final String MESSAGE_NOT_FOUND = "chat.message.not.found";
+    public static final String MESSAGE_DELETE_UNAUTHORIZED = "chat.message.delete.unauthorized";
+    public static final String MESSAGE_DELETED = "chat.message.deleted";
     // User Block Messages
     public static final String USER_BLOCK_SUCCESS = "user.block.success";
     public static final String USER_UNBLOCK_SUCCESS = "user.unblock.success";

@@ -42,6 +42,10 @@ serviceAccountKey.json
 ### Secrets ###
 .env
 
+### Data dumps ###
+*.sql
+!src/main/resources/db/migration/*.sql
+
 ### Private working docs ###
 docs/
 ANDROID_AUTH_REFRESH_HANDOFF.md

@@ -7,11 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IChatMessageDao extends JpaRepository<ChatMessage, Long> {
     List<ChatMessage> findByChatRoomIdOrderBySentAtAsc(Long chatRoomId);
 
     long countByChatRoomIdAndSenderId(Long chatRoomId, Long senderId);
+
+    // Idempotency guard: lets a retried send recognize "this already committed, the ack was
+    // just lost" instead of persisting a duplicate row.
+    Optional<ChatMessage> findFirstBySenderIdAndClientMessageId(Long senderId, String clientMessageId);
 
     long countByChatRoomIdAndSenderIdNotAndStatusNot(Long chatRoomId, Long senderId, MessageStatus status);
 

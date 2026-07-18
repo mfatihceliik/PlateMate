@@ -7,6 +7,7 @@ public final class SocketEvents {
     public static final String NEW_MESSAGE = "new_message";
     public static final String MESSAGE_DELIVERED = "message_delivered";
     public static final String MESSAGE_READ = "message_read";
+    public static final String MESSAGE_DELETED = "message_deleted";
 
     // Presence Events
     public static final String PRESENCE_ONLINE = "presence_online";
