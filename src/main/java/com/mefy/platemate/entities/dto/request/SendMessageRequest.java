@@ -20,4 +20,7 @@ public class SendMessageRequest implements IDto {
     // Client-generated correlation id (UUID) so the sender can reconcile its optimistic local
     // row against the persisted server row via the send ack. Nullable for backward compat.
     private String clientMessageId;
+
+    // Alıntılanan mesajın id'si — opsiyonel, quote/reply akışı için. Nullable, backward compat.
+    private Long replyToMessageId;
 }

@@ -175,6 +175,8 @@ public final class Messages {
     public static final String MESSAGE_NOT_FOUND = "chat.message.not.found";
     public static final String MESSAGE_DELETE_UNAUTHORIZED = "chat.message.delete.unauthorized";
     public static final String MESSAGE_DELETED = "chat.message.deleted";
+    public static final String CHAT_MESSAGE_REPORT_SUCCESS = "chat.message.report.success";
+    public static final String CHAT_MESSAGE_REPORT_SELF_NOT_ALLOWED = "chat.message.report.self.not.allowed";
     // User Block Messages
     public static final String USER_BLOCK_SUCCESS = "user.block.success";
     public static final String USER_UNBLOCK_SUCCESS = "user.unblock.success";

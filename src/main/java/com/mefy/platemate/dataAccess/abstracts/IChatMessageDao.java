@@ -12,6 +12,10 @@ import java.util.Optional;
 public interface IChatMessageDao extends JpaRepository<ChatMessage, Long> {
     List<ChatMessage> findByChatRoomIdOrderBySentAtAsc(Long chatRoomId);
 
+    // Bir odanın mesajlarını (silinenler haric) getirir: taze bir senkron, o cihazda hic
+    // gorulmemis eski silinmis mesajlari yerel onbellege tekrar getirmesin diye.
+    List<ChatMessage> findByChatRoomIdAndStatusNotOrderBySentAtAsc(Long chatRoomId, MessageStatus status);
+
     long countByChatRoomIdAndSenderId(Long chatRoomId, Long senderId);
 
     // Idempotency guard: lets a retried send recognize "this already committed, the ack was

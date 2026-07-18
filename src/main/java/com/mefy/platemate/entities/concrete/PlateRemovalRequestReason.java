@@ -15,8 +15,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "plate_removal_reasons", indexes = {
-        @Index(name = "idx_plate_removal_reasons_active_sort", columnList = "active,sort_order")
+@Table(name = "plate_removal_request_reasons", indexes = {
+        @Index(name = "idx_plate_removal_request_reasons_active_sort", columnList = "active,sort_order")
 })
 @Getter
 @Setter

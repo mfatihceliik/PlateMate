@@ -47,6 +47,12 @@ public class ChatMessage implements IEntity {
     @Column(name = "client_message_id", length = 64)
     private String clientMessageId;
 
+    // Alıntılanan mesaj — nullable self-FK; silinirse (ON DELETE SET NULL) alıntı sessizce
+    // kaybolur, kaynak mesajı bulamayan bir alıntı önizlemesi göstermeye çalışmaktansa.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_message_id")
+    private ChatMessage replyToMessage;
+
     @PrePersist
     private void onCreate() {
         // Server is the source of truth for the send time; never trust the client clock.

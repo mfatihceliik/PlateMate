@@ -85,6 +85,7 @@ public class ChatMessageManager implements IChatMessageService {
         message.setContent(request.getContent());
         message.setStatus(MessageStatus.SENT);
         message.setClientMessageId(request.getClientMessageId());
+        message.setReplyToMessage(resolveReplyTarget(request.getReplyToMessageId(), room));
 
         persistMessageAndTouchRoom(message, room);
         acceptRequestIfApproverReplied(room, currentUserId);
@@ -97,6 +98,19 @@ public class ChatMessageManager implements IChatMessageService {
         dispatchSendSideEffects(room, message, dto, currentUserId);
 
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.MESSAGE_SENT));
+    }
+
+    // Geçersiz bir alıntı hedefi (başka oda / silinmiş / bulunamayan mesaj) tüm gönderimi
+    // başarısız kılmaz — sessizce alıntısız gönderilir (ör. tıklama ile gönderim arasında karşı
+    // taraf mesajı sildiyse oluşabilecek bir yarış durumu).
+    private ChatMessage resolveReplyTarget(Long replyToMessageId, ChatRoom room) {
+        if (replyToMessageId == null || room == null) {
+            return null;
+        }
+        return chatMessageDao.findById(replyToMessageId)
+                .filter(parent -> parent.getChatRoom() != null && parent.getChatRoom().getId().equals(room.getId()))
+                .filter(parent -> parent.getStatus() != MessageStatus.DELETED)
+                .orElse(null);
     }
 
     private Result validateSendMessage(ChatRoom room, Long currentUserId) {
@@ -277,7 +291,7 @@ public class ChatMessageManager implements IChatMessageService {
             return new ErrorDataResult<>(accessResult.getMessage());
         }
 
-        List<ChatMessage> messages = chatMessageDao.findByChatRoomIdOrderBySentAtAsc(roomId);
+        List<ChatMessage> messages = chatMessageDao.findByChatRoomIdAndStatusNotOrderBySentAtAsc(roomId, MessageStatus.DELETED);
         List<ChatMessageDto> dtos = messages.stream()
                 .map(chatMessageMapper::entityToDto)
                 .collect(Collectors.toList());

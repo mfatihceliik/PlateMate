@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ChatMessageMapper implements IMapper<ChatMessage, ChatMessageDto> {
+
+    private static final int REPLY_PREVIEW_MAX_LENGTH = 120;
+
     @Override
     public ChatMessageDto entityToDto(ChatMessage entity) {
         if (entity == null) return null;
@@ -28,7 +31,22 @@ public class ChatMessageMapper implements IMapper<ChatMessage, ChatMessageDto> {
             dto.setSenderUserId(entity.getSender().getId());
             dto.setSenderUsername(entity.getSender().getUsername());
         }
+
+        ChatMessage replyTo = entity.getReplyToMessage();
+        if (replyTo != null) {
+            dto.setReplyToMessageId(replyTo.getId());
+            if (replyTo.getSender() != null) {
+                dto.setReplyToSenderUsername(replyTo.getSender().getUsername());
+            }
+            dto.setReplyToContentPreview(truncate(replyTo.getContent()));
+        }
         return dto;
+    }
+
+    private String truncate(String content) {
+        if (content == null) return null;
+        if (content.length() <= REPLY_PREVIEW_MAX_LENGTH) return content;
+        return content.substring(0, REPLY_PREVIEW_MAX_LENGTH);
     }
 
     @Override

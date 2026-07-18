@@ -22,4 +22,10 @@ public class ChatMessageDto implements IDto {
     private LocalDateTime deliveredAt;
     private LocalDateTime readAt;
     private String clientMessageId; // Echoed back so the sender can reconcile its optimistic local row
+
+    // Alıntı önizlemesi — flat alanlar (bu backend'in mevcut DTO konvansiyonu, nested full message
+    // yok). Hepsi null ise bu mesaj bir alıntı değildir.
+    private Long replyToMessageId;
+    private String replyToSenderUsername;
+    private String replyToContentPreview;
 }
