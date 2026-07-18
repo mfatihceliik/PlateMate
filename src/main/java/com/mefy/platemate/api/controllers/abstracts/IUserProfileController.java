@@ -3,6 +3,7 @@ package com.mefy.platemate.api.controllers.abstracts;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.dto.UserProfileDto;
+import com.mefy.platemate.entities.dto.UserProfilePageDto;
 import com.mefy.platemate.entities.dto.request.UpdateProfileRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,11 @@ public interface IUserProfileController {
 
     @GetMapping("/{userId}")
     ResponseEntity<DataResult<UserProfileDto>> getByUserId(
+            @PathVariable Long userId,
+            @RequestAttribute("userId") Long requesterUserId);
+
+    @GetMapping("/{userId}/page")
+    ResponseEntity<DataResult<UserProfilePageDto>> getPageByUserId(
             @PathVariable Long userId,
             @RequestAttribute("userId") Long requesterUserId);
 

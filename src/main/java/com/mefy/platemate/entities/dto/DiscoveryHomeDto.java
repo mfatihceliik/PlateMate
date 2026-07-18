@@ -19,4 +19,5 @@ public class DiscoveryHomeDto implements IDto {
     private String feedType;
     private DiscoveryExtendedStatsDto extendedStats;
     private DiscoveryForYouDto forYou;
+    private List<DiscoveryTabOptionDto> tabOptions;
 }

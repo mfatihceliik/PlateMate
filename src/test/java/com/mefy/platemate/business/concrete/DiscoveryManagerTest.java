@@ -1,5 +1,6 @@
 package com.mefy.platemate.business.concrete;
 
+import com.mefy.platemate.business.abstracts.IDiscoveryTabOptionService;
 import com.mefy.platemate.business.discovery.DiscoveryActivityService;
 import com.mefy.platemate.business.discovery.DiscoveryAggregationService;
 import com.mefy.platemate.business.discovery.DiscoveryPersonalizationService;
@@ -13,6 +14,7 @@ import com.mefy.platemate.core.utilities.pagination.PagedData;
 import com.mefy.platemate.core.utilities.pagination.PaginationRequest;
 import com.mefy.platemate.core.utilities.results.DataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
+import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.business.discovery.model.PlateDailyMetrics;
 import com.mefy.platemate.business.discovery.model.ScoredDiscoveryPlate;
@@ -50,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -78,6 +81,8 @@ class DiscoveryManagerTest {
     private DiscoveryActivityService discoveryActivityService;
     @Mock
     private DiscoveryPersonalizationService discoveryPersonalizationService;
+    @Mock
+    private IDiscoveryTabOptionService discoveryTabOptionService;
 
     private DiscoveryManager discoveryManager;
 
@@ -92,8 +97,13 @@ class DiscoveryManagerTest {
                 discoveryAggregationService,
                 discoveryTabService,
                 discoveryActivityService,
-                discoveryPersonalizationService
+                discoveryPersonalizationService,
+                discoveryTabOptionService
         );
+        // getHome basarili yol her testte cagirmaz (ör. validation-hatasi erken donuslerde); lenient
+        // ile strict-stubbing UnnecessaryStubbingException'i onlenir.
+        lenient().when(discoveryTabOptionService.getActiveTabOptions())
+                .thenReturn(new SuccessDataResult<>(List.of(), "ok"));
     }
 
     @Test

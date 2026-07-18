@@ -67,7 +67,8 @@ class DiscoveryDtoSerializationTest {
                 List.of(),
                 DiscoveryFeedType.FREE.name(),
                 new DiscoveryExtendedStatsDto(0L, 1L, 2L, 100.0, 100.0, 50.0, List.of()),
-                null
+                null,
+                List.of()
         );
 
         String json = objectMapper.writeValueAsString(home);

@@ -1,6 +1,8 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IFollowService;
+import com.mefy.platemate.business.abstracts.IFriendshipService;
+import com.mefy.platemate.business.abstracts.ISocialPlatformService;
 import com.mefy.platemate.business.abstracts.IUserProfileService;
 import com.mefy.platemate.business.abstracts.IUserSettingsService;
 import com.mefy.platemate.business.utilities.constants.Messages;
@@ -26,8 +28,11 @@ import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.dto.request.UpdateProfileRequest;
+import com.mefy.platemate.entities.dto.FriendshipDto;
+import com.mefy.platemate.entities.dto.SocialPlatformDto;
 import com.mefy.platemate.entities.dto.UserProfileDto;
 import com.mefy.platemate.entities.dto.UserProfileFriendRequestDto;
+import com.mefy.platemate.entities.dto.UserProfilePageDto;
 import com.mefy.platemate.entities.dto.UserProfileReviewDto;
 import com.mefy.platemate.entities.dto.UserReviewEvaluationTotalsDto;
 import com.mefy.platemate.entities.dto.UserReviewStatusCountsDto;
@@ -54,6 +59,8 @@ public class UserProfileManager implements IUserProfileService {
     private final IPlateReviewDao plateReviewDao;
     private final IPlateReportDao plateReportDao;
     private final IFollowService followService;
+    private final IFriendshipService friendshipService;
+    private final ISocialPlatformService socialPlatformService;
     private final UserProfileMapper userProfileMapper;
     private final IUserSettingsService userSettingsService;
     private final IMessageService messageService;
@@ -98,6 +105,26 @@ public class UserProfileManager implements IUserProfileService {
         populateProfileDetails(dto, profile, userId, selfViewer);
 
         return new SuccessDataResult<>(dto, messageService.getMessage(Messages.PROFILE_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DataResult<UserProfilePageDto> getPageByUserId(Long userId, Long requesterUserId) {
+        DataResult<UserProfileDto> profileResult = getByUserId(userId, requesterUserId);
+        if (!profileResult.isSuccess()) {
+            return new ErrorDataResult<>(profileResult.getMessage());
+        }
+
+        boolean selfViewer = requesterUserId != null && requesterUserId.equals(userId);
+        // Bekleyen arkadaşlık istekleri sadece kendi profilini görüntülerken anlamlı (başkasının
+        // bekleyen isteklerini görmek gizlilik ihlali olur).
+        List<FriendshipDto> pendingFriendRequests = selfViewer
+                ? friendshipService.getPendingRequests(requesterUserId).getData()
+                : List.of();
+        List<SocialPlatformDto> socialPlatforms = socialPlatformService.getActivePlatforms().getData();
+
+        UserProfilePageDto page = new UserProfilePageDto(profileResult.getData(), pendingFriendRequests, socialPlatforms);
+        return new SuccessDataResult<>(page, messageService.getMessage(Messages.PROFILE_FOUND));
     }
 
     @Override

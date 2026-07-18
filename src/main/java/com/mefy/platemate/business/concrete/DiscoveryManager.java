@@ -1,6 +1,7 @@
 package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IDiscoveryService;
+import com.mefy.platemate.business.abstracts.IDiscoveryTabOptionService;
 import com.mefy.platemate.business.discovery.DiscoveryActivityService;
 import com.mefy.platemate.business.discovery.DiscoveryAggregationService;
 import com.mefy.platemate.business.discovery.DiscoveryPersonalizationService;
@@ -30,6 +31,7 @@ import com.mefy.platemate.entities.dto.DiscoveryFeedType;
 import com.mefy.platemate.entities.dto.DiscoveryHomeDto;
 import com.mefy.platemate.entities.dto.DiscoveryPlateCardDto;
 import com.mefy.platemate.entities.dto.DiscoveryRecentActivityDto;
+import com.mefy.platemate.entities.dto.DiscoveryTabOptionDto;
 import com.mefy.platemate.entities.dto.DiscoveryTabType;
 import com.mefy.platemate.entities.dto.DiscoveryTabsDto;
 import com.mefy.platemate.entities.dto.PlateReportTypeDto;
@@ -73,6 +75,7 @@ public class DiscoveryManager implements IDiscoveryService {
     private final DiscoveryTabService discoveryTabService;
     private final DiscoveryActivityService discoveryActivityService;
     private final DiscoveryPersonalizationService discoveryPersonalizationService;
+    private final IDiscoveryTabOptionService discoveryTabOptionService;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,6 +95,11 @@ public class DiscoveryManager implements IDiscoveryService {
         if (feedType == DiscoveryFeedType.PREMIUM) {
             home.setForYou(discoveryPersonalizationService.buildForYou(userId, today, home.getRecentActivities()));
         }
+        // Sekme (chip) listesi ayri, admin-yonetimli global bir kaynak; tek istekte toplamak icin
+        // burada da cekilip aynı DTO'ya eklenir. Bu cagri basarisiz olsa da ana feed yuklemesi
+        // basarisiz sayilmaz (diger fallback'lerle tutarli davranis).
+        DataResult<List<DiscoveryTabOptionDto>> tabOptionsResult = discoveryTabOptionService.getActiveTabOptions();
+        home.setTabOptions(tabOptionsResult.isSuccess() ? tabOptionsResult.getData() : List.of());
 
         return new SuccessDataResult<>(home, messageService.getMessage(Messages.DISCOVERY_HOME_FOUND));
     }
@@ -263,6 +271,7 @@ public class DiscoveryManager implements IDiscoveryService {
                 cities,
                 topPlates,
                 recentActivities,
+                null,
                 null,
                 null,
                 null
