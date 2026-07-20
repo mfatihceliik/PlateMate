@@ -25,6 +25,7 @@ import com.mefy.platemate.entities.concrete.FriendshipRequestStatusCodes;
 import com.mefy.platemate.entities.concrete.PlateReport;
 import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
+import com.mefy.platemate.entities.concrete.ProfileFriendshipStatus;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
@@ -249,27 +250,27 @@ public class UserProfileManager implements IUserProfileService {
 
     private void populateFriendshipData(UserProfileDto dto, Long profileUserId, Long requesterUserId) {
         if (requesterUserId == null || requesterUserId.equals(profileUserId)) {
-            dto.setFriendshipStatus("NONE");
+            dto.setFriendshipStatus(ProfileFriendshipStatus.NONE.name());
             return;
         }
-        
+
         java.util.Optional<Friendship> friendshipOpt = friendshipDao.findLatestActiveBetweenUsers(
                 requesterUserId, profileUserId, FriendshipRequestStatusCodes.ACTIVE_IDS);
-        
+
         if (friendshipOpt.isPresent()) {
             Friendship f = friendshipOpt.get();
             dto.setFriendshipId(f.getId());
             if (f.getStatusId().equals(FriendshipRequestStatusCodes.ACCEPTED_ID)) {
-                dto.setFriendshipStatus("FRIENDS");
+                dto.setFriendshipStatus(ProfileFriendshipStatus.FRIENDS.name());
             } else if (f.getStatusId().equals(FriendshipRequestStatusCodes.REQUESTED_ID)) {
                 if (f.getRequester().getId().equals(requesterUserId)) {
-                    dto.setFriendshipStatus("PENDING_SENT");
+                    dto.setFriendshipStatus(ProfileFriendshipStatus.PENDING_SENT.name());
                 } else {
-                    dto.setFriendshipStatus("PENDING_RECEIVED");
+                    dto.setFriendshipStatus(ProfileFriendshipStatus.PENDING_RECEIVED.name());
                 }
             }
         } else {
-            dto.setFriendshipStatus("NONE");
+            dto.setFriendshipStatus(ProfileFriendshipStatus.NONE.name());
         }
     }
 
