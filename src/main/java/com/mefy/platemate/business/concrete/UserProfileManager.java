@@ -27,6 +27,7 @@ import com.mefy.platemate.entities.concrete.PlateReview;
 import com.mefy.platemate.entities.concrete.PlateReviewStatus;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.concrete.UserProfile;
+import com.mefy.platemate.entities.concrete.UserRoleCode;
 import com.mefy.platemate.entities.dto.request.UpdateProfileRequest;
 import com.mefy.platemate.entities.dto.FriendshipDto;
 import com.mefy.platemate.entities.dto.SocialPlatformDto;
@@ -276,6 +277,7 @@ public class UserProfileManager implements IUserProfileService {
         if (profile.getUser() != null) {
             dto.setJoinedAt(profile.getUser().getCreatedAt());
             dto.setPremiumActive(profile.getUser().isPremiumActive());
+            dto.setAdmin(profile.getUser().hasRole(UserRoleCode.ADMIN));
         }
 
         if (selfViewer) {

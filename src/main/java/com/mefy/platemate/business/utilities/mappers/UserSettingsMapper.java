@@ -19,6 +19,7 @@ public class UserSettingsMapper implements IMapper<UserSettings, UserSettingsDto
         dto.setPlateReviewNotificationsEnabled(entity.isPlateReviewNotificationsEnabled());
         dto.setNewFollowerNotificationsEnabled(entity.isNewFollowerNotificationsEnabled());
         dto.setReviewReplyNotificationsEnabled(entity.isReviewReplyNotificationsEnabled());
+        dto.setFollowingListVisible(entity.isFollowingListVisible());
         return dto;
     }
 

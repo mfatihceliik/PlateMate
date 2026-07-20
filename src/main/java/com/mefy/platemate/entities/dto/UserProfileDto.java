@@ -28,6 +28,7 @@ public class UserProfileDto implements IDto {
     private Integer reviewCount;
     private LocalDateTime joinedAt;
     private Boolean premiumActive;
+    private Boolean admin;
     private UserSettingsDto userSettings;
     private UserReviewStatusCountsDto reviewStatusCounts;
     private UserReviewEvaluationTotalsDto evaluationTotals;

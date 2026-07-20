@@ -16,4 +16,5 @@ public class UserSettingsDto implements IDto {
     private boolean plateReviewNotificationsEnabled;
     private boolean newFollowerNotificationsEnabled;
     private boolean reviewReplyNotificationsEnabled;
+    private boolean followingListVisible;
 }

@@ -16,4 +16,5 @@ public class UpdateSettingsRequest implements IDto {
     private Boolean plateReviewNotificationsEnabled;
     private Boolean newFollowerNotificationsEnabled;
     private Boolean reviewReplyNotificationsEnabled;
+    private Boolean followingListVisible;
 }

@@ -27,6 +27,7 @@ public class UserSettings implements IEntity {
     private boolean plateReviewNotificationsEnabled = true;  // Followed plate review notifications
     private boolean newFollowerNotificationsEnabled = true;   // New follower notifications
     private boolean reviewReplyNotificationsEnabled = true;   // Review reply notifications
+    private boolean followingListVisible = true;   // Show "who I follow" list to other users
 
     @Column(name = "theme_mode", nullable = false, length = 16)
     private String themeMode = "SYSTEM";  // SYSTEM | LIGHT | DARK (write-through from client)

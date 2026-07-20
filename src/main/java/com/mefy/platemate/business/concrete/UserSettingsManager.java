@@ -98,6 +98,9 @@ public class UserSettingsManager implements IUserSettingsService {
         if (request.getReviewReplyNotificationsEnabled() != null) {
             settings.setReviewReplyNotificationsEnabled(request.getReviewReplyNotificationsEnabled());
         }
+        if (request.getFollowingListVisible() != null) {
+            settings.setFollowingListVisible(request.getFollowingListVisible());
+        }
 
         userSettingsDao.save(settings);
         return new SuccessResult(messageService.getMessage(Messages.SETTINGS_UPDATED));
