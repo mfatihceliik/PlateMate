@@ -2,22 +2,32 @@ package com.mefy.platemate.business.concrete;
 
 import com.mefy.platemate.business.abstracts.IFollowService;
 import com.mefy.platemate.business.abstracts.INotificationService;
+import com.mefy.platemate.business.abstracts.IUserSettingsService;
 import com.mefy.platemate.business.utilities.constants.Messages;
 import com.mefy.platemate.business.utilities.rules.BusinessRules;
 import com.mefy.platemate.business.utilities.rules.RelationshipRules;
 import com.mefy.platemate.business.utilities.rules.UserRules;
 import com.mefy.platemate.core.utilities.messages.IMessageService;
 import com.mefy.platemate.core.utilities.results.DataResult;
+import com.mefy.platemate.core.utilities.results.ErrorDataResult;
 import com.mefy.platemate.core.utilities.results.ErrorResult;
 import com.mefy.platemate.core.utilities.results.Result;
+import com.mefy.platemate.core.utilities.results.SuccessDataResult;
 import com.mefy.platemate.core.utilities.results.SuccessResult;
 import com.mefy.platemate.dataAccess.abstracts.IFollowDao;
 import com.mefy.platemate.entities.concrete.Follow;
 import com.mefy.platemate.entities.concrete.NotificationType;
 import com.mefy.platemate.entities.concrete.User;
+import com.mefy.platemate.entities.concrete.UserProfile;
+import com.mefy.platemate.entities.dto.FollowListItemDto;
+import com.mefy.platemate.entities.dto.UserSettingsDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +38,7 @@ public class FollowManager implements IFollowService {
     private final IMessageService messageService;
     private final UserRules userRules;
     private final RelationshipRules relationshipRules;
+    private final IUserSettingsService userSettingsService;
 
     @Override
     @Transactional
@@ -92,5 +103,53 @@ public class FollowManager implements IFollowService {
             return false;
         }
         return followDao.existsByFollowerIdAndFollowingId(followerId, followingId);
+    }
+
+    @Override
+    public DataResult<List<FollowListItemDto>> getFollowers(Long userId, Long requesterId) {
+        List<FollowListItemDto> items = followDao.findByFollowingId(userId).stream()
+                .map(row -> toFollowListItemDto(row.getFollower(), requesterId))
+                .collect(Collectors.toList());
+        return new SuccessDataResult<>(items, messageService.getMessage(Messages.USERS_LISTED));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public DataResult<List<FollowListItemDto>> getFollowing(Long userId, Long requesterId) {
+        boolean selfViewer = requesterId != null && requesterId.equals(userId);
+        if (!selfViewer && !isFollowingListVisible(userId)) {
+            return (DataResult<List<FollowListItemDto>>) (DataResult<?>) new ErrorDataResult<>(
+                    Map.of("code", Messages.FOLLOW_FOLLOWING_LIST_HIDDEN),
+                    messageService.getMessage(Messages.FOLLOW_FOLLOWING_LIST_HIDDEN)
+            );
+        }
+
+        List<FollowListItemDto> items = followDao.findByFollowerId(userId).stream()
+                .map(row -> toFollowListItemDto(row.getFollowing(), requesterId))
+                .collect(Collectors.toList());
+        return new SuccessDataResult<>(items, messageService.getMessage(Messages.USERS_LISTED));
+    }
+
+    private boolean isFollowingListVisible(Long userId) {
+        DataResult<UserSettingsDto> settingsResult = userSettingsService.getByUserId(userId);
+        return settingsResult.isSuccess()
+                && settingsResult.getData() != null
+                && settingsResult.getData().isFollowingListVisible();
+    }
+
+    private FollowListItemDto toFollowListItemDto(User user, Long requesterId) {
+        FollowListItemDto dto = new FollowListItemDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+
+        UserProfile profile = user.getProfile();
+        if (profile != null) {
+            dto.setDisplayName(profile.getDisplayName());
+            dto.setBio(profile.getBio());
+            dto.setProfilePhotoUrl(profile.getProfilePhotoUrl());
+        }
+
+        dto.setIsFollowing(isFollowing(requesterId, user.getId()));
+        return dto;
     }
 }

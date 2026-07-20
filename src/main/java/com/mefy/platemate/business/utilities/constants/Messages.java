@@ -229,6 +229,7 @@ public final class Messages {
     public static final String FOLLOW_ALREADY_EXISTS = "follow.already.exists";
     public static final String FOLLOW_NOT_FOUND = "follow.not.found";
     public static final String UNFOLLOW_SUCCESS = "unfollow.success";
+    public static final String FOLLOW_FOLLOWING_LIST_HIDDEN = "follow.following.hidden";
     // Plate Follow Messages
     public static final String PLATE_FOLLOW_SUCCESS = "plate.follow.success";
     public static final String PLATE_UNFOLLOW_SUCCESS = "plate.unfollow.success";
