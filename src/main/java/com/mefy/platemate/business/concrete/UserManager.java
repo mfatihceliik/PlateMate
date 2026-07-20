@@ -21,6 +21,7 @@ import com.mefy.platemate.entities.concrete.UserRole;
 import com.mefy.platemate.entities.concrete.UserRoleCode;
 import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.UserSearchResultDto;
 import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -176,12 +177,27 @@ public class UserManager implements IUserService {
     }
 
     @Override
-    public DataResult<List<UserDto>> searchByUsername(String query) {
+    public DataResult<List<UserSearchResultDto>> searchByUsername(String query) {
         List<User> users = userDao.findByUsernameContainingIgnoreCaseAndActiveTrue(query);
-        List<UserDto> userDtos = users.stream()
-                .map(this::toUserDtoWithComputedPremium)
+        List<UserSearchResultDto> results = users.stream()
+                .map(this::toUserSearchResultDto)
                 .collect(Collectors.toList());
-        return new SuccessDataResult<>(userDtos, messageService.getMessage(Messages.USERS_LISTED));
+        return new SuccessDataResult<>(results, messageService.getMessage(Messages.USERS_LISTED));
+    }
+
+    private UserSearchResultDto toUserSearchResultDto(User user) {
+        UserSearchResultDto dto = new UserSearchResultDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+
+        UserProfile profile = user.getProfile();
+        if (profile != null) {
+            dto.setDisplayName(profile.getDisplayName());
+            dto.setBio(profile.getBio());
+            dto.setProfilePhotoUrl(profile.getProfilePhotoUrl());
+        }
+
+        return dto;
     }
 
     @Override

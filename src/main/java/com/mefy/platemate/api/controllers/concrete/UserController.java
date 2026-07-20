@@ -53,10 +53,10 @@ public class UserController implements IUserController {
     }
 
     @Override
-    public ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserDto>>> searchUsers(
+    public ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserSearchResultDto>>> searchUsers(
             @RequestParam String username
     ) {
-        DataResult<List<com.mefy.platemate.entities.dto.UserDto>> result = userService.searchByUsername(username);
+        DataResult<List<com.mefy.platemate.entities.dto.UserSearchResultDto>> result = userService.searchByUsername(username);
         if (!result.isSuccess()) {
             return ResponseEntity.badRequest().body(result);
         }

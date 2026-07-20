@@ -23,7 +23,7 @@ public interface IUserController {
     );
 
     @GetMapping("/search")
-    ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserDto>>> searchUsers(
+    ResponseEntity<DataResult<List<com.mefy.platemate.entities.dto.UserSearchResultDto>>> searchUsers(
             @RequestParam String username
     );
 

@@ -5,6 +5,7 @@ import com.mefy.platemate.core.utilities.results.Result;
 import com.mefy.platemate.entities.concrete.User;
 import com.mefy.platemate.entities.dto.UserAdminDto;
 import com.mefy.platemate.entities.dto.UserDto;
+import com.mefy.platemate.entities.dto.UserSearchResultDto;
 import java.util.List;
 import com.mefy.platemate.entities.dto.request.RegisterRequest;
 import com.mefy.platemate.entities.dto.request.UpdateUserRequest;
@@ -28,7 +29,7 @@ public interface IUserService {
 
     DataResult<UserDto> getByUsername(String username);
 
-    DataResult<List<UserDto>> searchByUsername(String query);
+    DataResult<List<UserSearchResultDto>> searchByUsername(String query);
 
     DataResult<UserAdminDto> getByUsernameForAdmin(String username);
 
