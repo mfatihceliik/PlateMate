@@ -79,7 +79,9 @@ public class ChatRoomManager implements IChatRoomService {
         chatRoomDao.save(newRoom);
 
         addParticipantToRoom(newRoom, userOneId);
-        addParticipantToRoom(newRoom, userTwoId);
+        if (!userOneId.equals(userTwoId)) {
+            addParticipantToRoom(newRoom, userTwoId);
+        }
 
         return new SuccessDataResult<>(toDtoWithUnread(newRoom, userOneId), messageService.getMessage(Messages.CHAT_ROOM_CREATED));
     }

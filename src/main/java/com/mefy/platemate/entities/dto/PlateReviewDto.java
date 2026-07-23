@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -22,4 +23,5 @@ public class PlateReviewDto implements IDto {
     private String username;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<String> reportTypeCodes;
 }

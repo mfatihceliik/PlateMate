@@ -17,7 +17,8 @@ public interface IParticipantDao extends JpaRepository<Participant, Long> {
     Optional<Participant> findByUserIdAndChatRoomId(Long userId, Long chatRoomId);
 
     @Query("SELECT p1.chatRoom FROM Participant p1 JOIN Participant p2 ON p1.chatRoom.id = p2.chatRoom.id " +
-            "WHERE p1.user.id = :u1 AND p2.user.id = :u2 AND p1.chatRoom.isGroup = false")
+            "WHERE p1.user.id = :u1 AND p2.user.id = :u2 AND p1.chatRoom.isGroup = false " +
+            "AND size(p1.chatRoom.participants) = (CASE WHEN :u1 = :u2 THEN 1 ELSE 2 END)")
     Optional<ChatRoom> findPrivateChatBetweenUsers(Long u1, Long u2);
 
     // Distinct users that share a 1-1 chat with the given user (presence partners)
